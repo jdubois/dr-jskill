@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:latest
+    image: postgres:16-alpine
     container_name: postgres-db
     environment:
       POSTGRES_DB: mydb

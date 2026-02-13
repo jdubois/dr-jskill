@@ -10,7 +10,7 @@ This agent skill helps you create Spring Boot projects following Julien Dubois' 
 
 ## Prerequisites
 
-- Java 25 installed
+- Java 21 installed
 - Node.js 22.x and NPM 10.x are installed (when doing front-end development)
 - Docker is installed and running
 
@@ -44,7 +44,7 @@ This skill includes sample bash scripts in the `scripts/` directory that can be 
 ### Latest Version Project ⭐
 Use the `create-project-latest.sh` script to create a project with the **latest Spring Boot version** (automatically fetched):
 ```bash
-./scripts/create-project-latest.sh my-app com.mycompany my-app com.mycompany.myapp 25 web
+./scripts/create-project-latest.sh my-app com.mycompany my-app com.mycompany.myapp 21 web
 ```
 
 Project types available:

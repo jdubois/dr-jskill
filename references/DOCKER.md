@@ -1,7 +1,22 @@
 # Docker Guide for Spring Boot Applications
 
 ## Overview
-This guide covers Docker deployment for Spring Boot applications, including both traditional JVM-based deployments and GraalVM native images.
+This guide covers Docker deployment for Spring Boot 4 applications, including both traditional JVM-based deployments and GraalVM native images.
+
+**Spring Boot 4 Requirements:**
+- Java 17+ (Java 21 LTS recommended - used in our Dockerfiles)
+- GraalVM 25+ for native images
+- Jakarta EE 11 / Servlet 6.1 baseline
+- PostgreSQL 12+ (we use 16-alpine for optimal size and performance)
+
+**Key Improvements in These Docker Files:**
+- ✅ Eclipse Temurin 21 LTS official images (better than Ubuntu + manual Java)
+- ✅ GraalVM 25 for native images (required for Spring Boot 4)
+- ✅ PostgreSQL 16 Alpine (smaller, more secure)
+- ✅ Optimized JVM flags for container environments
+- ✅ curl installed for healthchecks
+- ✅ Non-root user security
+- ✅ Multi-stage builds for smaller images
 
 ## Prerequisites
 - Docker installed and running
@@ -11,17 +26,18 @@ This guide covers Docker deployment for Spring Boot applications, including both
 ## Available Docker Files
 
 ### 1. Dockerfile (JVM-based)
-Standard Docker deployment using the latest Ubuntu and Java versions.
+Standard Docker deployment using Eclipse Temurin official Java images.
 
 **Location**: Copy to your project root
 
 **Features**:
 - Multi-stage build for smaller image size
-- Uses latest Ubuntu and Java 25
+- Uses Eclipse Temurin 21 LTS (official Java images)
 - Maven build included
 - Non-root user for security
-- Health check configured
-- Optimized for production
+- Health check configured with curl
+- Optimized JVM flags for containers
+- Production-ready
 
 **Build and Run**:
 ```bash
@@ -33,15 +49,16 @@ docker run -p 8080:8080 my-spring-app
 ```
 
 ### 2. Dockerfile-native (GraalVM Native Image)
-Native compilation using GraalVM for faster startup and lower memory footprint.
+Native compilation using GraalVM 25 for faster startup and lower memory footprint.
 
 **Location**: Copy to your project root
 
 **Features**:
-- GraalVM native image compilation
+- GraalVM 25 native image compilation (required for Spring Boot 4)
 - Ultra-fast startup time (<100ms)
 - Lower memory consumption
-- Smaller runtime image
+- Smaller runtime image (Oracle Linux slim base)
+- Health check with curl included
 - Ideal for serverless and microservices
 
 **Build and Run**:
@@ -56,17 +73,18 @@ docker run -p 8080:8080 my-spring-app-native
 **Note**: Native compilation takes longer but results in a much faster runtime application.
 
 ### 3. docker-compose.yml (JVM with Database)
-Complete stack with PostgreSQL database and Spring Boot application.
+Complete stack with PostgreSQL 16 database and Spring Boot application.
 
 **Location**: Copy to your project root
 
 **Features**:
-- PostgreSQL database service
+- PostgreSQL 16 Alpine (lightweight, production-ready)
 - Spring Boot application service
 - Automatic database connection configuration
-- Health checks
+- Health checks for both services
 - Named volumes for data persistence
 - Network isolation
+- No version field (modern Docker Compose)
 
 **Usage**:
 ```bash
@@ -88,15 +106,16 @@ docker compose down -v
 - Database: localhost:5432
 
 ### 4. docker-compose-native.yml (Native with Database)
-Complete stack using GraalVM native image with PostgreSQL.
+Complete stack using GraalVM 25 native image with PostgreSQL 16.
 
 **Location**: Copy to your project root
 
 **Features**:
 - All benefits of docker-compose.yml
-- Uses native Spring Boot image
-- Faster startup times
-- Lower resource usage
+- Uses GraalVM 25 native Spring Boot image
+- PostgreSQL 16 Alpine for smaller footprint
+- Faster startup times (<100ms vs several seconds)
+- Lower resource usage (50-75% less memory)
 
 **Usage**:
 ```bash
@@ -128,8 +147,6 @@ environment:
 If your application doesn't use a database, use the standalone Dockerfile:
 
 ```yaml
-version: '3.8'
-
 services:
   spring-app:
     build:
@@ -140,6 +157,8 @@ services:
       - "8080:8080"
     restart: unless-stopped
 ```
+
+**Note**: Modern Docker Compose doesn't require a version field.
 
 ## GraalVM Native Configuration
 
@@ -175,22 +194,28 @@ To enable GraalVM native compilation, add to your `pom.xml`:
 ```
 
 ### Native Build Requirements
+- **GraalVM 25+** required for Spring Boot 4
 - Ensure all reflection, resources, and JNI access are declared
 - Spring Boot 4.x has excellent native support out of the box
 - Most Spring libraries are pre-configured for native compilation
+- TestContainers 2.0+ supports native testing
 
 ## Best Practices
 
 ### 1. Image Optimization
-- Use multi-stage builds to minimize final image size
-- Clean up apt cache after installations
+- Use multi-stage builds to minimize final image size (both Dockerfiles use this)
+- Use Alpine or slim variants: `postgres:16-alpine`, `eclipse-temurin:21-jre-jammy`
+- Clean up package manager cache after installations
 - Copy only necessary files
+- Use `.dockerignore` to exclude unnecessary files
 
 ### 2. Security
-- Run as non-root user
-- Use specific base image versions in production
-- Scan images for vulnerabilities
+- Run as non-root user (both Dockerfiles implement this)
+- **Pin specific versions** in production (postgres:16-alpine, not latest)
+- Use official images: Eclipse Temurin for Java, postgres:alpine for database
+- Scan images for vulnerabilities: `docker scout cves my-app`
 - Keep base images updated
+- Avoid latest tag in production
 
 ### 3. Health Checks
 - Always include health checks
@@ -207,6 +232,14 @@ To enable GraalVM native compilation, add to your `pom.xml`:
         reservations:
           memory: 256M
 ```
+
+**JVM Container Optimization:**
+The Dockerfile includes optimized JVM flags:
+- `-XX:+UseContainerSupport`: Enables container-aware memory management
+- `-XX:MaxRAMPercentage=75.0`: Uses 75% of container memory limit
+- These flags ensure the JVM respects Docker memory limits
+
+**For native images:** No JVM tuning needed - GraalVM native apps are already optimized.
 
 ### 5. Data Persistence
 - Use named volumes for database data
@@ -301,16 +334,21 @@ docker system prune -a
 ```
 
 ## Deployment Checklist
-- [ ] Update database credentials
-- [ ] Configure environment variables
-- [ ] Set up health checks
-- [ ] Configure resource limits
-- [ ] Set up logging
+- [ ] Update database credentials (change from default dbuser/dbpassword)
+- [ ] Configure environment variables for production
+- [ ] **Pin versions**: Use specific tags (postgres:16-alpine, not latest)
+- [ ] **Java version**: Verify Java 21+ for Spring Boot 4
+- [ ] **GraalVM version**: Use GraalVM 25+ for native images
+- [ ] Set up health checks (already configured in provided files)
+- [ ] Configure resource limits (memory, CPU)
+- [ ] Set up logging and log aggregation
 - [ ] Configure backups for data volumes
 - [ ] Test container restart behavior
 - [ ] Document exposed ports
-- [ ] Set up monitoring
+- [ ] Set up monitoring (Prometheus/Grafana)
 - [ ] Configure reverse proxy (nginx/traefik) if needed
+- [ ] Security scan: Run `docker scout cves` on built images
+- [ ] Remove default credentials from docker-compose files
 
 ## Resources
 - [Docker Documentation](https://docs.docker.com/)

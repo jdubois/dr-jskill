@@ -1,8 +1,9 @@
 # Multi-stage Dockerfile for GraalVM Native Image
 # Builds and runs a native Spring Boot application
+# Requires GraalVM 25+ for Spring Boot 4
 
-# Build stage with GraalVM
-FROM ghcr.io/graalvm/graalvm-community:latest AS build
+# Build stage with GraalVM 25
+FROM ghcr.io/graalvm/graalvm-community:25-ol9 AS build
 
 # Install required build tools
 RUN microdnf install -y gcc glibc-devel zlib-devel && \
@@ -26,13 +27,11 @@ COPY src ./src
 RUN ./mvnw -Pnative native:compile -DskipTests
 
 # Runtime stage with minimal base image
-FROM ubuntu:latest
+FROM oraclelinux:9-slim
 
-# Install minimal runtime dependencies
-RUN apt-get update && \
-    apt-get install -y libz1 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Install curl for healthchecks
+RUN microdnf install -y curl && \
+    microdnf clean all
 
 # Create non-root user
 RUN useradd -m -u 1001 springboot
@@ -53,7 +52,7 @@ USER springboot
 # Expose port
 EXPOSE 8080
 
-# Health check
+# Health check (faster startup with native image)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health || exit 1
 

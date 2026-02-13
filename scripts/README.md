@@ -14,7 +14,7 @@ Creates a Spring Boot project using the **latest available Spring Boot version**
 
 **Example:**
 ```bash
-./create-project-latest.sh my-app com.mycompany my-app com.mycompany.myapp 25 web
+./create-project-latest.sh my-app com.mycompany my-app com.mycompany.myapp 21 web
 ```
 
 **Default values:**
@@ -22,7 +22,7 @@ Creates a Spring Boot project using the **latest available Spring Boot version**
 - Group ID: com.example
 - Artifact ID: (same as project name)
 - Package Name: com.example.app
-- Java Version: 25
+- Java Version: 21
 - Project Type: web (options: basic, web, fullstack)
 
 **Project Types:**
@@ -34,7 +34,7 @@ Creates a Spring Boot project using the **latest available Spring Boot version**
 - ✓ Automatically fetches the latest Spring Boot version
 - ✓ Supports Spring Boot 4.x and beyond
 - ✓ Flexible project types
-- ✓ Uses Java 25 by default
+- ✓ Uses Java 21 by default
 
 ### 1. create-basic-project.sh
 Creates a minimal Spring Boot project with essential dependencies.
@@ -46,7 +46,7 @@ Creates a minimal Spring Boot project with essential dependencies.
 
 **Example:**
 ```bash
-./create-basic-project.sh my-app com.mycompany my-app com.mycompany.myapp 25 4.0.0
+./create-basic-project.sh my-app com.mycompany my-app com.mycompany.myapp 21 4.0.0
 ```
 
 **Default values:**
@@ -54,7 +54,7 @@ Creates a minimal Spring Boot project with essential dependencies.
 - Group ID: com.example
 - Artifact ID: (same as project name)
 - Package Name: com.example.app
-- Java Version: 25
+- Java Version: 21
 - Spring Boot Version: 4.0.0
 
 **Included dependencies:**
@@ -72,7 +72,7 @@ Creates a Spring Boot web application with REST API capabilities.
 
 **Example:**
 ```bash
-./create-web-project.sh my-web-app com.mycompany my-web-app com.mycompany.webapp 25 4.0.0
+./create-web-project.sh my-web-app com.mycompany my-web-app com.mycompany.webapp 21 4.0.0
 ```
 
 **Default values:**
@@ -80,7 +80,7 @@ Creates a Spring Boot web application with REST API capabilities.
 - Group ID: com.example
 - Artifact ID: (same as project name)
 - Package Name: com.example.webapp
-- Java Version: 25
+- Java Version: 21
 - Spring Boot Version: 4.0.0
 
 **Included dependencies:**
@@ -99,7 +99,7 @@ Creates a comprehensive Spring Boot application with database, security, and web
 
 **Example:**
 ```bash
-./create-fullstack-project.sh my-fullstack-app com.mycompany my-fullstack-app com.mycompany.fullstack 25 4.0.0
+./create-fullstack-project.sh my-fullstack-app com.mycompany my-fullstack-app com.mycompany.fullstack 21 4.0.0
 ```
 
 **Default values:**
@@ -107,7 +107,7 @@ Creates a comprehensive Spring Boot application with database, security, and web
 - Group ID: com.example
 - Artifact ID: (same as project name)
 - Package Name: com.example.fullstack
-- Java Version: 25
+- Java Version: 21
 - Spring Boot Version: 4.0.0
 
 **Included dependencies:**

@@ -11,13 +11,13 @@ This skill provides tools, scripts, and templates for creating Spring Boot appli
 ### Project Generation
 - **Automated project creation** from start.spring.io
 - **Latest Spring Boot version** (currently 4.x) automatically detected
-- **Java 25** as the default version
+- **Java 21** as the default version
 - **Maven-based** projects (no Gradle)
 - Multiple project templates: basic, web, and fullstack
 
 ### Technology Stack
 - Spring Boot 4.x
-- Java 25
+- Java 21
 - PostgreSQL database
 - Spring Web for REST APIs
 - Spring Data JPA for database access
@@ -45,7 +45,7 @@ This skill provides tools, scripts, and templates for creating Spring Boot appli
 
 ```bash
 # Create a new project with the latest Spring Boot version
-./scripts/create-project-latest.sh my-app com.mycompany my-app com.mycompany.app 25 web
+./scripts/create-project-latest.sh my-app com.mycompany my-app com.mycompany.app 21 web
 
 # Navigate to your project
 cd my-app
@@ -96,7 +96,7 @@ docker compose up -d
 - unzip
 - grep and sed
 - Docker (for containerization)
-- Java 25 (for local development)
+- Java 21+ (for local development)
 
 ## License
 

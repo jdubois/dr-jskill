@@ -10,7 +10,7 @@ PROJECT_NAME="${1:-my-fullstack-app}"
 GROUP_ID="${2:-com.example}"
 ARTIFACT_ID="${3:-$PROJECT_NAME}"
 PACKAGE_NAME="${4:-$GROUP_ID.fullstack}"
-JAVA_VERSION="${5:-25}"
+JAVA_VERSION="${5:-21}"
 SPRING_BOOT_VERSION="${6:-4.0.0}"
 
 echo "Creating full-stack Spring Boot application..."

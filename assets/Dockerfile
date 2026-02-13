@@ -1,12 +1,12 @@
 # Multi-stage Dockerfile for Spring Boot application
-# Uses the latest Ubuntu and Java versions
+# Uses Eclipse Temurin official Java images for optimal performance
 
 # Build stage
-FROM ubuntu:latest AS build
+FROM eclipse-temurin:21-jdk-jammy AS build
 
-# Install Java and Maven
+# Install Maven
 RUN apt-get update && \
-    apt-get install -y openjdk-25-jdk maven && \
+    apt-get install -y maven && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -21,11 +21,11 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Runtime stage
-FROM ubuntu:latest
+FROM eclipse-temurin:21-jre-jammy
 
-# Install Java runtime
+# Install curl for healthchecks
 RUN apt-get update && \
-    apt-get install -y openjdk-25-jre && \
+    apt-get install -y curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -51,5 +51,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the application with optimized JVM flags
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

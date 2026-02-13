@@ -10,7 +10,7 @@ PROJECT_NAME="${1:-my-spring-boot-app}"
 GROUP_ID="${2:-com.example}"
 ARTIFACT_ID="${3:-$PROJECT_NAME}"
 PACKAGE_NAME="${4:-$GROUP_ID.app}"
-JAVA_VERSION="${5:-25}"
+JAVA_VERSION="${5:-21}"
 PROJECT_TYPE="${6:-web}"  # Options: basic, web, fullstack
 
 echo "Fetching latest Spring Boot version from start.spring.io..."
