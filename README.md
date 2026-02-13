@@ -23,7 +23,7 @@ This skill provides tools, scripts, and templates for creating Spring Boot appli
 - Spring Data JPA for database access
 - Spring Boot Actuator for monitoring
 - Spring Boot DevTools for development productivity
-- Bootstrap 5.3.x for front-end
+- Bootstrap for front-end
 
 ### Docker Support
 - Standard JVM deployments with `Dockerfile`
@@ -34,7 +34,7 @@ This skill provides tools, scripts, and templates for creating Spring Boot appli
 
 ### Front-End Development
 - Vanilla JavaScript (no frameworks)
-- Bootstrap 5.3.x for responsive design
+- Bootstrap for responsive design
 - Modern ES6+ patterns
 - RESTful API integration
 - Standard Spring Boot static resource structure
