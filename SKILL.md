@@ -8,11 +8,27 @@ description: Creates Spring Boot projects following Julien Dubois' best practice
 ## Overview
 This agent skill helps you create Spring Boot projects following Julien Dubois' best practices. It provides tools and scripts to quickly bootstrap Spring Boot applications using https://start.spring.io
 
+## Prerequisites
+
+- Java 25 installed
+
 ## Capabilities
 - Generate Spring Boot projects with predefined configurations
 - Support for various Spring Boot versions and dependencies
 - Follow best practices for project structure and configuration
 - Quick setup scripts for common use cases
+
+## Validation
+
+Once the project is generated, this skill MUST:
+
+- Validate that the project builds successfully with `./mvnw clean install`
+- Validate that the application starts successfully with `./mvnw spring-boot:run`
+- Validate that the application responds to HTTP requests (e.g. `curl http://localhost:8080/actuator/health` returns `{"status":"UP"}`)
+- Validate that the unit tests run successfully with `./mvnw test`
+- Validate the the integration tests run successfully with `./mvnw verify` (if included)
+- Validate that the Docker images build successfully
+- Validate that the GraalVM native image builds successfully with `./mvnw -Pnative native:compile`
 
 ## Usage
 

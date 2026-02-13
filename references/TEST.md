@@ -276,7 +276,7 @@ public abstract class AbstractIntegrationTest {
 
 Test the complete REST endpoint with real database interactions.
 
-**Example: UserIntegrationTest.java**
+**Example: UserIntegrationIT.java**
 
 ```java
 package com.example.app.controller;
@@ -297,7 +297,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @AutoConfigureMockMvc
-class UserIntegrationTest extends AbstractIntegrationTest {
+class UserIntegrationIT extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -394,7 +394,7 @@ class UserIntegrationTest extends AbstractIntegrationTest {
 
 Test repository methods with real database.
 
-**Example: UserRepositoryTest.java**
+**Example: UserRepositoryIT.java**
 
 ```java
 package com.example.app.repository;
@@ -410,7 +410,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class UserRepositoryTest extends AbstractIntegrationTest {
+class UserRepositoryIT extends AbstractIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
@@ -476,6 +476,24 @@ class UserRepositoryTest extends AbstractIntegrationTest {
 }
 ```
 
+## Test Naming Conventions
+
+**Unit tests** end with `Test`:
+- `UserServiceTest.java`
+- `OrderControllerTest.java`
+- Fast, isolated tests with mocks
+
+**Integration tests** end with `IT`:
+- `UserIntegrationIT.java`
+- `UserRepositoryIT.java`
+- Slower tests with real database and full context
+
+This naming convention allows:
+- Maven Surefire plugin to run unit tests (`*Test.java`)
+- Maven Failsafe plugin to run integration tests (`*IT.java`)
+- Separate execution in CI/CD pipelines
+- Clear distinction between test types
+
 ## Testing Best Practices
 
 ### 1. Test Organization
@@ -483,6 +501,7 @@ class UserRepositoryTest extends AbstractIntegrationTest {
 - Follow the Given-When-Then pattern in test structure
 - Keep tests focused - one assertion per test when possible
 - Use `@BeforeEach` for common setup
+- **Name unit tests with `Test` suffix, integration tests with `IT` suffix**
 
 ### 2. Unit Tests
 - Mock all external dependencies
@@ -524,24 +543,33 @@ src/test/java/
     ├── AbstractIntegrationTest.java         # Base class for integration tests
     ├── controller/
     │   ├── UserControllerTest.java          # Unit test with mocks
-    │   └── UserIntegrationTest.java         # Integration test with TestContainers
+    │   └── UserIntegrationIT.java           # Integration test with TestContainers
     ├── service/
     │   └── UserServiceTest.java             # Unit test with mocks
     └── repository/
-        └── UserRepositoryTest.java          # Integration test with TestContainers
+        └── UserRepositoryIT.java            # Integration test with TestContainers
 ```
 
 ## Running Tests
 
 ```bash
-# Run all tests
+# Run all tests (unit + integration)
+./mvnw verify
+
+# Run only unit tests (fast)
 ./mvnw test
+
+# Run only integration tests
+./mvnw failsafe:integration-test
 
 # Run specific test class
 ./mvnw test -Dtest=UserServiceTest
 
+# Run specific integration test
+./mvnw verify -Dit.test=UserIntegrationIT
+
 # Run with coverage report
-./mvnw test jacoco:report
+./mvnw verify jacoco:report
 
 # Skip tests during build
 ./mvnw package -DskipTests
