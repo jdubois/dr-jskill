@@ -2,3 +2,4 @@
 
 - You MUST follow the Agents Skills specifications at: https://agentskills.io/home
 - When doing a script, you MUST do a Bash script that works on Mac OS X, Windows and Linux.
+- NEVER propose to use Lombok in the generated projects.

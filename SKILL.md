@@ -6,7 +6,7 @@ description: Creates Spring Boot projects following Julien Dubois' best practice
 # Spring Boot skill that follows Julien Dubois' best practices.
 
 ## Overview
-This agent skill helps you create Spring Boot projects following Julien Dubois' best practices. It provides tools and scripts to quickly bootstrap Spring Boot applications using start.spring.io.
+This agent skill helps you create Spring Boot projects following Julien Dubois' best practices. It provides tools and scripts to quickly bootstrap Spring Boot applications using https://start.spring.io
 
 ## Capabilities
 - Generate Spring Boot projects with predefined configurations
@@ -53,10 +53,10 @@ Use the `create-fullstack-project.sh` script to create a comprehensive Spring Bo
 - Use the `create-project-latest.sh` script to automatically get the latest version
 - Use Spring Boot Actuator for production-ready features
 - Use Spring Data JPA for database access
-- Use PostgreSQL for database
+- Use PostgreSQL for database (see [Database Best Practices](references/DATABASE.md) for optimization)
 - Use `spring-boot-docker-compose` for automatic database startup during development
 - Follow RESTful API design principles
-- Include proper logging configuration
+- Use proper logging with Logback (see [Logging Best Practices](references/LOGGING.md))
 - Use Maven for dependency management
 - Add Spring Boot DevTools
 - Use Docker for containerized deployments
@@ -65,8 +65,6 @@ Use the `create-fullstack-project.sh` script to create a comprehensive Spring Bo
 ## Project Structure
 
 The service layer is only included if it adds value (e.g. complex business logic). For simple CRUD applications, the controller can directly call the repository.
-
-DTO classes are only included if there is a need to separate the API model from the domain model. For simple applications, the domain entities can be used directly in the controllers.
 
 Generated projects follow the following recommended structure:
 ```
@@ -138,6 +136,8 @@ spring.jpa.show-sql=false
 # Actuator configuration
 management.endpoints.web.exposure.include=health,info,metrics
 ```
+
+**For advanced database configuration and performance optimization**, see the [Database Best Practices Guide](references/DATABASE.md). It covers connection pooling, query optimization, transaction management, locking strategies, and PostgreSQL-specific optimizations based on Vlad Mihalcea's best practices.
 
 ## Automatic Docker Compose Support
 
@@ -249,6 +249,8 @@ Build native image locally:
 - [Spring Boot Documentation](https://spring.io/projects/spring-boot)
 - [Spring Initializr](https://start.spring.io)
 - [Julien Dubois on GitHub](https://github.com/jdubois)
+- [Database Best Practices](references/DATABASE.md) (included in this skill - PostgreSQL and Hibernate optimization)
+- [Logging Best Practices](references/LOGGING.md) (included in this skill - Logback configuration and patterns)
 - [Testing Guide](references/TEST.md) (included in this skill)
 - [Front-End Development Guide](references/FRONT-END.md) (included in this skill)
 - [Docker Deployment Guide](references/DOCKER.md) (included in this skill)
