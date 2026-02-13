@@ -129,7 +129,39 @@ class ApplicationTests {
 
 **Package changes:**
 - `com.fasterxml.jackson` → `tools.jackson`
-- Exception: `com.fasterxml.jackson.annotation` remains unchanged
+- **IMPORTANT Exception:** `com.fasterxml.jackson.annotation` remains unchanged
+
+**Critical: Common Jackson annotations DO NOT change:**
+```java
+// These annotations stay the same - DO NOT change these imports:
+import com.fasterxml.jackson.annotation.JsonProperty;      // ✅ Correct
+import com.fasterxml.jackson.annotation.JsonIgnore;        // ✅ Correct
+import com.fasterxml.jackson.annotation.JsonFormat;        // ✅ Correct
+import com.fasterxml.jackson.annotation.JsonCreator;       // ✅ Correct
+import com.fasterxml.jackson.annotation.JsonValue;         // ✅ Correct
+import com.fasterxml.jackson.annotation.JsonInclude;       // ✅ Correct
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties; // ✅ Correct
+
+// WRONG - These packages don't exist:
+import tools.jackson.annotation.JsonProperty;  // ❌ WRONG!
+```
+
+**What DOES change - Jackson API/core packages:**
+```java
+// OLD (Jackson 2):
+import com.fasterxml.jackson.databind.ObjectMapper;       // ❌ Old
+import com.fasterxml.jackson.core.JsonProcessingException; // ❌ Old
+import com.fasterxml.jackson.databind.JsonNode;           // ❌ Old
+
+// NEW (Jackson 3):
+import tools.jackson.databind.ObjectMapper;               // ✅ New
+import tools.jackson.core.JsonProcessingException;         // ✅ New
+import tools.jackson.databind.JsonNode;                   // ✅ New
+```
+
+**Rule of thumb:**
+- **Annotations** (`@JsonProperty`, `@JsonIgnore`, etc.) → Keep `com.fasterxml.jackson.annotation`
+- **API classes** (`ObjectMapper`, `JsonNode`, etc.) → Change to `tools.jackson`
 
 **Spring Boot API changes:**
 - `JsonObjectSerializer` → `ObjectValueSerializer`

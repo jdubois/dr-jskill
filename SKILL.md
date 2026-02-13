@@ -85,6 +85,48 @@ Use the `create-fullstack-project.sh` script to create a comprehensive Spring Bo
 - Use Docker for containerized deployments
 - Configure GraalVM native image support
 
+## Critical Spring Boot 4 Considerations
+
+When generating or modifying Spring Boot 4 applications, **ALWAYS** verify:
+
+### 1. Jackson 3 Annotations (Common Mistake!)
+**✅ CORRECT - Annotations stay in `com.fasterxml.jackson.annotation` package:**
+```java
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonFormat;
+```
+
+**❌ WRONG - Do NOT use `tools.jackson.annotation`:**
+```java
+import tools.jackson.annotation.JsonProperty;  // This package doesn't exist!
+```
+
+**Only Jackson API classes change to `tools.jackson`:**
+```java
+import tools.jackson.databind.ObjectMapper;  // ✅ Correct for API classes
+```
+
+See [Spring Boot 4 Migration Guide](references/SPRING-BOOT-4.md) for complete Jackson 3 details.
+
+### 2. TestcontainersConfiguration Must Be Package-Private
+**✅ CORRECT - Package-private (no `public` modifier):**
+```java
+@TestConfiguration(proxyBeanMethods = false)
+class TestcontainersConfiguration {  // No public!
+    // ...
+}
+```
+
+**❌ WRONG - Public modifier:**
+```java
+public class TestcontainersConfiguration {  // Wrong!
+    // ...
+}
+```
+
+See [Testing Best Practices](references/TEST.md) for complete TestContainers patterns.
+
 ## Project Structure
 
 The service layer is only included if it adds value (e.g. complex business logic). For simple CRUD applications, the controller can directly call the repository.

@@ -258,30 +258,71 @@ Integration tests verify the complete application stack, including database inte
 
 ### TestContainers Configuration
 
-Create a base test configuration class:
+Create a test configuration class for TestContainers. **This is the recommended pattern used by Spring Initializr.**
 
-**Example: AbstractIntegrationTest.java**
+**IMPORTANT: This class must be package-private (no `public` modifier)**
+
+**Example: TestcontainersConfiguration.java**
+
+```java
+package com.example.app;
+
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
+
+@TestConfiguration(proxyBeanMethods = false)
+class TestcontainersConfiguration {  // ✅ Note: package-private (no public modifier)
+
+    @Bean
+    @ServiceConnection
+    PostgreSQLContainer<?> postgresContainer() {
+        return new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"))
+            .withDatabaseName("testdb")
+            .withUsername("test")
+            .withPassword("test");
+    }
+}
+```
+
+**Common mistake:**
+```java
+// ❌ WRONG - Don't make this public
+public class TestcontainersConfiguration {
+    // ...
+}
+
+// ✅ CORRECT - Package-private
+class TestcontainersConfiguration {
+    // ...
+}
+```
+
+**Why package-private?**
+- Test configuration should not be exported outside the test package
+- Follows Spring Boot's convention for test-only configuration
+- Prevents accidental use in production code
+
+**Using TestcontainersConfiguration in tests:**
 
 ```java
 package com.example.app;
 
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.context.annotation.Import;
 
 @SpringBootTest
-@Testcontainers
-public abstract class AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
-        .withDatabaseName("testdb")
-        .withUsername("test")
-        .withPassword("test");
+@Import(TestcontainersConfiguration.class)  // Import the configuration
+class ApplicationIT {
+    
+    @Test
+    void testDatabaseConnection() {
+        // Test with real PostgreSQL from TestContainers
+    }
 }
+```
 ```
 
 **Note:** With Spring Boot 4.0, `@ServiceConnection` automatically configures datasource properties. No need for manual `@DynamicPropertySource` configuration. TestContainers 2.0+ is required.
@@ -295,7 +336,7 @@ Test the complete REST endpoint with real database interactions.
 ```java
 package com.example.app.controller;
 
-import com.example.app.AbstractIntegrationTest;
+import com.example.app.TestcontainersConfiguration;
 import com.example.app.domain.User;
 import com.example.app.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -303,6 +344,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -310,8 +353,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@SpringBootTest
 @AutoConfigureMockMvc
-class UserIntegrationIT extends AbstractIntegrationTest {
+@Import(TestcontainersConfiguration.class)
+class UserIntegrationIT {
 
     @Autowired
     private MockMvc mockMvc;
@@ -413,18 +458,22 @@ Test repository methods with real database.
 ```java
 package com.example.app.repository;
 
-import com.example.app.AbstractIntegrationTest;
+import com.example.app.TestcontainersConfiguration;
 import com.example.app.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class UserRepositoryIT extends AbstractIntegrationTest {
+@SpringBootTest
+@Import(TestcontainersConfiguration.class)
+class UserRepositoryIT {
 
     @Autowired
     private UserRepository userRepository;
@@ -525,7 +574,7 @@ This naming convention allows:
 - Verify mock interactions with `verify()`
 
 ### 3. Integration Tests
-- Extend `AbstractIntegrationTest` for consistent TestContainers setup
+- Use `@Import(TestcontainersConfiguration.class)` for consistent TestContainers setup
 - Use `@SpringBootTest` to load full application context
 - Use `@AutoConfigureMockMvc` for REST endpoint testing
 - Clean database state in `@BeforeEach` for test isolation
@@ -554,7 +603,7 @@ This naming convention allows:
 ```
 src/test/java/
 └── com/example/app/
-    ├── AbstractIntegrationTest.java         # Base class for integration tests
+    ├── TestcontainersConfiguration.java     # TestContainers config (package-private!)
     ├── controller/
     │   ├── UserControllerTest.java          # Unit test with mocks
     │   └── UserIntegrationIT.java           # Integration test with TestContainers
@@ -563,6 +612,8 @@ src/test/java/
     └── repository/
         └── UserRepositoryIT.java            # Integration test with TestContainers
 ```
+
+**Note:** All integration tests should use `@Import(TestcontainersConfiguration.class)` to access the shared TestContainers configuration.
 
 ## Running Tests
 
