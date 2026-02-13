@@ -1,3 +1,8 @@
+---
+name: jdubois-skill
+description: Creates Spring Boot projects following Julien Dubois' best practices. Generates web applications, full-stack apps with PostgreSQL, REST APIs, and Docker configurations. Use when creating Spring Boot projects, setting up Java microservices, or building enterprise applications with Spring Framework.
+---
+
 # Spring Boot skill that follows Julien Dubois' best practices.
 
 ## Overview

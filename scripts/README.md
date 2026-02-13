@@ -154,14 +154,14 @@ These scripts work on:
 
 ## Docker Deployment
 
-After creating your project, you can add Docker support by copying the Docker templates from the `references/` directory:
+After creating your project, you can add Docker support by copying the Docker templates from the `assets/` directory:
 
 ```bash
 # Copy Docker files to your project
-cp references/Dockerfile my-project/
-cp references/Dockerfile-native my-project/
-cp references/docker-compose.yml my-project/
-cp references/docker-compose-native.yml my-project/
+cp assets/Dockerfile my-project/
+cp assets/Dockerfile-native my-project/
+cp assets/docker-compose.yml my-project/
+cp assets/docker-compose-native.yml my-project/
 
 # Run with Docker Compose
 cd my-project
