@@ -28,7 +28,7 @@ Creates a Spring Boot project using the **latest available Spring Boot version**
 **Project Types:**
 - `basic` - Minimal project with Spring Web and Actuator
 - `web` - Web application with validation and DevTools
-- `fullstack` - Complete application with database, security, and all web features
+- `fullstack` - Complete application with database, automatic Docker Compose support, and all web features
 
 **Features:**
 - ✓ Automatically fetches the latest Spring Boot version
@@ -117,6 +117,9 @@ Creates a comprehensive Spring Boot application with database, security, and web
 - Validation
 - Spring Boot DevTools
 - PostgreSQL Driver
+- Spring Boot Docker Compose (automatically starts PostgreSQL during development)
+
+**Note:** Full-stack projects include automatic Docker Compose support. When you run `./mvnw spring-boot:run`, PostgreSQL will start automatically if you have a `compose.yaml` file in your project root.
 
 ## Requirements
 
@@ -124,6 +127,7 @@ Creates a comprehensive Spring Boot application with database, security, and web
 - `unzip` - for extracting the downloaded project
 - `bash` - for running the scripts
 - `grep` and `sed` - standard Unix tools (included in macOS, Linux, Git Bash, WSL)
+- `docker` - optional, for automatic database startup in full-stack projects
 
 ## Platform Compatibility
 
@@ -151,6 +155,22 @@ These scripts work on:
 - Spring Boot DevTools is included for development productivity
 - No Spring Security is included by default
 - PostgreSQL is the only database driver included (no H2)
+
+## Automatic Database Startup (Full-Stack Projects)
+
+Full-stack projects include `spring-boot-docker-compose` for automatic PostgreSQL startup during development.
+
+**Setup:**
+```bash
+# Copy the compose.yaml to your project
+cp assets/compose.yaml my-fullstack-app/
+
+# Run your application - PostgreSQL starts automatically!
+cd my-fullstack-app
+./mvnw spring-boot:run
+```
+
+The database container will start automatically when you run the application and stop when you shut it down. No manual `docker compose up` needed during development!
 
 ## Docker Deployment
 

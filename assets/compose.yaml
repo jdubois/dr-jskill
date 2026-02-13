@@ -1,0 +1,18 @@
+# Docker Compose file for Spring Boot development
+# Place this file in your project root for automatic PostgreSQL startup
+# with spring-boot-docker-compose
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

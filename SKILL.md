@@ -54,6 +54,7 @@ Use the `create-fullstack-project.sh` script to create a comprehensive Spring Bo
 - Use Spring Boot Actuator for production-ready features
 - Use Spring Data JPA for database access
 - Use PostgreSQL for database
+- Use `spring-boot-docker-compose` for automatic database startup during development
 - Follow RESTful API design principles
 - Include proper logging configuration
 - Use Maven for dependency management
@@ -108,6 +109,9 @@ Common dependencies included in generated projects:
 - Spring Boot DevTools (for development productivity)
 - PostgreSQL Driver (for database)
 - Validation (for bean validation)
+- Spring Boot Docker Compose (for automatic PostgreSQL startup during development)
+- Spring Boot Test Starter (for testing with JUnit 5 and Mockito)
+- TestContainers (for integration tests with PostgreSQL)
 
 ## Configuration
 
@@ -131,6 +135,71 @@ spring.jpa.show-sql=false
 management.endpoints.web.exposure.include=health,info,metrics
 ```
 
+## Automatic Docker Compose Support
+
+For full-stack applications with databases, the `spring-boot-docker-compose` dependency is included to automatically start PostgreSQL during development.
+
+### How It Works
+
+When you run `./mvnw spring-boot:run`, Spring Boot will:
+1. Detect the `compose.yaml` or `docker-compose.yml` file in your project root
+2. Automatically start the PostgreSQL container defined in the compose file
+3. Configure the datasource connection automatically
+4. Stop the container when the application shuts down
+
+### Setup
+
+Create a `compose.yaml` file in your project root (or copy from `assets/compose.yaml`):
+
+```yaml
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
+
+### Usage
+
+```bash
+# Just run your application - PostgreSQL starts automatically!
+./mvnw spring-boot:run
+```
+
+**No manual `docker compose up` needed!** Spring Boot handles container lifecycle automatically during development.
+
+### Configuration
+
+You can disable automatic startup if needed:
+
+```properties
+# Disable Docker Compose support
+spring.docker.compose.enabled=false
+
+# Keep containers running after application stops (useful for debugging)
+spring.docker.compose.lifecycle-management=start-only
+```
+
+## Testing
+For comprehensive testing best practices, see the [Testing Guide](references/TEST.md).
+
+Key highlights:
+- Unit tests with Mockito for isolated component testing
+- `@WebMvcTest` for controller unit tests
+- Integration tests with TestContainers for PostgreSQL
+- REST API integration tests with real database
+- Given-When-Then test structure
+- AssertJ for fluent assertions
+
 ## Front-End Development
 For detailed instructions on creating front-end websites with vanilla JavaScript and Bootstrap, see the [Front-End Development Guide](references/FRONT-END.md).
 
@@ -144,11 +213,18 @@ Key highlights:
 For comprehensive Docker deployment instructions, see the [Docker Guide](references/DOCKER.md).
 
 Key highlights:
+- Automatic PostgreSQL startup during development with `spring-boot-docker-compose`
 - Standard JVM deployment with `Dockerfile`
 - GraalVM native images with `Dockerfile-native`
 - PostgreSQL integration with `docker-compose.yml`
 
-### Quick Start with Docker
+### Development Mode (Automatic)
+```bash
+# PostgreSQL starts automatically with your app
+./mvnw spring-boot:run
+```
+
+### Production Deployment
 ```bash
 # Standard deployment
 docker compose up -d
@@ -169,7 +245,9 @@ Build native image locally:
 - [Spring Boot Documentation](https://spring.io/projects/spring-boot)
 - [Spring Initializr](https://start.spring.io)
 - [Julien Dubois on GitHub](https://github.com/jdubois)
+- [Testing Guide](references/TEST.md) (included in this skill)
 - [Front-End Development Guide](references/FRONT-END.md) (included in this skill)
 - [Docker Deployment Guide](references/DOCKER.md) (included in this skill)
 - [GraalVM Documentation](https://www.graalvm.org/)
 - [Spring Native Documentation](https://docs.spring.io/spring-boot/docs/current/reference/html/native-image.html)
+- [TestContainers Documentation](https://testcontainers.com/)
