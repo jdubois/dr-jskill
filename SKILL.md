@@ -1,6 +1,6 @@
 ---
 name: jdubois-skill
-description: Creates Spring Boot projects following Julien Dubois' best practices. Generates web applications, full-stack apps with PostgreSQL, REST APIs, and Docker configurations. Use when creating Spring Boot projects, setting up Java microservices, or building enterprise applications with Spring Framework.
+description: Creates Spring Boot projects following Julien Dubois' best practices. Generates Web applications, full-stack apps with Vue.js, PostgreSQL, REST APIs, and Docker configurations. Use when creating Spring Boot projects, setting up Java microservices, or building enterprise applications with the Spring Framework.
 ---
 
 # Spring Boot skill that follows Julien Dubois' best practices.
@@ -11,6 +11,7 @@ This agent skill helps you create Spring Boot projects following Julien Dubois' 
 ## Prerequisites
 
 - Java 25 installed
+- Node.js and NPM are installed (when doing front-end development)
 - Docker is installed and running
 
 ## Capabilities
@@ -18,6 +19,8 @@ This agent skill helps you create Spring Boot projects following Julien Dubois' 
 - Support for various Spring Boot versions and dependencies
 - Follow best practices for project structure and configuration
 - Quick setup scripts for common use cases
+- Docker support for containerized deployments
+- Front-end development with Vue.js 3 and Vite when needed
 
 ## Validation
 
@@ -28,6 +31,8 @@ Once the project is generated, this skill MUST:
 - Validate that the application responds to HTTP requests (e.g. `curl http://localhost:8080/actuator/health` returns `{"status":"UP"}`)
 - Validate that the unit tests run successfully with `./mvnw test`
 - Validate the the integration tests run successfully with `./mvnw verify` (if included)
+- Valide that the front-end assets are correctly bundled and served (e.g. `curl http://localhost:8080/index.html` returns the HTML page)
+- Validate that the Vue.js development server starts successfully with `npm run dev` (if included)
 - Validate that the Docker images build successfully
 - Validate that the GraalVM native image builds successfully with `./mvnw -Pnative native:compile`
 
@@ -222,12 +227,15 @@ Key highlights:
 - AssertJ for fluent assertions
 
 ## Front-End Development
-For detailed instructions on creating front-end websites with vanilla JavaScript and Bootstrap, see the [Front-End Development Guide](references/FRONT-END.md).
+For detailed instructions on creating front-end applications with Vue.js 3 and Vite, see the [Front-End Development Guide](references/FRONT-END.md).
 
 Key highlights:
-- Static resources placed in `src/main/resources/static/`
-- Vanilla JavaScript (no frameworks) with ES6+ features
-- Bootstrap for responsive design
+- Vue.js 3 with Composition API
+- Vite for development server with hot reload
+- Production builds minified and bundled into Spring Boot JAR
+- Pinia for state management
+- Vue Router for SPA routing
+- Bootstrap 5.3+ for responsive design
 - RESTful API integration patterns
 
 ## Docker Deployment

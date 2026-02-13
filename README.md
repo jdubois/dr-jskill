@@ -33,11 +33,13 @@ This skill provides tools, scripts, and templates for creating Spring Boot appli
 - Multi-stage builds for optimized images
 
 ### Front-End Development
-- Vanilla JavaScript (no frameworks)
+- Vue.js 3 with Composition API
+- Vite for hot reload during development
+- Production builds minified and bundled
+- Pinia for state management
+- Vue Router for SPA routing
 - Bootstrap for responsive design
-- Modern ES6+ patterns
 - RESTful API integration
-- Standard Spring Boot static resource structure
 
 ## Quick Start
 
@@ -85,7 +87,7 @@ docker compose up -d
 - ✅ No Spring Security by default (add when needed)
 - ✅ No environment profiles (use environment variables)
 - ✅ Docker-ready with native image support
-- ✅ Vanilla JavaScript for front-end (no complex frameworks)
+- ✅ Vue.js 3 with Vite for modern, reactive front-end development
 
 ## Requirements
 
