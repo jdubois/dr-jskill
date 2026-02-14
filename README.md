@@ -8,7 +8,7 @@ Dr JSkill is an agent skill: it is meant to work with tools like GitHub Copliot 
 
 ## What This Skill Provides
 
-- **Automated project generation** from start.spring.io with latest Spring Boot version
+- **Automated project generation** from https://start.spring.io with the latest available Spring Boot version
 - **Docker-ready** applications with standard and native image builds
 - **Multiple front-end options**: Vue.js (default), React, Angular, or Vanilla JS
 - **Production-ready** configurations with PostgreSQL, REST APIs, and monitoring
