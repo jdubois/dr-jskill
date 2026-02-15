@@ -61,7 +61,7 @@ export async function resolveBootVersion(preferredMajor, fallback) {
     );
     return fallback;
   } catch (err) {
-    console.error(`Warning: Failed to fetch bootVersion from start.spring.io: ${err.message}. Using fallback ${fallback}.`);
+    console.error(`Warning: Failed to fetch bootVersion from start.spring.io: ${err?.message || String(err)}. Using fallback ${fallback}.`);
     return fallback;
   }
 }
