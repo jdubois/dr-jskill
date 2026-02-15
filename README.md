@@ -43,7 +43,7 @@ Additional references:
 - [Docker Deployment](references/DOCKER.md)
 - [Testing Guide](references/TEST.md)
 - [Azure Deployment](references/AZURE.md)
-- **Versions manifest:** `versions.json` (read by `scripts/lib/versions.sh` and `scripts/lib/versions.ps1`). Update this file first when bumping any tool/library version.
+- **Versions manifest:** `versions.json` (read by `scripts/lib/versions.mjs`). Update this file first when bumping any tool/library version.
 
 ## Using This Skill with AI Assistants
 
@@ -159,10 +159,9 @@ Use the Dr JSKill skill to create a new Todo List application.
 
 ## Requirements
 
-- bash, curl, unzip
+- Node.js 22.x and npm 10.x
 - Java 21
 - Docker (for containerized deployments)
-- Node.js 22.x and npm 10.x (for front-end development)
 
 ## License
 

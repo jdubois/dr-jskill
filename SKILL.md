@@ -10,7 +10,7 @@ This agent skill helps you create Spring Boot projects following [Julien Dubois]
 
 ## Version Management
 
-Centralized versions live in `versions.json`. All scripts read from it via `scripts/lib/versions.sh` (bash) and `scripts/lib/versions.ps1` (PowerShell). Update this file to bump Java, Spring Boot fallback, Postgres, Node/npm, Testcontainers, etc.
+Centralized versions live in `versions.json`. All scripts read from it via `scripts/lib/versions.mjs` (JavaScript). Update this file to bump Java, Spring Boot fallback, Postgres, Node/npm, Testcontainers, etc.
 
 ## Prerequisites
 
@@ -33,24 +33,16 @@ Centralized versions live in `versions.json`. All scripts read from it via `scri
 ## Usage
 
 ### Using the Scripts
-This skill includes sample Bash **and PowerShell** scripts in the `scripts/` directory that can be used to download pre-configured Spring Boot projects from start.spring.io.
+This skill includes cross-platform JavaScript (Node.js) scripts in the `scripts/` directory that can be used to download pre-configured Spring Boot projects from start.spring.io. They work on Linux, macOS, and Windows.
 
 **Unified launcher (cross-platform):**
 ```bash
-# macOS/Linux
-./scripts/create-project my-app com.myco my-app com.myco.myapp 21 fullstack --flyway
-# Windows (PowerShell)
-pwsh ./scripts/create-project -ProjectName my-app -GroupId com.myco -ProjectType fullstack -Flyway
+node scripts/create-project my-app com.myco my-app com.myco.myapp 21 fullstack --flyway
 ```
 
-**Direct Bash (Mac/Linux):**
+**Direct invocation:**
 ```bash
-./scripts/create-project-latest.sh my-app com.myco my-app com.myco.myapp 21 fullstack --flyway
-```
-
-**Direct PowerShell (Windows):**
-```powershell
-pwsh ./scripts/create-project-latest.ps1 -ProjectName my-app -GroupId com.myco -ProjectType fullstack -Flyway
+node scripts/create-project-latest.mjs my-app com.myco my-app com.myco.myapp 21 fullstack --flyway
 ```
 
 Flags supported:
@@ -58,13 +50,12 @@ Flags supported:
 - `--project-type basic|web|fullstack` / `-ProjectType`
 - `--flyway` / `-Flyway`: adds Flyway dependency (Liquibase not offered)
 
-> Tip: The `create-project-latest` scripts auto-resolve preferred Boot 4.x and fall back to the configured `springBootFallback` if 4.x is not yet available. Override with `--boot-version`/`-BootVersion` if needed.
-> Note: Run with **bash** (`./scripts/create-project` or `bash scripts/...`). Avoid `sh script.sh`, which cannot handle some bash-only features.
+> Tip: The `create-project-latest` script auto-resolves preferred Boot 4.x and falls back to the configured `springBootFallback` if 4.x is not yet available. Override with `--boot-version` if needed.
 
 ### Latest Version Project ⭐
-Use the `create-project-latest.sh` script to create a project with the **latest Spring Boot version** (automatically fetched):
+Use the `create-project-latest.mjs` script to create a project with the **latest Spring Boot version** (automatically fetched):
 ```bash
-./scripts/create-project-latest.sh my-app com.mycompany my-app com.mycompany.myapp 21 web
+node scripts/create-project-latest.mjs my-app com.mycompany my-app com.mycompany.myapp 21 web
 ```
 
 Project types available:
@@ -73,28 +64,28 @@ Project types available:
 - `fullstack` - Complete application with database and security
 
 ### Basic Spring Boot Project
-Use the `create-basic-project.sh` script to create a basic Spring Boot project with essential dependencies:
+Use the `create-basic-project.mjs` script to create a basic Spring Boot project with essential dependencies:
 ```bash
-./scripts/create-basic-project.sh
+node scripts/create-basic-project.mjs
 ```
 
 ### Web Application
-Use the `create-web-project.sh` script to create a Spring Boot web application with web dependencies:
+Use the `create-web-project.mjs` script to create a Spring Boot web application with web dependencies:
 ```bash
-./scripts/create-web-project.sh
+node scripts/create-web-project.mjs
 ```
 
 ### Full-Stack Application
-Use the `create-fullstack-project.sh` script to create a comprehensive Spring Boot application with database, security, and web dependencies:
+Use the `create-fullstack-project.mjs` script to create a comprehensive Spring Boot application with database, security, and web dependencies:
 ```bash
-./scripts/create-fullstack-project.sh
+node scripts/create-fullstack-project.mjs
 ```
 
 ## Best Practices
 
 When creating Spring Boot projects:
 
-1. Use the latest Spring Boot version (currently 4.x) - the `create-project-latest.sh` script automatically fetches it
+1. Use the latest Spring Boot version (currently 4.x) - the `create-project-latest.mjs` script automatically fetches it
 2. **Review Spring Boot 4 critical considerations**: See [Spring Boot 4 Migration Guide](references/SPRING-BOOT-4.md) for Jackson 3 annotations and TestContainers configuration
 3. Include Spring Boot Actuator for production-ready features
 4. Use Spring Data JPA for database access
