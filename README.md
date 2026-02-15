@@ -39,6 +39,36 @@ Additional references:
 
 This is an [Agent Skill](https://agentskills.io) that can be used with AI coding assistants that support the Agent Skills specification.
 
+### Fork or clone this repository
+
+In order to use this skill, and modify it to your needs, you can fork this repository on GitHub, or simply clone it to your local machine.
+
+#### Forking on GitHub
+
+**Using the GitHub website:**
+1. Navigate to the repository on GitHub
+2. Click the "Fork" button in the top-right corner
+3. Select your account as the destination
+4. Clone your fork:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/dr-jskill.git
+   ```
+
+**Using the GitHub CLI:**
+1. Install the [GitHub CLI](https://cli.github.com/) if you haven't already
+2. Fork and clone in one command:
+   ```bash
+   gh repo fork jdubois/dr-jskill --clone
+   ```
+   This will fork the repository to your GitHub account and clone it to your local machine.
+
+#### Just cloning (without forking)
+
+If you only want to use the skill locally without maintaining your own fork:
+```bash
+git clone https://github.com/jdubois/dr-jskill.git
+```
+
 ### GitHub Copilot CLI
 
 Configure skills for GitHub Copilot CLI by placing them in the skills directory:

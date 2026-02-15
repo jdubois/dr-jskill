@@ -6,7 +6,7 @@ description: Creates Spring Boot projects following Julien Dubois' best practice
 # Spring Boot skill that follows Julien Dubois' best practices.
 
 ## Overview
-This agent skill helps you create Spring Boot projects following Julien Dubois' best practices. It provides tools and scripts to quickly bootstrap Spring Boot applications using [https://start.spring.io](https://start.spring.io).
+This agent skill helps you create Spring Boot projects following [Julien Dubois](https://www.julien-dubois.com)' best practices. It provides tools and scripts to quickly bootstrap Spring Boot applications using [https://start.spring.io](https://start.spring.io).
 
 ## Prerequisites
 
@@ -392,6 +392,7 @@ Once the project is generated, go through the steps above to ensure that the gen
 ### External Documentation
 - [Spring Boot Documentation](https://spring.io/projects/spring-boot)
 - [Spring Initializr](https://start.spring.io)
+- [Julien Dubois](https://www.julien-dubois.com)
 - [Julien Dubois on GitHub](https://github.com/jdubois)
 - [GraalVM Documentation](https://www.graalvm.org/)
 - [Spring Native Documentation](https://docs.spring.io/spring-boot/docs/current/reference/html/native-image.html)
