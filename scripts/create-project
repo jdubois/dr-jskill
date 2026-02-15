@@ -1,26 +1,11 @@
-#!/usr/bin/env bash
-# Cross-platform launcher for dr-jskill project generation
-# Delegates to PowerShell on Windows (if available) or Bash script otherwise.
-set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BASH_SCRIPT="$SCRIPT_DIR/create-project-latest.sh"
-POWERSHELL_SCRIPT="$SCRIPT_DIR/create-project-latest.ps1"
-
-is_windows() {
-  case "${OS:-}" in
-    Windows_NT) return 0;;
-  esac
-  case "${OSTYPE:-}" in
-    msys*|cygwin*|win32*) return 0;;
-  esac
-  return 1
+#!/usr/bin/env node
+// Cross-platform launcher for dr-jskill project generation
+// Delegates to create-project-latest.mjs (works on Linux, macOS, and Windows)
+const { execFileSync } = require('node:child_process');
+const { join } = require('node:path');
+const script = join(__dirname, 'create-project-latest.mjs');
+try {
+  execFileSync(process.execPath, [script, ...process.argv.slice(2)], { stdio: 'inherit' });
+} catch (e) {
+  process.exit(e.status || 1);
 }
-
-if is_windows && command -v pwsh >/dev/null 2>&1 && [[ -f "$POWERSHELL_SCRIPT" ]]; then
-  # PowerShell path
-  exec pwsh -NoLogo -NoProfile -File "$POWERSHELL_SCRIPT" "$@"
-else
-  # Bash path
-  exec "$BASH_SCRIPT" "$@"
-fi

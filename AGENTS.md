@@ -1,15 +1,16 @@
 # This is a Spring Boot skill that follows Julien Dubois' best practices
 
 - You MUST follow the Agents Skills specifications at: https://agentskills.io/home
-- When doing a script, you MUST do a Bash script that works on Mac OS X, Windows and Linux.
-  - Provide **PowerShell equivalents** for Windows (`scripts/*.ps1`). Use POSIX-safe bash (`set -euo pipefail`).
+- When doing a script, you MUST do a JavaScript (Node.js) script that works on Mac OS X, Windows and Linux.
+  - Scripts use ES modules (`.mjs` extension) and only Node.js built-in APIs (no npm dependencies).
+  - Node.js 22.x and npm 10.x are prerequisites.
 - NEVER propose to use Lombok in the generated projects (add Maven Enforcer/ArchUnit checks in generated templates).
 - Build tool is **Maven only** (no Gradle).
 - **Flyway** is the supported migration tool (do not offer Liquibase).
 - Do not add OpenAPI/springdoc, feature toggles, Buildpacks, or Jib.
 
 ## Versions Manifest
-Centralize versions in `versions.json`. Scripts load from `scripts/lib/versions.sh` (bash) and `scripts/lib/versions.ps1` (PowerShell). Update this file first when bumping versions.
+Centralize versions in `versions.json`. Scripts load from `scripts/lib/versions.mjs` (JavaScript). Update this file first when bumping versions.
 
 ## Updating Versions
 
@@ -21,7 +22,7 @@ To update all versions of tools, libraries, and frameworks in this skill, update
    - Check latest LTS at: https://adoptium.net/
 
 2. **Spring Boot version**: Currently 4.x (fetched dynamically)
-   - The `create-project-latest.sh` script automatically fetches the latest version from start.spring.io
+   - The `create-project-latest.mjs` script automatically fetches the latest version from start.spring.io
    - For manual updates, check: https://spring.io/projects/spring-boot
 
 3. **PostgreSQL version**: Currently 16

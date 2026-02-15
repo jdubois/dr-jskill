@@ -1,33 +1,26 @@
-# Optional Spring Boot Project Scripts
+# Spring Boot Project Scripts
 
-This directory contains sample bash scripts to quickly create Spring Boot projects using start.spring.io.
+This directory contains cross-platform JavaScript scripts (Node.js) to quickly create Spring Boot projects using start.spring.io.
 
 ## Available Scripts
 
 ### 🚀 Unified launcher (`scripts/create-project`)
-Cross-platform entrypoint. On Windows (with PowerShell), it runs `create-project-latest.ps1`; otherwise it delegates to `create-project-latest.sh`.
+Cross-platform entrypoint. Delegates to `create-project-latest.mjs` via Node.js.
 ```bash
-# macOS/Linux
-./scripts/create-project my-app com.myco my-app com.myco.myapp 21 fullstack --flyway
-# Windows (PowerShell)
-pwsh ./scripts/create-project -ProjectName my-app -GroupId com.myco -ProjectType fullstack -Flyway
+node scripts/create-project my-app com.myco my-app com.myco.myapp 21 fullstack --flyway
 ```
 
-### 0. create-project-latest.sh ⭐ RECOMMENDED
+### 0. create-project-latest.mjs ⭐ RECOMMENDED
 Creates a Spring Boot project using the **latest available Spring Boot version** (automatically fetched from start.spring.io). This is the recommended script as it always uses the most current Spring Boot release.
 
-**Usage (Bash):**
+**Usage:**
 ```bash
-./create-project-latest.sh [project-name] [group-id] [artifact-id] [package-name] [java-version] [project-type] [--boot-version x.y.z] [--flyway]
-```
-**Usage (PowerShell):**
-```powershell
-pwsh ./create-project-latest.ps1 -ProjectName my-app -GroupId com.mycompany -ProjectType web -BootVersion 4.0.0 -Flyway
+node scripts/create-project-latest.mjs [project-name] [group-id] [artifact-id] [package-name] [java-version] [project-type] [--boot-version x.y.z] [--flyway]
 ```
 
 **Example:**
 ```bash
-./create-project-latest.sh my-app com.mycompany my-app com.mycompany.myapp 21 web --flyway
+node scripts/create-project-latest.mjs my-app com.mycompany my-app com.mycompany.myapp 21 web --flyway
 ```
 
 **Default values:**
@@ -49,17 +42,17 @@ pwsh ./create-project-latest.ps1 -ProjectName my-app -GroupId com.mycompany -Pro
 - ✓ Flexible project types
 - ✓ Uses Java 21 by default
 
-### 1. create-basic-project.sh
+### 1. create-basic-project.mjs
 Creates a minimal Spring Boot project with essential dependencies.
 
 **Usage:**
 ```bash
-./create-basic-project.sh [project-name] [group-id] [artifact-id] [package-name] [java-version] [spring-boot-version]
+node scripts/create-basic-project.mjs [project-name] [group-id] [artifact-id] [package-name] [java-version]
 ```
 
 **Example:**
 ```bash
-./create-basic-project.sh my-app com.mycompany my-app com.mycompany.myapp 21 4.0.0
+node scripts/create-basic-project.mjs my-app com.mycompany my-app com.mycompany.myapp 21
 ```
 
 **Default values:**
@@ -68,24 +61,23 @@ Creates a minimal Spring Boot project with essential dependencies.
 - Artifact ID: (same as project name)
 - Package Name: com.example.app
 - Java Version: 21
-- Spring Boot Version: 4.0.0
 
 **Included dependencies:**
 - Spring Web
 - Spring Boot Actuator
 - Spring Boot DevTools
 
-### 2. create-web-project.sh
+### 2. create-web-project.mjs
 Creates a Spring Boot web application with REST API capabilities.
 
 **Usage:**
 ```bash
-./create-web-project.sh [project-name] [group-id] [artifact-id] [package-name] [java-version] [spring-boot-version]
+node scripts/create-web-project.mjs [project-name] [group-id] [artifact-id] [package-name] [java-version]
 ```
 
 **Example:**
 ```bash
-./create-web-project.sh my-web-app com.mycompany my-web-app com.mycompany.webapp 21 4.0.0
+node scripts/create-web-project.mjs my-web-app com.mycompany my-web-app com.mycompany.webapp 21
 ```
 
 **Default values:**
@@ -94,7 +86,6 @@ Creates a Spring Boot web application with REST API capabilities.
 - Artifact ID: (same as project name)
 - Package Name: com.example.webapp
 - Java Version: 21
-- Spring Boot Version: 4.0.0
 
 **Included dependencies:**
 - Spring Web
@@ -102,17 +93,17 @@ Creates a Spring Boot web application with REST API capabilities.
 - Validation
 - Spring Boot DevTools
 
-### 3. create-fullstack-project.sh
+### 3. create-fullstack-project.mjs
 Creates a comprehensive Spring Boot application with database, security, and web dependencies.
 
 **Usage:**
 ```bash
-./create-fullstack-project.sh [project-name] [group-id] [artifact-id] [package-name] [java-version] [spring-boot-version]
+node scripts/create-fullstack-project.mjs [project-name] [group-id] [artifact-id] [package-name] [java-version]
 ```
 
 **Example:**
 ```bash
-./create-fullstack-project.sh my-fullstack-app com.mycompany my-fullstack-app com.mycompany.fullstack 21 4.0.0
+node scripts/create-fullstack-project.mjs my-fullstack-app com.mycompany my-fullstack-app com.mycompany.fullstack 21
 ```
 
 **Default values:**
@@ -121,7 +112,6 @@ Creates a comprehensive Spring Boot application with database, security, and web
 - Artifact ID: (same as project name)
 - Package Name: com.example.fullstack
 - Java Version: 21
-- Spring Boot Version: 4.0.0
 
 **Included dependencies:**
 - Spring Web
@@ -137,22 +127,19 @@ Creates a comprehensive Spring Boot application with database, security, and web
 
 ## Requirements
 
-- `curl` - for downloading projects from start.spring.io
-- `unzip` - for extracting the downloaded project
-- `bash` - for running the scripts
-- `grep` and `sed` - standard Unix tools (included in macOS, Linux, Git Bash, WSL)
+- **Node.js** 22.x and **npm** 10.x (scripts use built-in `fetch` API, available since Node 18)
+- `unzip` - for extracting the downloaded project (pre-installed on macOS and Linux; Windows uses PowerShell `Expand-Archive`)
 - `docker` - optional, for automatic database startup in full-stack projects
 
 ## Platform Compatibility
 
-These scripts work on:
-- **macOS** - Uses built-in bash and Unix tools
-- **Linux** - Uses standard GNU tools
-- **Windows** - Use **PowerShell (`pwsh`)** scripts (`*.ps1`) or Git Bash/WSL if you prefer bash
+These JavaScript scripts work natively on:
+- **macOS** - `node scripts/create-project-latest.mjs ...`
+- **Linux** - `node scripts/create-project-latest.mjs ...`
+- **Windows** - `node scripts/create-project-latest.mjs ...`
 
-> Version management is centralized in `versions.json` and read via `scripts/lib/versions.sh` (bash) and `scripts/lib/versions.ps1` (PowerShell).
-> Windows PowerShell may require: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force`.
-> On POSIX, run with **bash** (`./scripts/create-project` or `bash scripts/…`). Avoid `sh script.sh` which lacks bash features.
+> Version management is centralized in `versions.json` and read via `scripts/lib/versions.mjs`.
+> No bash, PowerShell, curl, or Python required — only Node.js.
 
 ## Quick Start
 
