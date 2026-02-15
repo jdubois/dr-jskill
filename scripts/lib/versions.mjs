@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = process.env.ROOT_DIR || resolve(__dirname, '..', '..');
@@ -91,12 +91,12 @@ export async function downloadFile(url, dest) {
  */
 export function extractZip(zipPath) {
   if (process.platform === 'win32') {
-    execSync(
-      `powershell -NoLogo -NoProfile -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '.' -Force"`,
-      { stdio: 'inherit' }
-    );
+    execFileSync('powershell', [
+      '-NoLogo', '-NoProfile', '-Command',
+      `Expand-Archive -Path '${zipPath}' -DestinationPath '.' -Force`,
+    ], { stdio: 'inherit' });
   } else {
-    execSync(`unzip -q "${zipPath}"`, { stdio: 'inherit' });
+    execFileSync('unzip', ['-q', zipPath], { stdio: 'inherit' });
   }
 }
 
