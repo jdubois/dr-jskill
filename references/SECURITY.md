@@ -23,6 +23,43 @@ This guide covers Spring Security configuration for Spring Boot 4 applications. 
 2. Basic understanding of authentication and authorization concepts
 3. Database for user storage (optional - can use in-memory for testing)
 
+## Problem Details (RFC 7807)
+Enable globally in Spring Boot 4:
+```properties
+spring.mvc.problemdetails.enabled=true
+```
+Custom exception handler example:
+```java
+@RestControllerAdvice
+class GlobalExceptionHandler {
+  @ExceptionHandler(UserNotFoundException.class)
+  ProblemDetail handle(UserNotFoundException ex) {
+    var pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    pd.setTitle("User not found");
+    pd.setProperty("error_code", "USER_NOT_FOUND");
+    return pd;
+  }
+}
+```
+
+## CORS Configuration (API-only)
+```java
+@Configuration
+public class CorsConfig {
+  @Bean
+  CorsConfigurationSource corsConfigurationSource() {
+    var config = new CorsConfiguration();
+    config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:4200"));
+    config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE"));
+    config.setAllowedHeaders(List.of("Authorization","Content-Type"));
+    config.setAllowCredentials(true);
+    var source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+    return source;
+  }
+}
+```
+
 ## Maven Dependencies
 
 Add Spring Security starter to your `pom.xml`:

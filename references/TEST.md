@@ -13,6 +13,8 @@ This guide covers testing best practices for Spring Boot 4.x applications, inclu
 
 Add these dependencies to your `pom.xml`:
 
+> ⚠️ `TestcontainersConfiguration` classes must be **package-private** (no `public`) in Spring Boot 4 when used with `@ServiceConnection`.
+
 ```xml
 <dependencies>
     <!-- Spring Boot Test Starter (includes JUnit 5, Mockito, AssertJ) -->
@@ -42,6 +44,22 @@ Add these dependencies to your `pom.xml`:
     </dependency>
 </dependencies>
 ```
+
+## Testcontainers 2 + @ServiceConnection quickstart
+
+```java
+// src/test/java/.../TestcontainersConfiguration.java (package-private!)
+@TestConfiguration(proxyBeanMethods = false)
+class TestcontainersConfiguration {
+  @Bean
+  @ServiceConnection
+  PostgreSQLContainer<?> postgresContainer() {
+    return new PostgreSQLContainer<>("postgres:16-alpine");
+  }
+}
+```
+
+Use `@Import(TestcontainersConfiguration.class)` or `@ImportAutoConfiguration` in your integration tests.
 
 ## Unit Tests with Mocks
 
@@ -638,6 +656,36 @@ src/test/java/
 
 # Skip tests during build
 ./mvnw package -DskipTests
+```
+
+## Security Scanning & SBOM (CI-ready)
+
+Add to `pom.xml` (plugins section):
+```xml
+<plugin>
+  <groupId>org.cyclonedx</groupId>
+  <artifactId>cyclonedx-maven-plugin</artifactId>
+  <version>2.8.0</version>
+  <executions>
+    <execution>
+      <phase>verify</phase>
+      <goals><goal>makeAggregateBom</goal></goals>
+    </execution>
+  </executions>
+</plugin>
+<plugin>
+  <groupId>org.owasp</groupId>
+  <artifactId>dependency-check-maven</artifactId>
+  <version>9.2.0</version>
+  <configuration>
+    <failBuildOnCVSS>7</failBuildOnCVSS>
+  </configuration>
+</plugin>
+```
+
+CI commands:
+```bash
+mvn -B -DskipTests=false verify cyclonedx:makeAggregateBom dependency-check:check
 ```
 
 ## Additional Resources

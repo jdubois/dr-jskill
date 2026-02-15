@@ -130,6 +130,31 @@ az containerapp create \
     "SERVER_PORT=8080" \
     "JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
+# Optional: Autoscaling rule (HTTP RPS)
+az containerapp up \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --source . \
+  --target-port 8080 \
+  --ingress external \
+  --max-replicas 10 \
+  --min-replicas 0 \
+  --scale-rules "http={concurrency=50}" \
+  --env-vars "JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+
+# Managed Identity + Key Vault secrets (example)
+az identity create -g $RESOURCE_GROUP -n ${APP_NAME}-mi
+IDENTITY_ID=$(az identity show -g $RESOURCE_GROUP -n ${APP_NAME}-mi --query id -o tsv)
+az containerapp identity assign \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --identities $IDENTITY_ID
+
+# In Key Vault (once): grant access to managed identity
+# az keyvault set-policy --name $KEY_VAULT --object-id $IDENTITY_ID --secret-permissions get list
+# In Container App: set env var to a Key Vault secret reference
+# --set-secrets DB_PASSWORD=keyvaultref://${KEY_VAULT}/secrets/DB_PASSWORD
+
 # Get the application URL
 az containerapp show \
   --name $CONTAINER_APP_NAME \
@@ -318,6 +343,20 @@ az postgres flexible-server create \
   --subnet $SUBNET_DB \
   --yes
 
+# Firewall (allow Azure services; tighten as needed)
+az postgres flexible-server firewall-rule create \
+  --resource-group $RESOURCE_GROUP \
+  --name $DB_SERVER_NAME \
+  --rule-name allowAzureIps \
+  --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+
+# Backup & HA best practice
+az postgres flexible-server update \
+  --resource-group $RESOURCE_GROUP \
+  --name $DB_SERVER_NAME \
+  --backup-retention 7 \
+  --geo-redundant-backup Enabled
+
 # Create database
 az postgres flexible-server db create \
   --resource-group $RESOURCE_GROUP \
@@ -336,6 +375,10 @@ DB_HOST=$(az postgres flexible-server show \
   --resource-group $RESOURCE_GROUP \
   --name $DB_SERVER_NAME \
   --query fullyQualifiedDomainName -o tsv)
+
+# JDBC connection string (SSL)
+# jdbc:postgresql://$DB_HOST:5432/$DB_NAME?sslmode=require
+
 ```
 
 ### Update Container App Environment with VNET
@@ -835,6 +878,15 @@ az containerapp update \
 - ✅ Team collaboration with version control
 - ✅ Infrastructure reusability across projects
 - ✅ Automated CI/CD pipelines
+
+## Cleanup (to avoid unexpected costs)
+```bash
+az containerapp delete --name $CONTAINER_APP_NAME --resource-group $RESOURCE_GROUP --yes || true
+az containerapp env delete --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP --yes || true
+az acr delete --name $ACR_NAME --resource-group $RESOURCE_GROUP --yes || true
+az postgres flexible-server delete --name $DB_SERVER_NAME --resource-group $RESOURCE_GROUP --yes || true
+az group delete --name $RESOURCE_GROUP --yes --no-wait || true
+```
 
 ## Additional Resources
 

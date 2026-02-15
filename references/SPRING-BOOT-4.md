@@ -10,6 +10,8 @@ This guide covers the key changes in Spring Boot 4.0 and what to consider when c
 
 ## System Requirements
 
+> Scripts in this skill **prefer Spring Boot 4.x**. If start.spring.io still defaults to 3.x, they **fallback** to `springBootFallback` from `versions.json` with a warning. Override with `--boot-version`/`-BootVersion`.
+
 ### Minimum Requirements
 
 1. Java: 17+ (Java 21+ LTS recommended for production)
@@ -33,6 +35,8 @@ This guide covers the key changes in Spring Boot 4.0 and what to consider when c
 ## Critical Considerations When Creating Spring Boot 4 Projects
 
 ⚠️ **Two Most Common Mistakes** - Always verify these when generating code:
+
+0. **Maven-only / No Lombok / Flyway**: Do not generate Gradle builds; enforce no Lombok usage via Maven Enforcer + ArchUnit (snippet below). Offer Flyway only (no Liquibase).
 
 ### 1. Jackson 3 Annotations Stay in `com.fasterxml.jackson.annotation`
 
@@ -148,6 +152,61 @@ class ApplicationTests {
 1. Required version: TestContainers 2.0+
 2. Enhanced performance and resource management
 3. Works seamlessly with `@ServiceConnection` annotation
+
+#### Maven Enforcer + ArchUnit guardrails (no Lombok, enforce Maven)
+
+_Add this to `pom.xml` to enforce minimum Maven, Java, and block Lombok dependency:_
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-enforcer-plugin</artifactId>
+      <version>3.4.1</version>
+      <executions>
+        <execution>
+          <id>enforce</id>
+          <goals><goal>enforce</goal></goals>
+          <configuration>
+            <rules>
+              <requireMavenVersion>
+                <version>[3.8,)</version>
+              </requireMavenVersion>
+              <requireJavaVersion>
+                <version>[21,)</version>
+              </requireJavaVersion>
+              <bannedDependencies>
+                <excludes>
+                  <exclude>org.projectlombok:lombok</exclude>
+                </excludes>
+              </bannedDependencies>
+            </rules>
+            <fail>true</fail>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
+```
+
+_Add an ArchUnit test to `src/test/java/.../architecture/NoLombokTest.java`:_
+```java
+package com.example.app.architecture;
+
+import com.tngtech.archunit.junit.AnalyzeClasses;
+import com.tngtech.archunit.junit.ArchTest;
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
+
+@AnalyzeClasses(packages = "com.example.app")
+public class NoLombokTest {
+  @ArchTest
+  static final var noLombok = ArchRuleDefinition.noClasses()
+    .should().accessClassesThat().haveNameMatching(".*lombok.*")
+    .because("Lombok is not allowed; use records or explicit code");
+}
+```
+
 
 ### 3. Removed Features
 

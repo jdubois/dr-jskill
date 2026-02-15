@@ -8,6 +8,10 @@ description: Creates Spring Boot projects following Julien Dubois' best practice
 ## Overview
 This agent skill helps you create Spring Boot projects following [Julien Dubois](https://www.julien-dubois.com)' best practices. It provides tools and scripts to quickly bootstrap Spring Boot applications using [https://start.spring.io](https://start.spring.io).
 
+## Version Management
+
+Centralized versions live in `versions.json`. All scripts read from it via `scripts/lib/versions.sh` (bash) and `scripts/lib/versions.ps1` (PowerShell). Update this file to bump Java, Spring Boot fallback, Postgres, Node/npm, Testcontainers, etc.
+
 ## Prerequisites
 
 1. Java 21 installed
@@ -29,7 +33,32 @@ This agent skill helps you create Spring Boot projects following [Julien Dubois]
 ## Usage
 
 ### Using the Scripts
-This skill includes sample bash scripts in the `scripts/` directory that can be used to download pre-configured Spring Boot projects from start.spring.io.
+This skill includes sample Bash **and PowerShell** scripts in the `scripts/` directory that can be used to download pre-configured Spring Boot projects from start.spring.io.
+
+**Unified launcher (cross-platform):**
+```bash
+# macOS/Linux
+./scripts/create-project my-app com.myco my-app com.myco.myapp 21 fullstack --flyway
+# Windows (PowerShell)
+pwsh ./scripts/create-project -ProjectName my-app -GroupId com.myco -ProjectType fullstack -Flyway
+```
+
+**Direct Bash (Mac/Linux):**
+```bash
+./scripts/create-project-latest.sh my-app com.myco my-app com.myco.myapp 21 fullstack --flyway
+```
+
+**Direct PowerShell (Windows):**
+```powershell
+pwsh ./scripts/create-project-latest.ps1 -ProjectName my-app -GroupId com.myco -ProjectType fullstack -Flyway
+```
+
+Flags supported:
+- `--boot-version <x.y.z>` / `-BootVersion`: override Spring Boot version
+- `--project-type basic|web|fullstack` / `-ProjectType`
+- `--flyway` / `-Flyway`: adds Flyway dependency (Liquibase not offered)
+
+> Tip: The `create-project-latest` scripts auto-resolve preferred Boot 4.x and fall back to the configured `springBootFallback` if 4.x is not yet available.
 
 ### Latest Version Project ⭐
 Use the `create-project-latest.sh` script to create a project with the **latest Spring Boot version** (automatically fetched):
@@ -372,18 +401,19 @@ Key features:
 
 ## Validation
 
-Once the project is generated, this skill MUST validate that:
-
-1. The project builds successfully with `./mvnw clean install`
-2. The application starts successfully with `./mvnw spring-boot:run`
-3. The application responds to HTTP requests (e.g. `curl http://localhost:8080/actuator/health` returns `{"status":"UP"}`)
-4. The unit tests run successfully with `./mvnw test`
-5. The integration tests run successfully with `./mvnw verify` (if included)
-6. The front-end assets are correctly bundled and served (e.g. `curl http://localhost:8080/index.html` returns the HTML page)
-7. The Vue.js development server starts successfully with `npm run dev` (if included)
-8. The Docker images build successfully
-9. The GraalVM native image builds successfully with `./mvnw -Pnative native:compile`
-10. The Docker native image builds successfully with `docker build -f Dockerfile-native`
+| # | What | Command |
+|---|------|---------|
+| 1 | Build backend | `./mvnw clean install` |
+| 2 | Run app | `./mvnw spring-boot:run` |
+| 3 | Healthcheck | `curl http://localhost:8080/actuator/health` → `{ "status":"UP" }` |
+| 4 | Unit tests | `./mvnw test` |
+| 5 | Integration tests | `./mvnw verify` (uses Testcontainers 2 + `@ServiceConnection`) |
+| 6 | Front-end bundle served | `curl http://localhost:8080/index.html` (if frontend added) |
+| 7 | Front-end dev server | `cd frontend && npm run dev` |
+| 8 | Docker build (JVM) | `docker build -t myapp:latest .` |
+| 9 | Native build | `./mvnw -Pnative native:compile` (GraalVM 25+) |
+| 10 | Docker native build | `docker build -f Dockerfile-native -t myapp-native:latest .` |
+| 11 | SBOM & vuln scan | `mvn -B verify cyclonedx:makeAggregateBom dependency-check:check` |
 
 Once the project is generated, go through the steps above to ensure that the generated project is fully functional and follows best practices. If any validation step fails, try to identify the issue and fix it before proceeding. This ensures that the generated project is of high quality and ready for development.
 

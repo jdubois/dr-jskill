@@ -1,0 +1,19 @@
+{
+  "javaVersion": "21",
+  "springBootPreferredMajor": "4",
+  "springBootFallback": "3.4.0",
+  "postgresVersion": "16",
+  "temurinVersion": "21",
+  "mavenMinVersion": "3.8.0",
+  "graalvmVersion": "25",
+  "nodeVersion": "22.14.0",
+  "npmVersion": "10.10.0",
+  "viteVersion": "5",
+  "mavenFrontendPluginVersion": "1.15.1",
+  "vueVersion": "3",
+  "reactVersion": "18",
+  "angularVersion": "19",
+  "testcontainersVersion": "2.0.0",
+  "springFrameworkVersion": "7.0",
+  "hibernateVersion": "7.1"
+}

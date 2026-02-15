@@ -19,6 +19,8 @@ This guide covers Docker deployment for Spring Boot 4 applications, including bo
 5. curl installed for healthchecks
 6. Non-root user security
 7. Multi-stage builds for smaller images
+8. ❌ **No Buildpacks/Jib** — stick to the provided Dockerfiles/Compose
+
 
 ## Prerequisites
 
@@ -52,12 +54,23 @@ services:
       POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512m
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
 volumes:
   postgres_data:
 ```
+> Compose spec v2+: omit the `version:` key. Spring Boot's `spring-boot-docker-compose` works with this layout.
+
 
 ### Usage
 

@@ -4,17 +4,30 @@ This directory contains sample bash scripts to quickly create Spring Boot projec
 
 ## Available Scripts
 
+### 🚀 Unified launcher (`scripts/create-project`)
+Cross-platform entrypoint. On Windows (with PowerShell), it runs `create-project-latest.ps1`; otherwise it delegates to `create-project-latest.sh`.
+```bash
+# macOS/Linux
+./scripts/create-project my-app com.myco my-app com.myco.myapp 21 fullstack --flyway
+# Windows (PowerShell)
+pwsh ./scripts/create-project -ProjectName my-app -GroupId com.myco -ProjectType fullstack -Flyway
+```
+
 ### 0. create-project-latest.sh ⭐ RECOMMENDED
 Creates a Spring Boot project using the **latest available Spring Boot version** (automatically fetched from start.spring.io). This is the recommended script as it always uses the most current Spring Boot release.
 
-**Usage:**
+**Usage (Bash):**
 ```bash
-./create-project-latest.sh [project-name] [group-id] [artifact-id] [package-name] [java-version] [project-type]
+./create-project-latest.sh [project-name] [group-id] [artifact-id] [package-name] [java-version] [project-type] [--boot-version x.y.z] [--flyway]
+```
+**Usage (PowerShell):**
+```powershell
+pwsh ./create-project-latest.ps1 -ProjectName my-app -GroupId com.mycompany -ProjectType web -BootVersion 4.0.0 -Flyway
 ```
 
 **Example:**
 ```bash
-./create-project-latest.sh my-app com.mycompany my-app com.mycompany.myapp 21 web
+./create-project-latest.sh my-app com.mycompany my-app com.mycompany.myapp 21 web --flyway
 ```
 
 **Default values:**
@@ -135,7 +148,10 @@ Creates a comprehensive Spring Boot application with database, security, and web
 These scripts work on:
 - **macOS** - Uses built-in bash and Unix tools
 - **Linux** - Uses standard GNU tools
-- **Windows** - Requires Git Bash or WSL (Windows Subsystem for Linux)
+- **Windows** - Use **PowerShell (`pwsh`)** scripts (`*.ps1`) or Git Bash/WSL if you prefer bash
+
+> Version management is centralized in `versions.json` and read via `scripts/lib/versions.sh` (bash) and `scripts/lib/versions.ps1` (PowerShell).
+> Windows PowerShell may require: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force`.
 
 ## Quick Start
 

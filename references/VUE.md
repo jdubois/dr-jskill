@@ -1,7 +1,19 @@
 # Front-End Development with Vue.js for Spring Boot Applications
 
 ## Overview
-This guide covers creating front-end applications for Spring Boot using Vue.js 3 and Vite, with hot reload during development and optimized production builds integrated into the Spring Boot package.
+This guide covers creating front-end applications for Spring Boot using **Vue.js 3** and **Vite 5**, with hot reload during development and optimized production builds integrated into the Spring Boot package.
+
+## Versions (managed via `versions.json`)
+| Tool | Version |
+|------|---------|
+| Node.js | 22.14.0 |
+| npm | 10.10.0 |
+| Vue.js | 3.x |
+| Vite | 5.x |
+| Pinia | 2.x |
+| Vue Router | 4.x |
+
+> Tip: `corepack enable` to use `pnpm`/`yarn` if preferred. Default instructions assume `npm`.
 
 ## Architecture
 

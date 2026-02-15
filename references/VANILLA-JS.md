@@ -3,6 +3,16 @@
 ## Overview
 This guide covers creating front-end applications for Spring Boot using plain JavaScript (no framework), modern ES6+ features, and Vite for development tooling. This approach provides maximum simplicity with hot reload during development and optimized production builds integrated into the Spring Boot package.
 
+## Versions (managed via `versions.json`)
+| Tool | Version |
+|------|---------|
+| Node.js | 22.14.0 |
+| npm | 10.10.0 |
+| Vite | 5.x |
+| Bootstrap | 5.3+ |
+
+> Default instructions assume `npm`; `corepack enable` for pnpm/yarn. No OpenAPI client generation provided.
+
 ## Architecture
 
 **Development Mode:**

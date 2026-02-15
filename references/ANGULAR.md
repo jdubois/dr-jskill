@@ -3,6 +3,16 @@
 ## Overview
 This guide covers creating front-end applications for Spring Boot using Angular 19 and Angular CLI, with hot reload during development and optimized production builds integrated into the Spring Boot package.
 
+## Versions (managed via `versions.json`)
+| Tool | Version |
+|------|---------|
+| Node.js | 22.14.0 |
+| npm | 10.10.0 |
+| Angular | 19.x |
+| Angular Router | 19.x |
+
+> Use `npx @angular/cli@latest` to scaffold; keep alignment with `engines` constraints. No OpenAPI client generation provided.
+
 ## Architecture
 
 **Development Mode:**

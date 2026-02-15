@@ -34,11 +34,17 @@ Additional references:
 - [Database Best Practices](references/DATABASE.md)
 - [Docker Deployment](references/DOCKER.md)
 - [Testing Guide](references/TEST.md)
+- [Azure Deployment](references/AZURE.md)
+- **Versions manifest:** `versions.json` (read by `scripts/lib/versions.sh` and `scripts/lib/versions.ps1`). Update this file first when bumping any tool/library version.
 
 ## Using This Skill with AI Assistants
 
 This is an [Agent Skill](https://agentskills.io) that can be used with AI coding assistants that support the Agent Skills specification.
+### Scripts (cross-platform)
+- Bash (Mac/Linux): `./scripts/create-project-latest.sh myapp com.myco myapp com.myco.myapp 21 fullstack --flyway`
+- PowerShell (Windows): `pwsh ./scripts/create-project-latest.ps1 -ProjectName myapp -GroupId com.myco -ProjectType fullstack -Flyway`
 
+> All scripts auto-resolve preferred Spring Boot 4.x; they fall back to `springBootFallback` from `versions.json` if 4.x is unavailable. Override with `--boot-version`/`-BootVersion`.
 ### Fork or clone this repository
 
 In order to use this skill, and modify it to your needs, you can fork this repository on GitHub, or simply clone it to your local machine.

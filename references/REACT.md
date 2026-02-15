@@ -3,6 +3,17 @@
 ## Overview
 This guide covers creating front-end applications for Spring Boot using React 18 and Vite, with hot reload during development and optimized production builds integrated into the Spring Boot package.
 
+## Versions (managed via `versions.json`)
+| Tool | Version |
+|------|---------|
+| Node.js | 22.14.0 |
+| npm | 10.10.0 |
+| React | 18.x |
+| Vite | 5.x |
+| React Router | 6.x |
+
+> Tip: `corepack enable` for pnpm/yarn if desired. Default instructions assume `npm`. No OpenAPI client generation is provided; use `fetch`/`axios` as needed.
+
 ## Architecture
 
 **Development Mode:**

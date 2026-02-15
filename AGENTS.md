@@ -2,7 +2,14 @@
 
 - You MUST follow the Agents Skills specifications at: https://agentskills.io/home
 - When doing a script, you MUST do a Bash script that works on Mac OS X, Windows and Linux.
-- NEVER propose to use Lombok in the generated projects.
+  - Provide **PowerShell equivalents** for Windows (`scripts/*.ps1`). Use POSIX-safe bash (`set -euo pipefail`).
+- NEVER propose to use Lombok in the generated projects (add Maven Enforcer/ArchUnit checks in generated templates).
+- Build tool is **Maven only** (no Gradle).
+- **Flyway** is the supported migration tool (do not offer Liquibase).
+- Do not add OpenAPI/springdoc, feature toggles, Buildpacks, or Jib.
+
+## Versions Manifest
+Centralize versions in `versions.json`. Scripts load from `scripts/lib/versions.sh` (bash) and `scripts/lib/versions.ps1` (PowerShell). Update this file first when bumping versions.
 
 ## Updating Versions
 

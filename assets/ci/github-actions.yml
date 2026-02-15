@@ -1,0 +1,46 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-
+
+      - name: Build backend
+        run: ./mvnw -B -DskipTests=false verify cyclonedx:makeAggregateBom dependency-check:check
+
+      - name: Frontend (if present)
+        if: ${{ hashFiles('**/frontend/package.json') != '' }}
+        run: |
+          cd frontend
+          corepack enable || true
+          npm ci
+          npm run build --if-present
+          npm test --if-present
+
+      - name: Docker build (JVM)
+        run: docker build -t myapp:ci .
+
+      - name: Docker build (native) [optional]
+        run: |
+          docker build -f Dockerfile-native -t myapp-native:ci .
+        continue-on-error: true
