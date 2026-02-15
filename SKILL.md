@@ -6,7 +6,7 @@ description: Creates Spring Boot projects following Julien Dubois' best practice
 # Spring Boot skill that follows Julien Dubois' best practices.
 
 ## Overview
-This agent skill helps you create Spring Boot projects following Julien Dubois' best practices. It provides tools and scripts to quickly bootstrap Spring Boot applications using https://start.spring.io
+This agent skill helps you create Spring Boot projects following Julien Dubois' best practices. It provides tools and scripts to quickly bootstrap Spring Boot applications using [https://start.spring.io](https://start.spring.io).
 
 ## Prerequisites
 
@@ -25,22 +25,6 @@ This agent skill helps you create Spring Boot projects following Julien Dubois' 
   - **React 18** - Popular library for building user interfaces
   - **Angular 19** - Full-featured framework with TypeScript
   - **Vanilla JavaScript** - No framework, pure ES6+ with Vite
-
-## Validation
-
-Once the project is generated, this skill MUST validate that:
-
-1. The project builds successfully with `./mvnw clean install`
-2. The application starts successfully with `./mvnw spring-boot:run`
-3. The application responds to HTTP requests (e.g. `curl http://localhost:8080/actuator/health` returns `{"status":"UP"}`)
-4. The unit tests run successfully with `./mvnw test`
-5. The integration tests run successfully with `./mvnw verify` (if included)
-6. The front-end assets are correctly bundled and served (e.g. `curl http://localhost:8080/index.html` returns the HTML page)
-7. The Vue.js development server starts successfully with `npm run dev` (if included)
-8. The Docker images build successfully
-9. The GraalVM native image builds successfully with `./mvnw -Pnative native:compile`
-
-Once the project is generated, go through the steps above to ensure that the generated project is fully functional and follows best practices. If any validation step fails, try to identify the issue and fix it before proceeding. This ensures that the generated project is of high quality and ready for development.
 
 ## Usage
 
@@ -85,13 +69,15 @@ When creating Spring Boot projects:
 3. Include Spring Boot Actuator for production-ready features
 4. Use Spring Data JPA for database access
 5. Use PostgreSQL for database - see [Database Best Practices](references/DATABASE.md) for optimization
-6. Use `spring-boot-docker-compose` for automatic database startup during development - see [Docker Guide](references/DOCKER.md)
-7. Follow RESTful API design principles
-8. Configure proper logging with Logback - see [Logging Best Practices](references/LOGGING.md)
-9. Use Maven for dependency management
-10. Include Spring Boot DevTools for development productivity
-11. Configure Docker for containerized deployments
-12. Enable GraalVM native image support
+6. Use properties files for configuration - see [Configuration Best Practices](references/CONFIGURATION.md)
+7. Use `spring-boot-docker-compose` for automatic database startup during development - see [Docker Guide](references/DOCKER.md)
+8. Follow RESTful API design principles
+9. Configure proper logging with Logback - see [Logging Best Practices](references/LOGGING.md)
+10. Use Maven for dependency management
+11. Include Spring Boot DevTools for development productivity
+12. Add Spring Security only when needed - see [Security Guide](references/SECURITY.md) for best practices
+13. Configure Docker for containerized deployments - see [Docker Guide](references/DOCKER.md)
+14. Enable GraalVM native image support for faster startup - see [GraalVM Guide](references/GRAALVM.md)
 
 ## Project Structure
 
@@ -151,8 +137,19 @@ Common dependencies included in generated projects:
 
 ## Configuration
 
+For comprehensive configuration best practices, see the [Configuration Guide](references/CONFIGURATION.md).
+
+**Key Principles:**
+
+1. **Use Properties Files** (not YAML) for better IDE support and readability
+2. **Externalize Configuration** with environment variables for portability
+3. **Never Commit Secrets** to version control
+4. **Use Profiles** for environment-specific settings (dev, test, prod)
+5. **Type-Safe Configuration** with `@ConfigurationProperties` classes
+
 ### Application Properties
-Properties files are favored over YAML configuration files.
+
+Basic configuration example:
 
 ```properties
 # Server configuration
@@ -161,17 +158,53 @@ server.port=8080
 # Database configuration
 spring.datasource.url=jdbc:postgresql://localhost:5432/mydb
 spring.datasource.username=user
-spring.datasource.password=password
+spring.datasource.password=${DATABASE_PASSWORD}
 
 # JPA configuration
-spring.jpa.hibernate.ddl-auto=update
+spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.show-sql=false
 
 # Actuator configuration
 management.endpoints.web.exposure.include=health,info,metrics
 ```
 
-**For advanced database configuration and performance optimization**, see the [Database Best Practices Guide](references/DATABASE.md). It covers connection pooling, query optimization, transaction management, locking strategies, and PostgreSQL-specific optimizations based on Vlad Mihalcea's best practices.
+**See the [Configuration Guide](references/CONFIGURATION.md) for:**
+- Profile-specific properties files
+- Environment variable management
+- Secrets management (local and production)
+- Type-safe `@ConfigurationProperties` classes
+- Common configuration patterns
+- Testing configuration
+
+**For database configuration and performance optimization**, see the [Database Best Practices Guide](references/DATABASE.md).
+
+## Security (Optional)
+
+Spring Security is **optional** - only add it when you need authentication and authorization.
+
+For complete security implementation guide, see the [Security Guide](references/SECURITY.md).
+
+**When to Add Spring Security:**
+
+✅ Add when you need:
+- User authentication (login/logout)
+- API authentication (JWT, OAuth2)
+- Role-based access control
+- Protection against common vulnerabilities
+
+❌ Don't add if:
+- Building a simple public API
+- Creating a prototype
+- No authentication requirements
+
+**See the [Security Guide](references/SECURITY.md) for:**
+- Basic security configuration with Spring Boot 4
+- Database-backed user authentication
+- JWT authentication for REST APIs
+- OAuth2 and social login
+- Role-based authorization with `@PreAuthorize`
+- CORS configuration
+- Security best practices and testing
 
 ## Development with Docker Compose
 
@@ -262,7 +295,7 @@ Key features:
 
 For comprehensive Docker deployment instructions, see the [Docker Guide](references/DOCKER.md).
 
-Key features:
+**Key Features:**
 
 1. Automatic PostgreSQL startup during development with `spring-boot-docker-compose`
 2. Standard JVM deployment with `Dockerfile`
@@ -277,20 +310,55 @@ Key features:
 
 ### Production Deployment
 ```bash
-# Standard deployment
+# Standard JVM deployment
 docker compose up -d
 
 # Native image deployment (faster startup)
 docker compose -f docker-compose-native.yml up -d
 ```
 
-## GraalVM Native Support
-Project is configured to support GraalVM.
+**See the [Docker Guide](references/DOCKER.md) for:**
+- Automatic Docker Compose support in development
+- Multi-stage Dockerfile best practices
+- Docker Compose configuration for full-stack apps
+- Health checks and monitoring
+- Production deployment patterns
 
-Build native image locally:
+## GraalVM Native Images
+
+For comprehensive GraalVM native image instructions, see the [GraalVM Guide](references/GRAALVM.md).
+
+### Building with Docker (Recommended)
+
 ```bash
-./mvnw -Pnative native:compile
+# Build native image with Docker
+docker build -f Dockerfile-native -t myapp-native:latest .
+
+# Run the native image
+docker run -p 8080:8080 myapp-native:latest
+
+# Or use Docker Compose
+docker compose -f docker-compose-native.yml up -d
 ```
+
+### Building Locally (Optional)
+
+```bash
+# Requires GraalVM 25+ installed locally
+./mvnw -Pnative native:compile
+
+# Run the native executable
+./target/myapp-exec
+```
+
+**See the [GraalVM Guide](references/GRAALVM.md) for:**
+- Docker-based native builds (no local GraalVM needed)
+- Multi-stage Dockerfile for native images
+- Spring Boot native configuration
+- Runtime hints for reflection and resources
+- Performance characteristics and trade-offs
+- Testing and troubleshooting native images
+- CI/CD integration examples
 
 ## Azure Deployment
 
@@ -302,20 +370,57 @@ Key features:
 2. Azure Database for PostgreSQL for managed database service
 3. Azure CLI for deployment and management
 
+## Validation
+
+Once the project is generated, this skill MUST validate that:
+
+1. The project builds successfully with `./mvnw clean install`
+2. The application starts successfully with `./mvnw spring-boot:run`
+3. The application responds to HTTP requests (e.g. `curl http://localhost:8080/actuator/health` returns `{"status":"UP"}`)
+4. The unit tests run successfully with `./mvnw test`
+5. The integration tests run successfully with `./mvnw verify` (if included)
+6. The front-end assets are correctly bundled and served (e.g. `curl http://localhost:8080/index.html` returns the HTML page)
+7. The Vue.js development server starts successfully with `npm run dev` (if included)
+8. The Docker images build successfully
+9. The GraalVM native image builds successfully with `./mvnw -Pnative native:compile`
+10. The Docker native image builds successfully with `docker build -f Dockerfile-native`
+
+Once the project is generated, go through the steps above to ensure that the generated project is fully functional and follows best practices. If any validation step fails, try to identify the issue and fix it before proceeding. This ensures that the generated project is of high quality and ready for development.
+
 ## Additional Resources
+
+### External Documentation
 - [Spring Boot Documentation](https://spring.io/projects/spring-boot)
 - [Spring Initializr](https://start.spring.io)
 - [Julien Dubois on GitHub](https://github.com/jdubois)
-- [Spring Boot 4 Migration Guide](references/SPRING-BOOT-4.md) (included in this skill - Key changes from Spring Boot 3)
-- [Database Best Practices](references/DATABASE.md) (included in this skill - PostgreSQL and Hibernate optimization)
-- [Logging Best Practices](references/LOGGING.md) (included in this skill - Logback configuration and patterns)
-- [Testing Guide](references/TEST.md) (included in this skill - Unit and integration testing with TestContainers)
-- Front-End Development Guides (included in this skill):
-  - [Vue.js Development Guide](references/VUE.md) (default - Vue.js 3 with Vite)
-  - [React Development Guide](references/REACT.md) (React 18 with Vite)
-  - [Angular Development Guide](references/ANGULAR.md) (Angular 19 with Angular CLI)
-  - [Vanilla JS Development Guide](references/VANILLA-JS.md) (Pure ES6+ with Vite)
-- [Docker Deployment Guide](references/DOCKER.md) (included in this skill)
 - [GraalVM Documentation](https://www.graalvm.org/)
 - [Spring Native Documentation](https://docs.spring.io/spring-boot/docs/current/reference/html/native-image.html)
 - [TestContainers Documentation](https://testcontainers.com/)
+- [Spring Security Documentation](https://docs.spring.io/spring-security/reference/)
+
+### Included Reference Guides
+
+**Core Spring Boot:**
+- [Spring Boot 4 Migration Guide](references/SPRING-BOOT-4.md) - Key changes from Spring Boot 3, Jackson 3 annotations
+- [Configuration Best Practices](references/CONFIGURATION.md) - Properties files, profiles, secrets management
+- [Logging Best Practices](references/LOGGING.md) - Logback configuration and patterns
+
+**Data and Persistence:**
+- [Database Best Practices](references/DATABASE.md) - PostgreSQL and Hibernate optimization
+
+**Security (Optional):**
+- [Security Guide](references/SECURITY.md) - Spring Security, JWT, OAuth2, authentication patterns
+
+**Testing:**
+- [Testing Guide](references/TEST.md) - Unit and integration testing with TestContainers
+
+**Front-End Development:**
+- [Vue.js Development Guide](references/VUE.md) - Vue.js 3 with Vite (default)
+- [React Development Guide](references/REACT.md) - React 18 with Vite
+- [Angular Development Guide](references/ANGULAR.md) - Angular 19 with Angular CLI
+- [Vanilla JS Development Guide](references/VANILLA-JS.md) - Pure ES6+ with Vite
+
+**Deployment:**
+- [Docker Deployment Guide](references/DOCKER.md) - Docker, Docker Compose, development automation
+- [GraalVM Native Images Guide](references/GRAALVM.md) - Docker-based native builds, optimization
+- [Azure Deployment Guide](references/AZURE.md) - Azure Container Apps, Azure Database for PostgreSQL
