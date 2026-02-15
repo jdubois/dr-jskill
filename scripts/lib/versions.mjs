@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 // Shared version utilities for dr-jskill scripts
-// Replaces versions.sh (bash) and versions.ps1 (PowerShell)
 
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
