@@ -39,8 +39,33 @@ export function getSpringFrameworkVersion() { return getVersionValue('springFram
 export function getHibernateVersion() { return getVersionValue('hibernateVersion', '7.1'); }
 
 /**
+ * Strip legacy qualifiers (.RELEASE, .GA) that Spring Boot 4+ no longer uses.
+ * E.g. "4.0.2.RELEASE" → "4.0.2", "4.0.2" → "4.0.2"
+ */
+function stripLegacyQualifier(version) {
+  return version.replace(/\.(RELEASE|GA)$/i, '');
+}
+
+/**
+ * Check whether a Spring Boot version exists on Maven Central.
+ * Returns true if the POM can be found (HTTP 200).
+ */
+async function existsOnMavenCentral(version) {
+  const groupPath = 'org/springframework/boot/spring-boot';
+  const url = `https://repo1.maven.org/maven2/${groupPath}/${version}/spring-boot-${version}.pom`;
+  try {
+    const res = await fetch(url, { method: 'HEAD' });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Resolve preferred Spring Boot version with fallback.
- * Fetches the default boot version from start.spring.io metadata.
+ * Fetches the default boot version from start.spring.io metadata,
+ * validates it exists on Maven Central, and strips legacy qualifiers.
+ * Only considers versions ≥ 4.x.
  */
 export async function resolveBootVersion(preferredMajor, fallback) {
   preferredMajor = preferredMajor || getBootPreferredMajor();
@@ -54,9 +79,43 @@ export async function resolveBootVersion(preferredMajor, fallback) {
       return fallback;
     }
     const metadata = await response.json();
-    const fetched = metadata?.bootVersion?.default;
-    if (!fetched) return fallback;
-    if (fetched.startsWith(`${preferredMajor}.`)) return fetched;
+
+    // Try multiple metadata paths (API may evolve)
+    const fetched = metadata?.bootVersion?.default
+      || metadata?.platformVersion?.default
+      || metadata?.bootVersion;
+
+    if (!fetched || typeof fetched !== 'string') {
+      console.error(`Warning: could not read bootVersion from start.spring.io metadata. Using fallback ${fallback}.`);
+      return fallback;
+    }
+
+    const cleaned = stripLegacyQualifier(fetched);
+
+    if (cleaned.startsWith(`${preferredMajor}.`)) {
+      // Verify the version actually exists on Maven Central
+      if (await existsOnMavenCentral(cleaned)) {
+        return cleaned;
+      }
+      console.error(`⚠️  Spring Boot ${cleaned} (from start.spring.io) is not on Maven Central yet. Using fallback ${fallback}.`);
+      return fallback;
+    }
+
+    // start.spring.io default doesn't match our preferred major — scan available versions
+    const values = metadata?.bootVersion?.values || [];
+    const candidates = values
+      .map(v => typeof v === 'string' ? v : v?.id)
+      .filter(Boolean)
+      .map(stripLegacyQualifier)
+      .filter(v => v.startsWith(`${preferredMajor}.`) && !v.includes('-'));
+    // Pick the highest stable version from the list
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+      if (await existsOnMavenCentral(candidates[0])) {
+        return candidates[0];
+      }
+    }
+
     console.error(
       `⚠️  start.spring.io default bootVersion (${fetched}) does not match preferred major ${preferredMajor}. Using fallback ${fallback}. Override with --boot-version if needed.`
     );
@@ -103,8 +162,12 @@ export function extractZip(zipPath) {
 
 /**
  * Download and extract a Spring Boot project from start.spring.io.
+ * Automatically strips legacy .RELEASE/.GA qualifiers from bootVersion.
  */
 export async function downloadAndExtractProject(params) {
+  if (params.bootVersion) {
+    params.bootVersion = stripLegacyQualifier(params.bootVersion);
+  }
   const query = Object.entries(params)
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&');
