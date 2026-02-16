@@ -121,6 +121,24 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 
 Requires `spring-boot-starter-webmvc-test` dependency (not included in `spring-boot-starter-test`).
 
+### 5. Always Set `mainClass` in `pom.xml`
+
+Spring Boot 4's `process-aot` goal (used for native images and AOT processing) may fail to auto-detect the main class.
+
+**✅ CORRECT - Always add `start-class` property to `pom.xml`:**
+```xml
+<properties>
+    <java.version>21</java.version>
+    <!-- Use your actual main class: {CamelCaseArtifactId}Application -->
+    <start-class>com.example.app.MyAppApplication</start-class>
+</properties>
+```
+
+This ensures both `spring-boot-maven-plugin` and `native-maven-plugin` can find the entry point. Without it, Docker builds and native compilations will fail with:
+```
+Unable to find a suitable main class, please add a 'mainClass' property
+```
+
 ---
 
 ## Major Changes from Spring Boot 3
@@ -597,6 +615,7 @@ For war deployment to Tomcat:
 ### Quick Migration Checklist
 
 - [ ] Java 17+ (21+ recommended)
+- [ ] `<start-class>` property set in `pom.xml` (required for `process-aot`)
 - [ ] Jakarta EE 11 / Servlet 6.1 dependencies updated
 - [ ] Replace `@MockBean` with `@MockitoBean` in tests
 - [ ] Update `@WebMvcTest`/`@AutoConfigureMockMvc` imports to `org.springframework.boot.webmvc.test.autoconfigure` and add `spring-boot-starter-webmvc-test` dependency

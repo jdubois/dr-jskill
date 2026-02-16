@@ -189,7 +189,7 @@ Spring Boot automatically manages Docker containers during development via `spri
 
 ## GraalVM Native Images
 
-Build native images via Docker (no local GraalVM needed) or locally with `./mvnw -Pnative native:compile`. See the [GraalVM Guide](references/GRAALVM.md) for configuration, runtime hints, testing, and CI/CD integration.
+Build native images via Docker (no local GraalVM needed) or locally with `./mvnw -Pnative package`. See the [GraalVM Guide](references/GRAALVM.md) for configuration, runtime hints, testing, and CI/CD integration.
 
 ## Azure Deployment
 
@@ -207,7 +207,7 @@ Deploy to Azure Container Apps with Azure Database for PostgreSQL. See the [Azur
 | 6 | Front-end bundle served | `curl http://localhost:8080/index.html` (if frontend added) |
 | 7 | Front-end dev server | `cd frontend && npm run dev` |
 | 8 | Docker build (JVM) | `docker build -t myapp:latest .` |
-| 9 | Native build | `./mvnw -Pnative native:compile` (GraalVM 25+) |
+| 9 | Native build | `./mvnw -Pnative package` (GraalVM 25+) |
 | 10 | Docker native build | `docker build -f Dockerfile-native -t myapp-native:latest .` |
 | 11 | SBOM & vuln scan | `mvn -B verify cyclonedx:makeAggregateBom dependency-check:check` |
 

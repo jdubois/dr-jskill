@@ -46,17 +46,13 @@ Use the `Dockerfile-native` for building native images with Docker:
 # Builds and runs a native Spring Boot application
 # Requires GraalVM 25+ for Spring Boot 4
 
-# Build stage with GraalVM 25
+# Build stage with GraalVM 25 (includes native-image toolchain)
 FROM ghcr.io/graalvm/graalvm-community:25-ol9 AS build
-
-# Install required build tools
-RUN microdnf install -y gcc glibc-devel zlib-devel && \
-    microdnf clean all
 
 # Set working directory
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml
+# Copy Maven wrapper and pom.xml (dependency caching layer)
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
@@ -67,8 +63,12 @@ RUN ./mvnw dependency:go-offline
 # Copy source code
 COPY src ./src
 
-# Build native image
-RUN ./mvnw -Pnative native:compile -DskipTests
+# Copy frontend directory if present (for fullstack projects with frontend-maven-plugin)
+# If no frontend/ exists, comment out or remove this line
+COPY frontend ./frontend
+
+# Build native image (full lifecycle: compile → process-aot → native compile)
+RUN ./mvnw -Pnative package -DskipTests
 
 # Runtime stage with minimal base image
 FROM oraclelinux:9-slim
@@ -106,8 +106,8 @@ CMD ["./native-app"]
 
 **Key Points:**
 
-1. **Build Stage**: Uses GraalVM 25 Community Edition with Oracle Linux 9
-2. **Build Tools**: Installs gcc, glibc-devel, and zlib-devel (required for native compilation)
+1. **Build Stage**: Uses GraalVM 25 Community Edition with Oracle Linux 9 (includes native-image toolchain)
+2. **Full Lifecycle**: Uses `package` (not `native:compile`) to ensure `process-aot` runs correctly
 3. **Multi-Stage**: Final image is minimal (Oracle Linux 9 Slim + native executable)
 4. **Non-Root User**: Runs as unprivileged user for security
 5. **Healthcheck**: Standard Spring Boot Actuator health endpoint
@@ -192,9 +192,15 @@ docker compose -f docker-compose-native.yml down
 
 ### Maven Configuration
 
-Ensure your `pom.xml` includes the native profile:
+Ensure your `pom.xml` includes the `start-class` property and the native profile:
 
 ```xml
+<properties>
+    <java.version>21</java.version>
+    <!-- Use your actual main class: {CamelCaseArtifactId}Application -->
+    <start-class>com.example.app.MyAppApplication</start-class>
+</properties>
+
 <profiles>
     <profile>
         <id>native</id>
@@ -209,6 +215,8 @@ Ensure your `pom.xml` includes the native profile:
     </profile>
 </profiles>
 ```
+
+> ⚠️ The `start-class` property is **required** for `process-aot` to find the main class. Without it, native builds and Docker builds will fail.
 
 ### Native Hints
 
@@ -250,7 +258,7 @@ public class MyRuntimeHints implements RuntimeHintsRegistrar {
 
 ```bash
 # Build native image locally (requires GraalVM installed)
-./mvnw -Pnative native:compile
+./mvnw -Pnative package -DskipTests
 
 # Run the native executable
 ./target/myapp-exec

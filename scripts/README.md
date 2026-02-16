@@ -233,7 +233,7 @@ cd my-project
 ### GraalVM Native Build
 ```bash
 cd my-project
-./mvnw -Pnative native:compile
+./mvnw -Pnative package
 ./target/my-project-exec
 ```
 

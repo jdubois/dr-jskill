@@ -23,8 +23,8 @@ COPY src ./src
 # If no frontend/ exists, comment out or remove this line
 COPY frontend ./frontend
 
-# Build native image
-RUN ./mvnw -Pnative native:compile -DskipTests
+# Build native image (full lifecycle: compile → process-aot → native compile)
+RUN ./mvnw -Pnative package -DskipTests
 
 # Runtime stage with minimal base image
 FROM oraclelinux:9-slim

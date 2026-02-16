@@ -147,6 +147,9 @@ Add to your `pom.xml`:
         <plugin>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+                <mainClass>${start-class}</mainClass>
+            </configuration>
         </plugin>
         
         <!-- Frontend Maven Plugin for Node/npm -->

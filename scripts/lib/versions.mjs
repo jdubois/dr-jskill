@@ -177,6 +177,41 @@ export async function downloadAndExtractProject(params) {
   await downloadFile(url, zipFile);
   extractZip(zipFile);
   unlinkSync(zipFile);
+
+  // Ensure pom.xml has <start-class> for process-aot main class detection
+  if (params.packageName && params.name) {
+    const mainClassName = toCamelCase(params.name) + 'Application';
+    patchPomStartClass(params.baseDir, `${params.packageName}.${mainClassName}`);
+  }
+}
+
+/**
+ * Convert a kebab-case or snake_case name to CamelCase.
+ * e.g. "my-spring-app" → "MySpringApp"
+ */
+function toCamelCase(name) {
+  return name
+    .split(/[-_]+/)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join('');
+}
+
+/**
+ * Inject <start-class> property into an existing pom.xml.
+ * Spring Boot 4's process-aot goal requires an explicit main class.
+ */
+export function patchPomStartClass(projectDir, mainClass) {
+  const pomPath = join(projectDir, 'pom.xml');
+  if (!existsSync(pomPath)) return;
+  let pom = readFileSync(pomPath, 'utf8');
+  if (pom.includes('<start-class>')) return; // Already present
+  // Insert after <java.version>...</java.version> inside <properties>
+  const javaVersionTag = /<java\.version>[^<]*<\/java\.version>/;
+  const match = pom.match(javaVersionTag);
+  if (match) {
+    pom = pom.replace(javaVersionTag, `${match[0]}\n\t\t<start-class>${mainClass}</start-class>`);
+    writeFileSync(pomPath, pom, 'utf8');
+  }
 }
 
 /**
