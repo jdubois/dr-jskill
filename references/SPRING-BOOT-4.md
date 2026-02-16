@@ -43,7 +43,7 @@ This guide covers the key changes in Spring Boot 4.0 and what to consider when c
 
 ## Critical Considerations When Creating Spring Boot 4 Projects
 
-⚠️ **Two Most Common Mistakes** - Always verify these when generating code:
+⚠️ **Most Common Mistakes** - Always verify these when generating code:
 
 0. **Maven-only / No Lombok / Flyway**: Do not generate Gradle builds; enforce no Lombok usage via Maven Enforcer + ArchUnit (snippet below). Offer Flyway only (no Liquibase).
 
@@ -87,6 +87,40 @@ public class TestcontainersConfiguration {  // Wrong!
 
 This is a Spring Boot 4 requirement for test configurations. See "Testing Changes" section below for more details.
 
+### 3. TestContainers 2.x Artifact & Package Rename
+
+**Maven artifact renamed:**
+```xml
+<!-- ❌ WRONG (TC 1.x artifact): -->
+<artifactId>postgresql</artifactId>
+
+<!-- ✅ CORRECT (TC 2.x artifact): -->
+<artifactId>testcontainers-postgresql</artifactId>
+```
+
+**Class package renamed:**
+```java
+// ❌ WRONG (TC 1.x):
+import org.testcontainers.containers.PostgreSQLContainer;
+
+// ✅ CORRECT (TC 2.x):
+import org.testcontainers.postgresql.PostgreSQLContainer;
+```
+
+The `junit-jupiter` artifact is no longer needed — TC 2.x integrates with JUnit 5 directly.
+
+### 4. @WebMvcTest Moved to New Package
+
+```java
+// ❌ WRONG (Spring Boot 3):
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+
+// ✅ CORRECT (Spring Boot 4):
+import org.springframework.boot.webmvc.test.autoconfigure.servlet.WebMvcTest;
+```
+
+Requires `spring-boot-starter-webmvc-test` dependency (not included in `spring-boot-starter-test`).
+
 ---
 
 ## Major Changes from Spring Boot 3
@@ -108,6 +142,32 @@ Spring Boot 4 introduces a **new modular design** with technology-specific modul
 **For quick upgrades:** Use `spring-boot-starter-classic` to get all modules at once (but migrate away eventually).
 
 ### 2. Testing Changes
+
+#### @WebMvcTest and @AutoConfigureMockMvc Package Change
+
+**Critical:** Due to the modular architecture, `@WebMvcTest` and `@AutoConfigureMockMvc` moved to a new package and require a new test starter dependency.
+
+**New dependency required:**
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-webmvc-test</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+**Import change:**
+```java
+// OLD (Spring Boot 3):
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+
+// NEW (Spring Boot 4):
+import org.springframework.boot.webmvc.test.autoconfigure.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.servlet.AutoConfigureMockMvc;
+```
+
+> ⚠️ `spring-boot-starter-test` alone no longer provides `@WebMvcTest`. You **must** add `spring-boot-starter-webmvc-test`.
 
 #### @MockBean and @SpyBean Deprecation
 **Critical:** `@MockBean` and `@SpyBean` are **deprecated** and will be removed in future releases.
@@ -154,13 +214,17 @@ class ApplicationTests {
 
 1. `@SpringBootTest` no longer provides MockMVC automatically - add `@AutoConfigureMockMvc`
 2. `@SpringBootTest` no longer provides `TestRestTemplate` - add `@AutoConfigureTestRestTemplate`
-3. Consider using new `RestTestClient` instead of `TestRestTemplate`
+3. `@WebMvcTest` and `@AutoConfigureMockMvc` moved to `org.springframework.boot.webmvc.test.autoconfigure.servlet` package — requires `spring-boot-starter-webmvc-test` dependency
+4. Consider using new `RestTestClient` instead of `TestRestTemplate`
 
 #### TestContainers 2.0
 
 1. Required version: TestContainers 2.0+
 2. Enhanced performance and resource management
 3. Works seamlessly with `@ServiceConnection` annotation
+4. **Artifact rename:** `org.testcontainers:postgresql` → `org.testcontainers:testcontainers-postgresql`
+5. **Package rename:** `org.testcontainers.containers.PostgreSQLContainer` → `org.testcontainers.postgresql.PostgreSQLContainer`
+6. `junit-jupiter` artifact removed — TC 2.x integrates with JUnit 5 directly
 
 #### Maven Enforcer + ArchUnit guardrails (no Lombok, enforce Maven)
 
@@ -534,8 +598,9 @@ For war deployment to Tomcat:
 - [ ] Java 17+ (21+ recommended)
 - [ ] Jakarta EE 11 / Servlet 6.1 dependencies updated
 - [ ] Replace `@MockBean` with `@MockitoBean` in tests
+- [ ] Update `@WebMvcTest`/`@AutoConfigureMockMvc` imports to `org.springframework.boot.webmvc.test.autoconfigure.servlet` and add `spring-boot-starter-webmvc-test` dependency
 - [ ] Add `@AutoConfigureMockMvc` where needed
-- [ ] TestContainers 2.0+ in use
+- [ ] TestContainers 2.0+ in use (`testcontainers-postgresql` artifact, `org.testcontainers.postgresql` package)
 - [ ] No Undertow references
 - [ ] Jackson 3 package names (or using compatibility mode)
 - [ ] Technology-specific starters added (e.g., Flyway, Liquibase)

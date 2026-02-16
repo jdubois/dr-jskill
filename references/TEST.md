@@ -21,7 +21,8 @@ This guide covers testing best practices for Spring Boot 4.x applications, inclu
 - TestContainers 2.0+ is required (integration simplified with `@ServiceConnection`)
 - **@MockBean/@SpyBean are DEPRECATED** - use `@MockitoBean/@MockitoSpyBean` from Spring Framework instead
 - `@ServiceConnection` eliminates need for manual `@DynamicPropertySource` configuration
-- New modular test starter structure (e.g., `spring-boot-starter-data-jpa-test`)
+- New modular test starter structure (e.g., `spring-boot-starter-webmvc-test`, `spring-boot-starter-data-jpa-test`)
+- **`@WebMvcTest` and `@AutoConfigureMockMvc` moved** to `org.springframework.boot.webmvc.test.autoconfigure.servlet` package — requires `spring-boot-starter-webmvc-test` dependency
 
 ## Testing Dependencies
 
@@ -37,6 +38,13 @@ Add these dependencies to your `pom.xml`:
         <artifactId>spring-boot-starter-test</artifactId>
         <scope>test</scope>
     </dependency>
+
+    <!-- WebMvc Test Starter (provides @WebMvcTest, @AutoConfigureMockMvc) -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-webmvc-test</artifactId>
+        <scope>test</scope>
+    </dependency>
     
     <!-- TestContainers 2.0+ for integration tests -->
     <dependency>
@@ -47,13 +55,7 @@ Add these dependencies to your `pom.xml`:
     
     <dependency>
         <groupId>org.testcontainers</groupId>
-        <artifactId>postgresql</artifactId>
-        <scope>test</scope>
-    </dependency>
-    
-    <dependency>
-        <groupId>org.testcontainers</groupId>
-        <artifactId>junit-jupiter</artifactId>
+        <artifactId>testcontainers-postgresql</artifactId>
         <scope>test</scope>
     </dependency>
 </dependencies>
@@ -63,6 +65,8 @@ Add these dependencies to your `pom.xml`:
 
 ```java
 // src/test/java/.../TestcontainersConfiguration.java (package-private!)
+import org.testcontainers.postgresql.PostgreSQLContainer; // ✅ TC 2.x package
+
 @TestConfiguration(proxyBeanMethods = false)
 class TestcontainersConfiguration {
   @Bean
@@ -181,8 +185,8 @@ class UserServiceTest {
 
 Test controllers without loading the full application context. Uses `@MockitoBean` to mock service dependencies.
 
-> ✅ **Spring Boot 4 import:** `org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest`
-> ✅ **Dependency:** `spring-boot-starter-test` (still provides `@WebMvcTest`). If you trimmed dependencies, ensure this starter is present. Avoid IDE auto-imports to `org.springframework.test.web.servlet.*` (wrong).
+> ✅ **Spring Boot 4 import:** `org.springframework.boot.webmvc.test.autoconfigure.servlet.WebMvcTest`
+> ✅ **Dependency:** `spring-boot-starter-webmvc-test` (required — `spring-boot-starter-test` alone no longer provides `@WebMvcTest`). Avoid IDE auto-imports to the old `org.springframework.boot.test.autoconfigure.web.servlet` package or `org.springframework.test.web.servlet.*`.
 
 **Example: Controller Unit Test**
 
@@ -191,10 +195,10 @@ package com.example.app.controller;
 
 import com.example.app.domain.User;
 import com.example.app.service.UserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest; // ✅ correct package for Boot 4
+import org.springframework.boot.webmvc.test.autoconfigure.servlet.WebMvcTest; // ✅ correct package for Boot 4
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -305,8 +309,7 @@ package com.example.app;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 @TestConfiguration(proxyBeanMethods = false)
 class TestcontainersConfiguration {  // ✅ Note: package-private (no public modifier)
@@ -314,10 +317,7 @@ class TestcontainersConfiguration {  // ✅ Note: package-private (no public mod
     @Bean
     @ServiceConnection
     PostgreSQLContainer<?> postgresContainer() {
-        return new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"))
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
+        return new PostgreSQLContainer<>("postgres:16-alpine");
     }
 }
 ```
@@ -374,11 +374,11 @@ package com.example.app.controller;
 import com.example.app.TestcontainersConfiguration;
 import com.example.app.domain.User;
 import com.example.app.repository.UserRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -812,10 +812,11 @@ import org.springframework.boot.test.mock.mockito.SpyBean;   // ❌
 ### TestContainers 2.0 Requirements
 
 Spring Boot 4 requires **TestContainers 2.0+**, which brings:
+- **Artifact rename:** `org.testcontainers:postgresql` → `org.testcontainers:testcontainers-postgresql`
+- **Package rename:** `org.testcontainers.containers.PostgreSQLContainer` → `org.testcontainers.postgresql.PostgreSQLContainer`
+- `junit-jupiter` artifact removed — TC 2.x integrates with JUnit 5 directly
 - Improved performance and resource management
 - Better cleanup of containers
 - Enhanced Docker platform support
 - Simplified configuration with `@ServiceConnection`
-
-No code changes needed if already using `@ServiceConnection` pattern shown in this guide.
 - [AssertJ Documentation](https://assertj.github.io/doc/)
