@@ -33,6 +33,27 @@ Dr JSkill builds on the JHipster experience:
 
 At the moment, Dr JSkill is an experiment. If it is successful, it might join the JHipster organization.
 
+## Sample usage
+
+Here is an example you can use to try out this skill with an AI assistant like GitHub Copilot CLI .
+
+To create a new project:
+```
+Use Dr JSkill to create a new Todo List application.
+
+- Features: add/edit/remove todos
+- A fancy UI with nice effects
+- Data stored in a database
+- No security
+``` 
+
+Once the project is created, you can ask the assistant to add features, for example:
+```
+I want to assign those todos to users, but I don't want to implement authentication. Can you use a simple user management system with hardcoded users in the database?
+There would be a dropdown to select the user when creating a todo, and the list of todos would be filtered by user.
+User names are: julien, alice, bob.
+```
+
 ## Documentation
 
 For complete documentation, usage instructions, and best practices, see **[SKILL.md](SKILL.md)**.
@@ -144,19 +165,6 @@ Claude Code will automatically discover all skills in the configured directory a
 ### Other Compatible Assistants
 
 This skill follows the [Agent Skills specification](https://agentskills.io/specification) and works with any compatible AI assistant. Refer to your assistant's documentation for configuration instructions.
-
-## Sample prompt
-
-Here is an example prompt you can use to try out this skill with an AI assistant:
-
-```
-Use the Dr JSKill skill to create a new Todo List application.
-
-- Features: add/edit/remove todos
-- A fancy UI with nice effects
-- Data stored in a database
-- No security
-``` 
 
 ## Requirements
 
