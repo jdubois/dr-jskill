@@ -4,17 +4,17 @@
 # Build stage
 FROM eclipse-temurin:21-jdk-jammy AS build
 
-# Install Maven
-RUN apt-get update && \
-    apt-get install -y maven && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
 # Set working directory
 WORKDIR /app
 
-# Copy pom.xml (dependency caching layer)
+# Copy Maven wrapper and pom.xml (dependency caching layer)
+COPY mvnw .
+COPY .mvn .mvn
 COPY pom.xml .
+RUN chmod +x mvnw
+
+# Download dependencies
+RUN ./mvnw dependency:go-offline
 
 # Copy source code
 COPY src ./src
@@ -24,7 +24,7 @@ COPY src ./src
 COPY frontend ./frontend
 
 # Build the application
-RUN mvn clean package -DskipTests
+RUN ./mvnw clean package -DskipTests
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-jammy
