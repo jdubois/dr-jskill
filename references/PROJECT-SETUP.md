@@ -9,6 +9,7 @@
 - [`.editorconfig`](#editorconfig)
 - [`.gitattributes`](#gitattributes)
 - [`.dockerignore`](#dockerignore)
+- [DevContainer Setup](#devcontainer-setup)
 - [Optional dotfiles & folders](#optional-dotfiles--folders)
 - [How the generator handles these](#how-the-generator-handles-these)
 - [Validation](#validation)
@@ -21,6 +22,7 @@
 - **.editorconfig** → enforce indentation, charset, LF endings, trim trailing whitespace
 - **.gitattributes** → normalize line endings, mark binary files, improve diffs
 - **.dockerignore** → keep Docker build context lean; exclude `target/`, `node_modules/`, `.git/`, etc.
+- **.devcontainer/** (optional) → reproducible Dev Container with Java 21, Node 22, PostgreSQL
 - **.vscode/** (optional) → recommended extensions/settings (Java, Spring, YAML, Docker)
 - **.nvmrc / .node-version** (optional) → pin Node 22.x for front-end builds
 
@@ -220,6 +222,134 @@ coverage
 
 ---
 
+## DevContainer Setup
+
+A [Dev Container](https://containers.dev/) gives every contributor the same pre-configured environment — Java 21, Node 22, Maven, Docker-in-Docker, and a PostgreSQL sidecar — without installing anything locally beyond VS Code / GitHub Codespaces.
+
+The skill ships two files in `assets/devcontainer/`; the generator copies them to `.devcontainer/` in the project root.
+
+### `.devcontainer/devcontainer.json`
+
+```jsonc
+// Dev Container configuration for Spring Boot + optional front-end + PostgreSQL.
+{
+    "name": "Spring Boot Dev Environment",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+
+    "features": {
+        "ghcr.io/devcontainers/features/java:1": {
+            "version": "21",
+            "installMaven": "true"
+        },
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "22"
+        },
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+    },
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "vscjava.vscode-java-pack",
+                "pivotal.vscode-spring-boot",
+                "vmware.vscode-boot-dev-pack",
+                "redhat.vscode-yaml",
+                "ms-azuretools.vscode-docker",
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode"
+            ],
+            "settings": {
+                "java.compile.nullAnalysis.mode": "automatic",
+                "editor.formatOnSave": true,
+                "files.eol": "\n"
+            }
+        }
+    },
+
+    "postCreateCommand": "./mvnw dependency:go-offline -q || true",
+    "postStartCommand": "echo '✅ Dev container ready — run ./mvnw spring-boot:run'",
+
+    "forwardPorts": [8080, 5173, 5432],
+    "portsAttributes": {
+        "8080": { "label": "Spring Boot",   "onAutoForward": "notify" },
+        "5173": { "label": "Vite Dev Server","onAutoForward": "silent" },
+        "5432": { "label": "PostgreSQL",     "onAutoForward": "silent" }
+    },
+
+    "remoteUser": "vscode"
+}
+```
+
+**Key decisions:**
+
+| Setting | Why |
+|---------|-----|
+| `dockerComposeFile` | Lets the container depend on a PostgreSQL service instead of requiring `spring-boot-docker-compose` to start one |
+| `features/java` | Installs Eclipse Temurin 21 + Maven wrapper support |
+| `features/node` | Installs Node 22 so `npm run dev` works for the front-end |
+| `features/docker-in-docker` | Lets Testcontainers and `docker build` work inside the container |
+| `postCreateCommand` | Pre-fetches Maven dependencies so the first build is fast |
+| `forwardPorts` | Exposes the Spring Boot app (8080), Vite dev server (5173), and PostgreSQL (5432) |
+
+### `.devcontainer/docker-compose.yml`
+
+```yaml
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu
+    volumes:
+      - ..:/workspaces/${localWorkspaceFolderBasename}:cached
+    command: sleep infinity
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
+
+The `postgres` service mirrors the project's root `compose.yaml` so credentials stay consistent. The `app` service is a lightweight Ubuntu container that Dev Container features layer onto.
+
+### Customising the DevContainer
+
+- **No database needed?** Remove the `postgres` service from `docker-compose.yml`, remove `depends_on` from `app`, and delete port `5432` from `forwardPorts`.
+- **No front-end?** Remove the `features/node` block and port `5173`.
+- **Add Redis, Kafka, etc.?** Add the service to `docker-compose.yml` and a matching `forwardPorts` entry.
+- **GitHub Codespaces**: works out of the box — push `.devcontainer/` and open the repo in Codespaces.
+
+### Connecting the app to the DevContainer database
+
+Because the `postgres` service runs as a sibling Docker Compose service, the app connects via `localhost:5432` — the same as local development. Use these properties (or set via `.env`):
+
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/mydb
+spring.datasource.username=user
+spring.datasource.password=password
+```
+
+> **Tip:** With `spring-boot-docker-compose` enabled, Spring Boot may try to start *another* PostgreSQL container from the project root `compose.yaml`. To avoid duplication inside the DevContainer, set `spring.docker.compose.enabled=false` in a `dev` profile or pass `-Dspring.docker.compose.enabled=false`.
+
+---
+
 ## Optional dotfiles & folders
 
 - **`.vscode/extensions.json`** (recommended):
@@ -253,6 +383,7 @@ coverage
   - `.gitattributes`
   - `.dockerignore`
   - optional `.vscode/` recommendations folder
+  - optional `.devcontainer/` setup (`devcontainer.json` + `docker-compose.yml`)
 - Existing files are **not overwritten blindly**:
   - If `.gitignore` exists, we append with a marker `# === dr-jskill additions ===`.
   - For other dotfiles, we create them only if missing.
@@ -275,6 +406,7 @@ If any check fails, adjust the dotfiles and re-run the generator or update your 
 
 ## References
 
+- [Dev Containers Specification](https://containers.dev/)
 - [EditorConfig Specification](https://editorconfig.org/)
 - [gitattributes Documentation](https://git-scm.com/docs/gitattributes)
 - [gitignore Documentation](https://git-scm.com/docs/gitignore)

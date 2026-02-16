@@ -91,7 +91,7 @@ When creating Spring Boot projects:
 4. Use Spring Data JPA for database access
 5. Use PostgreSQL for database - see [Database Best Practices](references/DATABASE.md) for optimization
 6. Use properties files for configuration - see [Configuration Best Practices](references/CONFIGURATION.md)
-7. Set up foundational dotfiles: `.gitignore`, `.env.sample`, `.editorconfig`, `.gitattributes`, `.dockerignore`, optional `.vscode/` - see [Project Setup & Dotfiles](references/PROJECT-SETUP.md)
+7. Set up foundational dotfiles: `.gitignore`, `.env.sample`, `.editorconfig`, `.gitattributes`, `.dockerignore`, optional `.vscode/`, `.devcontainer/` - see [Project Setup & Dotfiles](references/PROJECT-SETUP.md)
 8. Use `spring-boot-docker-compose` for automatic database startup during development - see [Docker Guide](references/DOCKER.md)
 9. Follow RESTful API design principles
 10. Configure proper logging with Logback - see [Logging Best Practices](references/LOGGING.md)
@@ -116,6 +116,9 @@ my-spring-boot-app/
 ├── .vscode/                   # Optional editor recommendations
 │   ├── extensions.json
 │   └── settings.json
+├── .devcontainer/             # Optional Dev Container (Java 21 + Node 22 + PostgreSQL)
+│   ├── devcontainer.json
+│   └── docker-compose.yml
 ├── src/
 │   ├── main/
 │   │   ├── java/
@@ -237,7 +240,7 @@ Once the project is generated, go through the steps above to ensure that the gen
 - [Vanilla JS Development Guide](references/VANILLA-JS.md) - Pure ES6+ with Vite
 
 **Project Setup:**
-- [Project Setup & Dotfiles](references/PROJECT-SETUP.md) - `.gitignore`, `.env.sample`, `.editorconfig`, `.gitattributes`, `.dockerignore`
+- [Project Setup & Dotfiles](references/PROJECT-SETUP.md) - `.gitignore`, `.env.sample`, `.editorconfig`, `.gitattributes`, `.dockerignore`, `.devcontainer/`
 
 **Deployment:**
 - [Docker Deployment Guide](references/DOCKER.md) - Docker, Docker Compose, development automation

@@ -162,6 +162,9 @@ export function applyDotfiles(projectDir) {
   // Optional .vscode recommendations
   copyAssetIfMissing(join('vscode', 'extensions.json'), join(projectDir, '.vscode', 'extensions.json'));
   copyAssetIfMissing(join('vscode', 'settings.json'), join(projectDir, '.vscode', 'settings.json'));
+  // DevContainer setup (Java 21, Node 22, PostgreSQL)
+  copyAssetIfMissing(join('devcontainer', 'devcontainer.json'), join(projectDir, '.devcontainer', 'devcontainer.json'));
+  copyAssetIfMissing(join('devcontainer', 'docker-compose.yml'), join(projectDir, '.devcontainer', 'docker-compose.yml'));
   // Optional Node version pinning if front-end present
   try {
     const nodeVersion = getNodeVersion();
