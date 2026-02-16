@@ -808,7 +808,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 **Controller Tests:**
 
 ```java
-@WebMvcTest(UserController.class) // correct import: org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+@WebMvcTest(UserController.class) // correct import: org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 class UserControllerTest {
 
     @Autowired

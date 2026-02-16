@@ -65,8 +65,8 @@ CREATE TABLE if not exists app_user (
 class TestcontainersConfiguration {
   @Bean
   @ServiceConnection
-  PostgreSQLContainer<?> postgresContainer() {
-    return new PostgreSQLContainer<>("postgres:16-alpine")
+  PostgreSQLContainer postgresContainer() {
+    return new PostgreSQLContainer("postgres:16-alpine")
       .withReuse(true);
   }
 }

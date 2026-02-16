@@ -22,7 +22,7 @@ This guide covers testing best practices for Spring Boot 4.x applications, inclu
 - **@MockBean/@SpyBean are DEPRECATED** - use `@MockitoBean/@MockitoSpyBean` from Spring Framework instead
 - `@ServiceConnection` eliminates need for manual `@DynamicPropertySource` configuration
 - New modular test starter structure (e.g., `spring-boot-starter-webmvc-test`, `spring-boot-starter-data-jpa-test`)
-- **`@WebMvcTest` and `@AutoConfigureMockMvc` moved** to `org.springframework.boot.webmvc.test.autoconfigure.servlet` package — requires `spring-boot-starter-webmvc-test` dependency
+- **`@WebMvcTest` and `@AutoConfigureMockMvc` moved** to `org.springframework.boot.webmvc.test.autoconfigure` package — requires `spring-boot-starter-webmvc-test` dependency
 
 ## Testing Dependencies
 
@@ -71,8 +71,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer; // ✅ TC 2.x package
 class TestcontainersConfiguration {
   @Bean
   @ServiceConnection
-  PostgreSQLContainer<?> postgresContainer() {
-    return new PostgreSQLContainer<>("postgres:16-alpine");
+  PostgreSQLContainer postgresContainer() {
+    return new PostgreSQLContainer("postgres:16-alpine");
   }
 }
 ```
@@ -185,7 +185,7 @@ class UserServiceTest {
 
 Test controllers without loading the full application context. Uses `@MockitoBean` to mock service dependencies.
 
-> ✅ **Spring Boot 4 import:** `org.springframework.boot.webmvc.test.autoconfigure.servlet.WebMvcTest`
+> ✅ **Spring Boot 4 import:** `org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest`
 > ✅ **Dependency:** `spring-boot-starter-webmvc-test` (required — `spring-boot-starter-test` alone no longer provides `@WebMvcTest`). Avoid IDE auto-imports to the old `org.springframework.boot.test.autoconfigure.web.servlet` package or `org.springframework.test.web.servlet.*`.
 
 **Example: Controller Unit Test**
@@ -198,7 +198,7 @@ import com.example.app.service.UserService;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.servlet.WebMvcTest; // ✅ correct package for Boot 4
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest; // ✅ correct package for Boot 4
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -316,8 +316,8 @@ class TestcontainersConfiguration {  // ✅ Note: package-private (no public mod
 
     @Bean
     @ServiceConnection
-    PostgreSQLContainer<?> postgresContainer() {
-        return new PostgreSQLContainer<>("postgres:16-alpine");
+    PostgreSQLContainer postgresContainer() {
+        return new PostgreSQLContainer("postgres:16-alpine");
     }
 }
 ```
@@ -339,6 +339,7 @@ class TestcontainersConfiguration {
 - Test configuration should not be exported outside the test package
 - Follows Spring Boot's convention for test-only configuration
 - Prevents accidental use in production code
+- **Integration tests using `@Import(TestcontainersConfiguration.class)` must be in the same package** (e.g., `com.example.app`), not in sub-packages like `controller` or `repository`
 
 **Using TestcontainersConfiguration in tests:**
 
@@ -369,16 +370,15 @@ Test the complete REST endpoint with real database interactions.
 **Example: UserIntegrationIT.java**
 
 ```java
-package com.example.app.controller;
+package com.example.app;
 
-import com.example.app.TestcontainersConfiguration;
 import com.example.app.domain.User;
 import com.example.app.repository.UserRepository;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -491,7 +491,7 @@ Test repository methods with real database.
 **Example: UserRepositoryIT.java**
 
 ```java
-package com.example.app.repository;
+package com.example.app;
 
 import com.example.app.TestcontainersConfiguration;
 import com.example.app.domain.User;
@@ -639,16 +639,15 @@ This naming convention allows:
 src/test/java/
 └── com/example/app/
     ├── TestcontainersConfiguration.java     # TestContainers config (package-private!)
+    ├── UserIntegrationIT.java               # Integration test (same package as TC config)
+    ├── UserRepositoryIT.java                # Integration test (same package as TC config)
     ├── controller/
-    │   ├── UserControllerTest.java          # Unit test with mocks
-    │   └── UserIntegrationIT.java           # Integration test with TestContainers
-    ├── service/
-    │   └── UserServiceTest.java             # Unit test with mocks
-    └── repository/
-        └── UserRepositoryIT.java            # Integration test with TestContainers
+    │   └── UserControllerTest.java          # Unit test with mocks (@WebMvcTest)
+    └── service/
+        └── UserServiceTest.java             # Unit test with mocks
 ```
 
-**Note:** All integration tests should use `@Import(TestcontainersConfiguration.class)` to access the shared TestContainers configuration.
+**Note:** Integration tests (`*IT.java`) must live in the **same package** as `TestcontainersConfiguration` (e.g., `com.example.app`) because it is package-private. Unit tests with `@WebMvcTest` can live in sub-packages (e.g., `controller/`).
 
 ## Running Tests
 
@@ -814,6 +813,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;   // ❌
 Spring Boot 4 requires **TestContainers 2.0+**, which brings:
 - **Artifact rename:** `org.testcontainers:postgresql` → `org.testcontainers:testcontainers-postgresql`
 - **Package rename:** `org.testcontainers.containers.PostgreSQLContainer` → `org.testcontainers.postgresql.PostgreSQLContainer`
+- **`PostgreSQLContainer` is no longer generic** — use `PostgreSQLContainer` (not `PostgreSQLContainer<?>`)
 - `junit-jupiter` artifact removed — TC 2.x integrates with JUnit 5 directly
 - Improved performance and resource management
 - Better cleanup of containers

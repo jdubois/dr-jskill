@@ -116,7 +116,7 @@ The `junit-jupiter` artifact is no longer needed — TC 2.x integrates with JUni
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 
 // ✅ CORRECT (Spring Boot 4):
-import org.springframework.boot.webmvc.test.autoconfigure.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 ```
 
 Requires `spring-boot-starter-webmvc-test` dependency (not included in `spring-boot-starter-test`).
@@ -163,8 +163,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 
 // NEW (Spring Boot 4):
-import org.springframework.boot.webmvc.test.autoconfigure.servlet.WebMvcTest;
-import org.springframework.boot.webmvc.test.autoconfigure.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 ```
 
 > ⚠️ `spring-boot-starter-test` alone no longer provides `@WebMvcTest`. You **must** add `spring-boot-starter-webmvc-test`.
@@ -214,7 +214,7 @@ class ApplicationTests {
 
 1. `@SpringBootTest` no longer provides MockMVC automatically - add `@AutoConfigureMockMvc`
 2. `@SpringBootTest` no longer provides `TestRestTemplate` - add `@AutoConfigureTestRestTemplate`
-3. `@WebMvcTest` and `@AutoConfigureMockMvc` moved to `org.springframework.boot.webmvc.test.autoconfigure.servlet` package — requires `spring-boot-starter-webmvc-test` dependency
+3. `@WebMvcTest` and `@AutoConfigureMockMvc` moved to `org.springframework.boot.webmvc.test.autoconfigure` package — requires `spring-boot-starter-webmvc-test` dependency
 4. Consider using new `RestTestClient` instead of `TestRestTemplate`
 
 #### TestContainers 2.0
@@ -225,6 +225,7 @@ class ApplicationTests {
 4. **Artifact rename:** `org.testcontainers:postgresql` → `org.testcontainers:testcontainers-postgresql`
 5. **Package rename:** `org.testcontainers.containers.PostgreSQLContainer` → `org.testcontainers.postgresql.PostgreSQLContainer`
 6. `junit-jupiter` artifact removed — TC 2.x integrates with JUnit 5 directly
+7. **`PostgreSQLContainer` is no longer generic** — use `PostgreSQLContainer` (not `PostgreSQLContainer<?>`) and `new PostgreSQLContainer(...)` (not `new PostgreSQLContainer<>(...)`)
 
 #### Maven Enforcer + ArchUnit guardrails (no Lombok, enforce Maven)
 
@@ -598,7 +599,7 @@ For war deployment to Tomcat:
 - [ ] Java 17+ (21+ recommended)
 - [ ] Jakarta EE 11 / Servlet 6.1 dependencies updated
 - [ ] Replace `@MockBean` with `@MockitoBean` in tests
-- [ ] Update `@WebMvcTest`/`@AutoConfigureMockMvc` imports to `org.springframework.boot.webmvc.test.autoconfigure.servlet` and add `spring-boot-starter-webmvc-test` dependency
+- [ ] Update `@WebMvcTest`/`@AutoConfigureMockMvc` imports to `org.springframework.boot.webmvc.test.autoconfigure` and add `spring-boot-starter-webmvc-test` dependency
 - [ ] Add `@AutoConfigureMockMvc` where needed
 - [ ] TestContainers 2.0+ in use (`testcontainers-postgresql` artifact, `org.testcontainers.postgresql` package)
 - [ ] No Undertow references
