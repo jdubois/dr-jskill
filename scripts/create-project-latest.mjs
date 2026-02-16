@@ -50,15 +50,15 @@ let dependencies;
 let description;
 switch (projectType) {
   case 'basic':
-    dependencies = 'web,actuator,devtools';
+    dependencies = 'web,actuator,devtools,native';
     description = 'Basic+Spring+Boot+application';
     break;
   case 'web':
-    dependencies = 'web,actuator,validation,devtools';
+    dependencies = 'web,actuator,validation,devtools,native';
     description = 'Spring+Boot+web+application';
     break;
   case 'fullstack':
-    dependencies = 'web,data-jpa,actuator,validation,devtools,postgresql,docker-compose,testcontainers';
+    dependencies = 'web,data-jpa,actuator,validation,devtools,postgresql,docker-compose,testcontainers,native';
     description = 'Full-stack+Spring+Boot+application';
     break;
   default:

@@ -28,7 +28,7 @@ const packageName = positional[3] || `${groupId}.fullstack`;
 const javaVersion = positional[4] || getJavaVersion();
 const bootVersion = flags.bootVersion || await resolveBootVersion();
 
-let dependencies = 'web,data-jpa,actuator,validation,devtools,postgresql,docker-compose,testcontainers';
+let dependencies = 'web,data-jpa,actuator,validation,devtools,postgresql,docker-compose,testcontainers,native';
 if (flags.flyway) {
   dependencies = joinDependencies(dependencies, 'flyway');
 }

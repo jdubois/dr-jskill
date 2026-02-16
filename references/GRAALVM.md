@@ -72,8 +72,9 @@ COPY frontend ./frontend
 RUN ./mvnw -Pnative package -DskipTests
 
 # Move native executable to a known path (artifact name varies per project)
-RUN find target -maxdepth 1 -type f -executable ! -name '*.jar' ! -name 'mvnw' -print -quit \
-    | xargs -I{} cp {} native-app
+RUN find target -maxdepth 1 -type f ! -name '*.jar' ! -name '*.jar.original' -size +1M -print -quit \
+    | xargs -I{} cp {} native-app && \
+    test -f native-app || { echo "ERROR: Native executable not found in target/"; ls -la target/; exit 1; }
 
 # Runtime stage with minimal base image
 FROM oraclelinux:9-slim

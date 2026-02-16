@@ -28,7 +28,7 @@ const packageName = positional[3] || `${groupId}.app`;
 const javaVersion = positional[4] || getJavaVersion();
 const bootVersion = flags.bootVersion || await resolveBootVersion();
 
-let dependencies = 'web,actuator,devtools';
+let dependencies = 'web,actuator,devtools,native';
 if (flags.flyway) {
   dependencies = joinDependencies(dependencies, 'flyway');
 }
