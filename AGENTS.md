@@ -6,7 +6,7 @@
   - Node.js 22.x and npm 10.x are prerequisites.
 - NEVER propose to use Lombok in the generated projects (add Maven Enforcer/ArchUnit checks in generated templates).
 - Build tool is **Maven only** (no Gradle).
-- **Spring Boot SQL Initialization** is the supported migration tool (do not offer Liquibase or Flyway).
+- **Hibernate ddl-auto** is the supported database initialization mechanism (`spring.jpa.hibernate.ddl-auto`). Do not offer Liquibase or Flyway.
 - Do not add OpenAPI/springdoc, feature toggles, Buildpacks, or Jib.
 - **Ship dotfiles**: ensure `.gitignore`, `.env.sample`, `.editorconfig`, `.gitattributes`, `.dockerignore`, optional `.vscode/` are added to generated projects (see `references/PROJECT-SETUP.md`).
 

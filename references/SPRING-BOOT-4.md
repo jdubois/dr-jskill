@@ -45,7 +45,7 @@ This guide covers the key changes in Spring Boot 4.0 and what to consider when c
 
 ⚠️ **Most Common Mistakes** - Always verify these when generating code:
 
-0. **Maven-only / No Lombok / Spring Boot SQL Initialization**: Do not generate Gradle builds; enforce no Lombok usage via Maven Enforcer + ArchUnit (snippet below). Use Spring Boot SQL Initialization only (no Flyway, no Liquibase).
+0. **Maven-only / No Lombok / Hibernate ddl-auto**: Do not generate Gradle builds; enforce no Lombok usage via Maven Enforcer + ArchUnit (snippet below). Use Hibernate ddl-auto for schema management (no Flyway, no Liquibase).
 
 ### 1. Jackson 3 Annotations Stay in `com.fasterxml.jackson.annotation`
 

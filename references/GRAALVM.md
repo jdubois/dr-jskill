@@ -7,7 +7,6 @@
 - [Spring Boot Configuration for Native Images](#spring-boot-configuration-for-native-images)
 - [Testing Native Images](#testing-native-images)
 - [Troubleshooting](#troubleshooting)
-- [SQL Initialization Native Image Configuration](#sql-initialization-native-image-configuration)
 - [Advanced Topics](#advanced-topics)
 - [CI/CD Integration](#cicd-integration)
 - [References](#references)
@@ -334,15 +333,7 @@ Error: Class MyClass cannot be found for reflection
 
 **Solution:** Add `@RegisterReflectionForBinding` or create a `RuntimeHintsRegistrar`.
 
-**Issue 3: SQL Initialization Scripts Not Found in Native Image**
-
-```
-org.springframework.jdbc.datasource.init.UncategorizedScriptException: Failed to execute SQL script
-```
-
-GraalVM native images only include resources that are explicitly registered. By default, `schema.sql` and `data.sql` in `src/main/resources/` are **not** included in the native image. See the [SQL Initialization Native Image Configuration](#sql-initialization-native-image-configuration) section below for the fix.
-
-**Issue 4: Resource Not Found**
+**Issue 3: Resource Not Found**
 
 ```
 Error: Resource 'config/data.json' not found
@@ -354,7 +345,7 @@ Error: Resource 'config/data.json' not found
 hints.resources().registerPattern("config/*.json");
 ```
 
-**Issue 5: Slow Build Times**
+**Issue 4: Slow Build Times**
 
 Native compilation is CPU and memory intensive. Strategies to improve:
 
@@ -374,68 +365,6 @@ Before deploying native images, verify:
 - [ ] Docker image size is reasonable (< 200 MB)
 - [ ] Memory usage is stable under load
 - [ ] No reflection or resource loading errors in logs
-- [ ] SQL initialization scripts execute successfully (if using `schema.sql`/`data.sql`)
-
-## SQL Initialization Native Image Configuration
-
-GraalVM native images use ahead-of-time (AOT) compilation and only include resources that are explicitly registered. Spring Boot SQL initialization files (`schema.sql`, `data.sql`) must be registered or they will be missing at runtime.
-
-Use **both** approaches below for maximum compatibility:
-
-### 1. RuntimeHints Configuration (Spring Boot approach)
-
-Create a configuration class that registers SQL initialization resources with Spring's AOT engine:
-
-```java
-package com.example.app.config;
-
-import org.springframework.aot.hint.RuntimeHints;
-import org.springframework.aot.hint.RuntimeHintsRegistrar;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.ImportRuntimeHints;
-
-/**
- * GraalVM Native Image configuration for Spring Boot SQL Initialization.
- * Registers schema.sql and data.sql as resources so they are included
- * in the native image.
- */
-@Configuration
-@ImportRuntimeHints(SqlInitNativeConfiguration.SqlInitResourcesRuntimeHints.class)
-public class SqlInitNativeConfiguration {
-
-    static class SqlInitResourcesRuntimeHints implements RuntimeHintsRegistrar {
-
-        @Override
-        public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
-            hints.resources().registerPattern("schema.sql");
-            hints.resources().registerPattern("data.sql");
-        }
-    }
-}
-```
-
-### 2. Native Image Resource Configuration (GraalVM approach)
-
-Create `src/main/resources/META-INF/native-image/<groupId>/<artifactId>/resource-config.json`:
-
-```json
-{
-  "resources": {
-    "includes": [
-      {
-        "pattern": "schema\\.sql"
-      },
-      {
-        "pattern": "data\\.sql"
-      }
-    ]
-  }
-}
-```
-
-Replace `<groupId>/<artifactId>` with your project's coordinates (e.g., `com.example/my-app`).
-
-> ⚠️ **Both files should be created when the project uses SQL initialization with native image support.** The RuntimeHints approach integrates with Spring Boot's AOT processing, while the `resource-config.json` approach is a GraalVM-level fallback that works even outside the Spring context.
 
 ## Advanced Topics
 
