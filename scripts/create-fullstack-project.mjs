@@ -49,7 +49,7 @@ await downloadAndExtractProject({
   javaVersion,
   dependencies,
 });
-applyDotfiles(projectName, { database: true });
+applyDotfiles(projectName, { database: true, frontend: true });
 
 console.log(`✓ Full-stack Spring Boot application created successfully in ./${projectName}`);
 console.log('Includes:');

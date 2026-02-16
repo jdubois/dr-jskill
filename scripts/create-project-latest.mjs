@@ -88,7 +88,8 @@ await downloadAndExtractProject({
 
 // Apply dotfiles and editor-recommended settings
 const hasDatabase = projectType === 'fullstack';
-applyDotfiles(projectName, { database: hasDatabase });
+const hasFrontend = projectType === 'fullstack';
+applyDotfiles(projectName, { database: hasDatabase, frontend: hasFrontend });
 
 console.log('');
 console.log(`✓ Spring Boot project created successfully in ./${projectName}`);

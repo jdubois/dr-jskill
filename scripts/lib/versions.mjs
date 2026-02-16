@@ -249,12 +249,27 @@ function writeTextFileIfMissing(destPath, content) {
 }
 
 /**
+ * Remove the frontend COPY lines from a Dockerfile when no frontend is present.
+ */
+function stripFrontendCopyLines(filePath) {
+  if (!existsSync(filePath)) return;
+  let content = readFileSync(filePath, 'utf8');
+  // Remove the comment + COPY frontend block (2-3 lines)
+  content = content.replace(
+    /# Copy frontend directory[^\n]*\n(?:#[^\n]*\n)*COPY frontend [^\n]*\n/g,
+    ''
+  );
+  writeFileSync(filePath, content, 'utf8');
+}
+
+/**
  * Apply additional dotfiles after project extraction.
  * @param {string} projectDir
- * @param {{ database?: boolean }} [options]
+ * @param {{ database?: boolean, frontend?: boolean }} [options]
  */
 export function applyDotfiles(projectDir, options = {}) {
   const hasDatabase = options.database === true;
+  const hasFrontend = options.frontend === true;
   mergeGitignore(projectDir);
   copyAssetIfMissing('env.sample', join(projectDir, '.env.sample'));
   copyAssetIfMissing('editorconfig', join(projectDir, '.editorconfig'));
@@ -263,6 +278,10 @@ export function applyDotfiles(projectDir, options = {}) {
   // Docker deployment files (Dockerfiles always, compose files only with database)
   copyAssetIfMissing('Dockerfile', join(projectDir, 'Dockerfile'));
   copyAssetIfMissing('Dockerfile-native', join(projectDir, 'Dockerfile-native'));
+  if (!hasFrontend) {
+    stripFrontendCopyLines(join(projectDir, 'Dockerfile'));
+    stripFrontendCopyLines(join(projectDir, 'Dockerfile-native'));
+  }
   if (hasDatabase) {
     copyAssetIfMissing('compose.yaml', join(projectDir, 'compose.yaml'));
     copyAssetIfMissing('docker-compose.yml', join(projectDir, 'docker-compose.yml'));
