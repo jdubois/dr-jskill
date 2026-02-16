@@ -22,7 +22,7 @@
 - **.editorconfig** → enforce indentation, charset, LF endings, trim trailing whitespace
 - **.gitattributes** → normalize line endings, mark binary files, improve diffs
 - **.dockerignore** → keep Docker build context lean; exclude `target/`, `node_modules/`, `.git/`, etc.
-- **.devcontainer/** (optional) → reproducible Dev Container with Java 21, Node 22, PostgreSQL
+- **.devcontainer/** (optional) → reproducible Dev Container with Java 25, Node 22, PostgreSQL
 - **.vscode/** (optional) → recommended extensions/settings (Java, Spring, YAML, Docker)
 - **.nvmrc / .node-version** (optional) → pin Node 22.x for front-end builds
 
@@ -224,7 +224,7 @@ coverage
 
 ## DevContainer Setup
 
-A [Dev Container](https://containers.dev/) gives every contributor the same pre-configured environment — Java 21, Node 22, Maven, Docker-in-Docker, and a PostgreSQL sidecar — without installing anything locally beyond VS Code / GitHub Codespaces.
+A [Dev Container](https://containers.dev/) gives every contributor the same pre-configured environment — Java 25, Node 22, Maven, Docker-in-Docker, and a PostgreSQL sidecar — without installing anything locally beyond VS Code / GitHub Codespaces.
 
 The skill ships two files in `assets/devcontainer/`; the generator copies them to `.devcontainer/` in the project root.
 
@@ -240,7 +240,7 @@ The skill ships two files in `assets/devcontainer/`; the generator copies them t
 
     "features": {
         "ghcr.io/devcontainers/features/java:1": {
-            "version": "21",
+            "version": "25",
             "installMaven": "true"
         },
         "ghcr.io/devcontainers/features/node:1": {
@@ -287,7 +287,7 @@ The skill ships two files in `assets/devcontainer/`; the generator copies them t
 | Setting | Why |
 |---------|-----|
 | `dockerComposeFile` | Lets the container depend on a PostgreSQL service instead of requiring `spring-boot-docker-compose` to start one |
-| `features/java` | Installs Eclipse Temurin 21 + Maven wrapper support |
+| `features/java` | Installs Eclipse Temurin 25 + Maven wrapper support |
 | `features/node` | Installs Node 22 so `npm run dev` works for the front-end |
 | `features/docker-in-docker` | Lets Testcontainers and `docker build` work inside the container |
 | `postCreateCommand` | Pre-fetches Maven dependencies so the first build is fast |

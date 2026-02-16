@@ -28,7 +28,7 @@ node scripts/create-project-latest.mjs my-app com.mycompany my-app com.mycompany
 - Group ID: com.example
 - Artifact ID: (same as project name)
 - Package Name: com.example.app
-- Java Version: 21
+- Java Version: 25
 - Project Type: web (options: basic, web, fullstack)
 
 **Project Types:**
@@ -40,7 +40,7 @@ node scripts/create-project-latest.mjs my-app com.mycompany my-app com.mycompany
 - ✓ Automatically fetches the latest Spring Boot version
 - ✓ Supports Spring Boot 4.x and beyond
 - ✓ Flexible project types
-- ✓ Uses Java 21 by default
+- ✓ Uses Java 25 by default
 
 ### 1. create-basic-project.mjs
 Creates a minimal Spring Boot project with essential dependencies.
@@ -52,7 +52,7 @@ node scripts/create-basic-project.mjs [project-name] [group-id] [artifact-id] [p
 
 **Example:**
 ```bash
-node scripts/create-basic-project.mjs my-app com.mycompany my-app com.mycompany.myapp 21
+node scripts/create-basic-project.mjs my-app com.mycompany my-app com.mycompany.myapp 25
 ```
 
 **Default values:**
@@ -60,7 +60,7 @@ node scripts/create-basic-project.mjs my-app com.mycompany my-app com.mycompany.
 - Group ID: com.example
 - Artifact ID: (same as project name)
 - Package Name: com.example.app
-- Java Version: 21
+- Java Version: 25
 
 **Included dependencies:**
 - Spring Web
@@ -77,7 +77,7 @@ node scripts/create-web-project.mjs [project-name] [group-id] [artifact-id] [pac
 
 **Example:**
 ```bash
-node scripts/create-web-project.mjs my-web-app com.mycompany my-web-app com.mycompany.webapp 21
+node scripts/create-web-project.mjs my-web-app com.mycompany my-web-app com.mycompany.webapp 25
 ```
 
 **Default values:**
@@ -85,7 +85,7 @@ node scripts/create-web-project.mjs my-web-app com.mycompany my-web-app com.myco
 - Group ID: com.example
 - Artifact ID: (same as project name)
 - Package Name: com.example.webapp
-- Java Version: 21
+- Java Version: 25
 
 **Included dependencies:**
 - Spring Web
@@ -103,7 +103,7 @@ node scripts/create-fullstack-project.mjs [project-name] [group-id] [artifact-id
 
 **Example:**
 ```bash
-node scripts/create-fullstack-project.mjs my-fullstack-app com.mycompany my-fullstack-app com.mycompany.fullstack 21
+node scripts/create-fullstack-project.mjs my-fullstack-app com.mycompany my-fullstack-app com.mycompany.fullstack 25
 ```
 
 **Default values:**
@@ -111,7 +111,7 @@ node scripts/create-fullstack-project.mjs my-fullstack-app com.mycompany my-full
 - Group ID: com.example
 - Artifact ID: (same as project name)
 - Package Name: com.example.fullstack
-- Java Version: 21
+- Java Version: 25
 
 **Included dependencies:**
 - Spring Web
@@ -233,7 +233,7 @@ cd my-project
 ### GraalVM Native Build
 ```bash
 cd my-project
-./mvnw -Pnative package
+./mvnw native:compile
 ./target/my-project
 ```
 

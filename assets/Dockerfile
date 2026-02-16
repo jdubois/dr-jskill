@@ -2,7 +2,7 @@
 # Uses Eclipse Temurin official Java images for optimal performance
 
 # Build stage
-FROM eclipse-temurin:21-jdk-jammy AS build
+FROM eclipse-temurin:25-jdk-jammy AS build
 
 # Set working directory
 WORKDIR /app
@@ -27,7 +27,7 @@ COPY frontend ./frontend
 RUN ./mvnw clean package -DskipTests
 
 # Runtime stage
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 
 # Install curl for healthchecks
 RUN apt-get update && \

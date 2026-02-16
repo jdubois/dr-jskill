@@ -25,7 +25,7 @@ This guide covers building GraalVM native images for Spring Boot 4 applications 
 
 1. Docker installed and running
 2. Spring Boot 4 application with Maven
-3. GraalVM 25+ (automatically handled in Dockerfile)
+3. GraalVM 26+ (automatically handled in Dockerfile)
 4. Sufficient build resources (native compilation is resource-intensive)
 
 ## Docker-Based Native Builds (Recommended)
@@ -44,10 +44,10 @@ Use the `Dockerfile-native` for building native images with Docker:
 ```dockerfile
 # Multi-stage Dockerfile for GraalVM Native Image
 # Builds and runs a native Spring Boot application
-# Requires GraalVM 25+ for Spring Boot 4
+# Requires GraalVM 26+ for Spring Boot 4
 
-# Build stage with GraalVM 25 (includes native-image toolchain)
-FROM ghcr.io/graalvm/graalvm-community:25-ol9 AS build
+# Build stage with GraalVM 26 (includes native-image toolchain, JDK 25)
+FROM ghcr.io/graalvm/graalvm-community:26-ol9 AS build
 
 # Set working directory
 WORKDIR /app
@@ -68,13 +68,17 @@ COPY src ./src
 # If no frontend/ exists, comment out or remove this line
 COPY frontend ./frontend
 
-# Build native image (full lifecycle: compile → process-aot → native compile)
-RUN ./mvnw -Pnative package -DskipTests
+# Build native image (compile → process-aot → native compile)
+RUN ./mvnw native:compile -DskipTests
 
 # Move native executable to a known path (artifact name varies per project)
-RUN find target -maxdepth 1 -type f ! -name '*.jar' ! -name '*.jar.original' -size +1M -print -quit \
-    | xargs -I{} cp {} native-app && \
-    test -f native-app || { echo "ERROR: Native executable not found in target/"; ls -la target/; exit 1; }
+RUN if [ -f target/$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout 2>/dev/null) ]; then \
+      cp target/$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout 2>/dev/null) native-app; \
+    else \
+      native_exe=$(find target -maxdepth 3 -type f -executable ! -name '*.jar' ! -name '*.jar.original' | head -1) && \
+      if [ -n "$native_exe" ]; then cp "$native_exe" native-app; \
+      else echo "ERROR: Native executable not found in target/"; ls -laR target/ | head -40; exit 1; fi; \
+    fi
 
 # Runtime stage with minimal base image
 FROM oraclelinux:9-slim
@@ -112,9 +116,9 @@ CMD ["./native-app"]
 
 **Key Points:**
 
-1. **Build Stage**: Uses GraalVM 25 Community Edition with Oracle Linux 9 (includes native-image toolchain)
-2. **Full Lifecycle**: Uses `package` (not `native:compile`) to ensure `process-aot` runs correctly
-3. **Portable Copy**: Uses `find` to locate the native binary by its executable flag, so the Dockerfile works regardless of artifact name
+1. **Build Stage**: Uses GraalVM 26 Community Edition with Oracle Linux 9 (includes native-image toolchain, JDK 25)
+2. **Native Compile**: Uses `native:compile` to directly invoke the GraalVM native image compilation
+3. **Portable Copy**: First tries `target/<artifactId>` (the default native output), then falls back to `find` to locate any executable binary
 4. **Multi-Stage**: Final image is minimal (Oracle Linux 9 Slim + native executable)
 5. **Non-Root User**: Runs as unprivileged user for security
 6. **Healthcheck**: Standard Spring Boot Actuator health endpoint
@@ -203,7 +207,7 @@ Ensure your `pom.xml` includes the `start-class` property and the native profile
 
 ```xml
 <properties>
-    <java.version>21</java.version>
+    <java.version>25</java.version>
     <!-- Use your actual main class: {CamelCaseArtifactId}Application -->
     <start-class>com.example.app.MyAppApplication</start-class>
 </properties>
@@ -216,6 +220,22 @@ Ensure your `pom.xml` includes the `start-class` property and the native profile
                 <plugin>
                     <groupId>org.graalvm.buildtools</groupId>
                     <artifactId>native-maven-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>build-native</id>
+                            <goals>
+                                <goal>compile-no-fork</goal>
+                            </goals>
+                            <phase>package</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <configuration>
+                        <classifier>exec</classifier>
+                    </configuration>
                 </plugin>
             </plugins>
         </build>
@@ -265,7 +285,7 @@ public class MyRuntimeHints implements RuntimeHintsRegistrar {
 
 ```bash
 # Build native image locally (requires GraalVM installed)
-./mvnw -Pnative package -DskipTests
+./mvnw native:compile -DskipTests
 
 # Run the native executable (name matches your artifactId)
 ./target/myapp

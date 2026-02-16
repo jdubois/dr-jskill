@@ -14,7 +14,7 @@ Centralized versions live in `versions.json`. All scripts read from it via `scri
 
 ## Prerequisites
 
-1. Java 21 installed
+1. Java 25 installed
 2. Node.js 22.x and NPM 10.x (for front-end development)
 3. Docker installed and running
 
@@ -117,7 +117,7 @@ my-spring-boot-app/
 ├── .vscode/                   # Optional editor recommendations
 │   ├── extensions.json
 │   └── settings.json
-├── .devcontainer/             # Optional Dev Container (Java 21 + Node 22 + PostgreSQL)
+├── .devcontainer/             # Optional Dev Container (Java 25 + Node 22 + PostgreSQL)
 │   ├── devcontainer.json
 │   └── docker-compose.yml
 ├── src/
@@ -191,7 +191,7 @@ Spring Boot automatically manages Docker containers during development via `spri
 
 ## GraalVM Native Images
 
-Build native images via Docker (no local GraalVM needed) or locally with `./mvnw -Pnative package`. See the [GraalVM Guide](references/GRAALVM.md) for configuration, runtime hints, testing, and CI/CD integration.
+Build native images via Docker (no local GraalVM needed) or locally with `./mvnw native:compile`. See the [GraalVM Guide](references/GRAALVM.md) for configuration, runtime hints, testing, and CI/CD integration.
 
 ## Azure Deployment
 
@@ -209,7 +209,7 @@ Deploy to Azure Container Apps with Azure Database for PostgreSQL. See the [Azur
 | 6 | Front-end bundle served | `curl http://localhost:8080/index.html` (if frontend added) |
 | 7 | Front-end dev server | `cd frontend && npm run dev` |
 | 8 | Docker build (JVM) | `docker build -t myapp:latest .` |
-| 9 | Native build | `./mvnw -Pnative package` (GraalVM 25+) |
+| 9 | Native build | `./mvnw native:compile` (GraalVM 26+) |
 | 10 | Docker native build | `docker build -f Dockerfile-native -t myapp-native:latest .` |
 | 11 | SBOM & vuln scan | `mvn -B verify cyclonedx:makeAggregateBom dependency-check:check` |
 

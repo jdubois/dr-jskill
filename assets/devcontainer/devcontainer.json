@@ -6,10 +6,10 @@
     "service": "app",
     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 
-    // JDK 21 + Node 22 features
+    // JDK 25 + Node 22 features
     "features": {
         "ghcr.io/devcontainers/features/java:1": {
-            "version": "21",
+            "version": "25",
             "installMaven": "true"
         },
         "ghcr.io/devcontainers/features/node:1": {

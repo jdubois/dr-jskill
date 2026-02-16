@@ -18,7 +18,7 @@ Centralize versions in `versions.json`. Scripts load from `scripts/lib/versions.
 To update all versions of tools, libraries, and frameworks in this skill, update the following:
 
 ### Backend & Java
-1. **Java version**: Currently Java 21
+1. **Java version**: Currently Java 25
    - Update in: `SKILL.md`, `assets/Dockerfile`, `assets/Dockerfile-native`, all script files
    - Check latest LTS at: https://adoptium.net/
 
@@ -31,7 +31,7 @@ To update all versions of tools, libraries, and frameworks in this skill, update
    - Update references in: `references/TEST.md`, `references/DOCKER.md`, `references/DATABASE.md`
    - Check latest at: https://www.postgresql.org/
 
-4. **Eclipse Temurin (Docker base image)**: Currently 21
+4. **Eclipse Temurin (Docker base image)**: Currently 25
    - Update in: `assets/Dockerfile`, `assets/Dockerfile-native`
    - Check latest at: https://hub.docker.com/_/eclipse-temurin
 
@@ -39,7 +39,7 @@ To update all versions of tools, libraries, and frameworks in this skill, update
    - Update references in: `references/SPRING-BOOT-4.md`
    - Check latest at: https://maven.apache.org/
 
-6. **GraalVM**: Currently 25+ (for native images)
+6. **GraalVM**: Currently 26+ (for native images)
    - Update references in: `references/SPRING-BOOT-4.md`
    - Check latest at: https://www.graalvm.org/
 

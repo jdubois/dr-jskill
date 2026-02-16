@@ -20,13 +20,13 @@ function getVersionValue(key, defaultValue = '') {
   return value != null && String(value).trim() !== '' ? String(value) : defaultValue;
 }
 
-export function getJavaVersion() { return getVersionValue('javaVersion', '21'); }
+export function getJavaVersion() { return getVersionValue('javaVersion', '25'); }
 export function getBootPreferredMajor() { return getVersionValue('springBootPreferredMajor', '4'); }
 export function getBootFallback() { return getVersionValue('springBootFallback', '4.0.2'); }
 export function getPostgresVersion() { return getVersionValue('postgresVersion', '16'); }
-export function getTemurinVersion() { return getVersionValue('temurinVersion', '21'); }
+export function getTemurinVersion() { return getVersionValue('temurinVersion', '25'); }
 export function getMavenMinVersion() { return getVersionValue('mavenMinVersion', '3.8.0'); }
-export function getGraalvmVersion() { return getVersionValue('graalvmVersion', '25'); }
+export function getGraalvmVersion() { return getVersionValue('graalvmVersion', '26'); }
 export function getNodeVersion() { return getVersionValue('nodeVersion', '22.14.0'); }
 export function getNpmVersion() { return getVersionValue('npmVersion', '10.10.0'); }
 export function getViteVersion() { return getVersionValue('viteVersion', '5'); }

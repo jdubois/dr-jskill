@@ -23,9 +23,9 @@ This guide covers the key changes in Spring Boot 4.0 and what to consider when c
 
 ### Minimum Requirements
 
-1. Java: 17+ (Java 21+ LTS recommended for production)
+1. Java: 17+ (Java 25 recommended for production)
 2. Kotlin: 2.2+ (if using Kotlin)
-3. GraalVM: 25+ (for native images)
+3. GraalVM: 26+ (for native images)
 4. Jakarta EE: 11 baseline (Servlet 6.1+)
 5. Maven: 3.8+
 6. Gradle: 8.14+ or 9.x
@@ -128,7 +128,7 @@ Spring Boot 4's `process-aot` goal (used for native images and AOT processing) m
 **✅ CORRECT - Always add `start-class` property to `pom.xml`:**
 ```xml
 <properties>
-    <java.version>21</java.version>
+    <java.version>25</java.version>
     <!-- Use your actual main class: {CamelCaseArtifactId}Application -->
     <start-class>com.example.app.MyAppApplication</start-class>
 </properties>
@@ -597,7 +597,7 @@ For war deployment to Tomcat:
 
 ### For New Projects
 1. ✅ Start with Spring Boot 4.0.x directly
-2. ✅ Use Java 21+ for LTS support
+2. ✅ Use Java 25+ for modern features
 3. ✅ Use `@MockitoBean` from the start (not `@MockBean`)
 4. ✅ Use technology-specific starters (not classic)
 5. ✅ Plan for Jackson 3 API usage
@@ -614,7 +614,7 @@ For war deployment to Tomcat:
 
 ### Quick Migration Checklist
 
-- [ ] Java 17+ (21+ recommended)
+- [ ] Java 17+ (25 recommended)
 - [ ] `<start-class>` property set in `pom.xml` (required for `process-aot`)
 - [ ] Jakarta EE 11 / Servlet 6.1 dependencies updated
 - [ ] Replace `@MockBean` with `@MockitoBean` in tests
@@ -631,7 +631,7 @@ For war deployment to Tomcat:
 
 ## Best Practices for Spring Boot 4 Projects
 
-1. **Use Java 21+** for long-term support and modern features
+1. **Use Java 25+** for modern features and native image support
 2. **Modular starters** - Use technology-specific starters, not classic
 3. **@MockitoBean** - Adopt from the start, avoid deprecated `@MockBean`
 4. **TestContainers 2.0** - Use `@ServiceConnection` for simplified testing
