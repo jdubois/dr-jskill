@@ -28,7 +28,7 @@ export function getTemurinVersion() { return getVersionValue('temurinVersion', '
 export function getMavenMinVersion() { return getVersionValue('mavenMinVersion', '3.8.0'); }
 export function getGraalvmVersion() { return getVersionValue('graalvmVersion', '25'); }
 export function getNodeVersion() { return getVersionValue('nodeVersion', '22.14.0'); }
-export function getNpmVersion() { return getVersionValue('npmVersion', '10.10.0'); }
+export function getNpmVersion() { return getVersionValue('npmVersion', '10.9.4'); }
 export function getViteVersion() { return getVersionValue('viteVersion', '5'); }
 export function getMavenFrontendPluginVersion() { return getVersionValue('mavenFrontendPluginVersion', '1.15.1'); }
 export function getVueVersion() { return getVersionValue('vueVersion', '3'); }

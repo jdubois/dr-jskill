@@ -48,7 +48,7 @@ To update all versions of tools, libraries, and frameworks in this skill, update
    - Update in: `references/VUE.md`, `references/REACT.md`, `references/ANGULAR.md`, `references/VANILLA-JS.md`
    - Check latest LTS at: https://nodejs.org/
 
-8. **npm version**: Currently 10.10.0
+8. **npm version**: Currently 10.9.4
    - Update in: `references/VUE.md`, `references/REACT.md`, `references/ANGULAR.md`, `references/VANILLA-JS.md`
    - Check latest at: https://www.npmjs.com/package/npm
 

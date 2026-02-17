@@ -7,7 +7,7 @@
   "mavenMinVersion": "3.8.0",
   "graalvmVersion": "25",
   "nodeVersion": "22.14.0",
-  "npmVersion": "10.10.0",
+  "npmVersion": "10.9.4",
   "viteVersion": "5",
   "mavenFrontendPluginVersion": "1.15.1",
   "vueVersion": "3",
