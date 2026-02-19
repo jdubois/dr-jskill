@@ -99,7 +99,7 @@ When creating Spring Boot projects:
 13. Add Spring Security only when needed - see [Security Guide](references/SECURITY.md) for best practices
 14. Configure Docker for containerized deployments - see [Docker Guide](references/DOCKER.md)
 15. Enable GraalVM native image support for faster startup - see [GraalVM Guide](references/GRAALVM.md)
-16. **Do NOT** initialize a Git repository, run `git init`, `git add`, or `git commit`. The user manages version control themselves.
+16. The user must review changes before they are committed to git. Ask the user before initializing a Git repository, or running git commands.
 
 ## Project Structure
 
