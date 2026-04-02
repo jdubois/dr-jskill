@@ -24,9 +24,9 @@
 `src/main/resources/application.properties`:
 ```properties
 # Datasource
-spring.datasource.url=jdbc:postgresql://localhost:5432/mydb
-spring.datasource.username=user
-spring.datasource.password=${DATABASE_PASSWORD:password}
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/mydb}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:user}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:password}
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 # JPA / Hibernate
@@ -218,7 +218,7 @@ public AppUser findByLogin(String login) {
 
 ## Local Developer Experience
 - Enable `spring-boot-docker-compose` (Boot 3.1+) to auto-start `compose.yaml` on `./mvnw spring-boot:run`.
-- Provide `.env.sample` with placeholders: `DATABASE_PASSWORD`, etc. (see [Project Setup](PROJECT-SETUP.md)).
+- Provide `.env.sample` with placeholders: `SPRING_DATASOURCE_PASSWORD`, etc. (see [Project Setup](PROJECT-SETUP.md)).
 
 ## Observability
 - Expose Postgres metrics via `pg_stat_statements`; integrate with Micrometer if needed.

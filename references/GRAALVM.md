@@ -132,7 +132,7 @@ docker run -p 8080:8080 myapp-native:latest
 # With environment variables
 docker run -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
-  -e DATABASE_URL=jdbc:postgresql://postgres:5432/mydb \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/mydb \
   myapp-native:latest
 ```
 

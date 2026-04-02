@@ -53,9 +53,9 @@ logging.level.com.example.myapp=DEBUG
 logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n
 
 # Database Configuration
-spring.datasource.url=jdbc:postgresql://localhost:5432/mydb
-spring.datasource.username=user
-spring.datasource.password=password
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/mydb}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:user}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:password}
 spring.datasource.hikari.maximum-pool-size=10
 spring.datasource.hikari.minimum-idle=5
 
@@ -128,9 +128,9 @@ spring.jpa.hibernate.ddl-auto=validate
 logging.level.com.example.myapp=INFO
 
 # Use environment variables for sensitive data
-spring.datasource.url=${DATABASE_URL}
-spring.datasource.username=${DATABASE_USERNAME}
-spring.datasource.password=${DATABASE_PASSWORD}
+spring.datasource.url=${SPRING_DATASOURCE_URL}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
 ```
 
 ### Activating Profiles
@@ -206,9 +206,9 @@ Spring Boot loads configuration in the following order (later sources override e
 
 ```properties
 # application-prod.properties
-spring.datasource.url=${DATABASE_URL}
-spring.datasource.username=${DATABASE_USERNAME}
-spring.datasource.password=${DATABASE_PASSWORD}
+spring.datasource.url=${SPRING_DATASOURCE_URL}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
 
 # Custom application properties
 app.api.key=${API_KEY}
@@ -237,9 +237,9 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DATABASE_URL: jdbc:postgresql://postgres:5432/mydb
-      DATABASE_USERNAME: user
-      DATABASE_PASSWORD: ${DB_PASSWORD}  # From .env file
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mydb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}  # From .env file
     env_file:
       - .env  # Load additional variables from file
 ```
@@ -391,7 +391,7 @@ app.api.key=abc123xyz
 
 ```properties
 # application.properties - CORRECT!
-spring.datasource.password=${DATABASE_PASSWORD}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
 app.api.key=${API_KEY}
 ```
 
@@ -403,7 +403,7 @@ For local development, use one of these approaches:
 
 ```bash
 # .bashrc or .zshrc
-export DATABASE_PASSWORD=devpassword
+export SPRING_DATASOURCE_PASSWORD=devpassword
 export API_KEY=dev-api-key
 ```
 

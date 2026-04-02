@@ -111,9 +111,9 @@ dependency-check-report.*
 SPRING_PROFILES_ACTIVE=dev
 
 # Database (PostgreSQL)
-DATABASE_URL=jdbc:postgresql://localhost:5432/mydb
-DATABASE_USERNAME=user
-DATABASE_PASSWORD=change-me
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/mydb
+SPRING_DATASOURCE_USERNAME=user
+SPRING_DATASOURCE_PASSWORD=change-me
 
 # Testcontainers overrides (optional)
 TESTCONTAINERS_RYUK_DISABLED=false
@@ -341,9 +341,9 @@ The `postgres` service mirrors the project's root `compose.yaml` so credentials 
 Because the `postgres` service runs as a sibling Docker Compose service, the app connects via `localhost:5432` — the same as local development. Use these properties (or set via `.env`):
 
 ```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/mydb
-spring.datasource.username=user
-spring.datasource.password=password
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/mydb}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:user}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:password}
 ```
 
 > **Tip:** With `spring-boot-docker-compose` enabled, Spring Boot may try to start *another* PostgreSQL container from the project root `compose.yaml`. To avoid duplication inside the DevContainer, set `spring.docker.compose.enabled=false` in a `dev` profile or pass `-Dspring.docker.compose.enabled=false`.
