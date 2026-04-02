@@ -319,6 +319,10 @@ export function applyDotfiles(projectDir, options = {}) {
   if (hasDatabase) {
     copyAssetIfMissing(join('devcontainer', 'docker-compose.yml'), join(projectDir, '.devcontainer', 'docker-compose.yml'));
   }
+  // Fallback index.html so the app shows a helpful page before the frontend is built
+  if (hasFrontend) {
+    copyAssetIfMissing('index.html', join(projectDir, 'src', 'main', 'resources', 'static', 'index.html'));
+  }
   // CI workflow
   copyAssetIfMissing(join('ci', 'github-actions.yml'), join(projectDir, '.github', 'workflows', 'ci.yml'));
   // Optional Node version pinning if front-end present

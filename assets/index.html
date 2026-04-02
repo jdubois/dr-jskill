@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frontend Not Built</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f8f9fa; color: #212529; display: flex; justify-content: center;
+      align-items: center; min-height: 100vh; padding: 1rem;
+    }
+    .card {
+      background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      max-width: 640px; width: 100%; padding: 2.5rem;
+    }
+    h1 { font-size: 1.6rem; margin-bottom: .5rem; }
+    .subtitle { color: #6c757d; margin-bottom: 1.5rem; }
+    h2 { font-size: 1.1rem; margin: 1.5rem 0 .5rem; }
+    p, li { line-height: 1.6; }
+    ul { padding-left: 1.25rem; margin-bottom: 1rem; }
+    li { margin-bottom: .35rem; }
+    code {
+      background: #f1f3f5; padding: .15rem .4rem; border-radius: 4px;
+      font-size: .9em; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+    pre {
+      background: #212529; color: #f8f9fa; padding: 1rem; border-radius: 8px;
+      overflow-x: auto; margin: .75rem 0 1rem; font-size: .85rem; line-height: 1.5;
+    }
+    pre code { background: none; color: inherit; padding: 0; }
+    .badge {
+      display: inline-block; background: #fff3cd; color: #856404; font-size: .75rem;
+      font-weight: 600; padding: .25rem .6rem; border-radius: 6px; margin-bottom: 1rem;
+      border: 1px solid #ffc107;
+    }
+    .divider { border: none; border-top: 1px solid #dee2e6; margin: 1.5rem 0; }
+    .note { font-size: .85rem; color: #6c757d; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">⚠ Development Notice</span>
+    <h1>The frontend has not been built yet</h1>
+    <p class="subtitle">The Spring Boot backend is running, but the frontend assets are missing from
+      <code>src/main/resources/static/</code>.</p>
+
+    <h2>Option 1 — Development mode <em>(recommended)</em></h2>
+    <p>Run the frontend dev server alongside Spring Boot for hot-reload:</p>
+    <pre><code># Terminal 1 — backend
+DEV_MODE=true ./mvnw spring-boot:run
+
+# Terminal 2 — frontend (hot-reload on http://localhost:5173)
+cd frontend &amp;&amp; npm run dev</code></pre>
+
+    <h2>Option 2 — Full build</h2>
+    <p>Build everything into a single JAR:</p>
+    <pre><code>./mvnw clean package
+java -jar target/*.jar</code></pre>
+
+    <hr class="divider">
+    <p class="note">This placeholder page is automatically replaced when the frontend is built.
+      The build output is directed to <code>src/main/resources/static/</code>, which overwrites this file.</p>
+  </div>
+</body>
+</html>
