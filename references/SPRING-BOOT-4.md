@@ -381,6 +381,27 @@ spring.jackson.json.read.*
 spring.jackson.json.write.*
 ```
 
+**⚠️ Hibernate Bytecode Enhancer + Jackson 3 Gotcha:**
+
+When using JPA entities with primitive fields (e.g., `boolean completed`), Jackson 3 will fail with:
+
+```
+JSON parse error: Cannot map `null` into type `boolean`
+(set DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES to 'false' to allow)
+```
+
+This happens because Hibernate's bytecode enhancer generates a constructor that Jackson uses for "property-based" deserialization, bypassing field-level defaults and `@JsonSetter` annotations. When a JSON request omits a primitive field (e.g., `{"title":"Buy milk"}` without `"completed"`), Jackson maps it as `null` → `boolean`, which fails.
+
+**Fix:** Add this to `application.properties`:
+
+```properties
+# Required: Hibernate bytecode enhancer + Jackson 3 causes constructor-based
+# deserialization that fails when primitive fields are absent from JSON input.
+spring.jackson.deserialization.fail-on-null-for-primitives=false
+```
+
+> **Note:** Field-level `@JsonSetter(nulls = Nulls.SKIP)` does NOT work here because Jackson uses the Hibernate-generated constructor, not field-by-field deserialization. The global property is required.
+
 **Jackson 2 Compatibility:**
 - Spring Boot 4 provides deprecated `spring-boot-jackson2` module for gradual migration
 - Use `spring.jackson.use-jackson2-defaults=true` to align Jackson 3 behavior with Jackson 2
