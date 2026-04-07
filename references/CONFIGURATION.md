@@ -544,6 +544,11 @@ spring.jackson.default-property-inclusion=non_null
 
 # Fail on unknown properties (strict mode)
 spring.jackson.deserialization.fail-on-unknown-properties=true
+
+# Required when using JPA entities with primitive fields (boolean, int, etc.)
+# Hibernate's bytecode enhancer generates constructors that Jackson 3 uses for
+# deserialization, causing failures when primitive fields are absent from JSON.
+spring.jackson.deserialization.fail-on-null-for-primitives=false
 ```
 
 ### CORS Configuration
