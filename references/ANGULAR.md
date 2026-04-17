@@ -885,52 +885,48 @@ This approach ensures that refreshing the browser on any Angular route (e.g., `/
 
 ## CORS Configuration for Development
 
-Add this to your Spring Boot application to allow the Angular dev server:
+Add this to your Spring Boot application to allow the Angular dev server. The bean is only registered when the `dev` profile is active, so no CORS filter is created in production:
 
 ```java
 package com.example.demo.config;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
-import java.util.Arrays;
-
 @Configuration
+@Profile("dev")
 public class CorsConfig {
-    
+
     /**
-     * CORS configuration for development with Angular dev server.
-     * In production, the Angular app is served from the same origin,
-     * so CORS is not needed.
+     * Allows the Angular dev server (http://localhost:4200) to call the
+     * Spring Boot API during development. In production the Angular app
+     * is served from the same origin, so no CORS configuration is
+     * registered.
      */
     @Bean
     public CorsFilter corsFilter() {
-        // Only enable CORS if DEV_MODE environment variable is set
-        String devMode = System.getenv("DEV_MODE");
-        if (!"true".equals(devMode)) {
-            return new CorsFilter(new UrlBasedCorsConfigurationSource());
-        }
-        
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
-        config.setAllowedHeaders(Arrays.asList("*"));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        
+        config.setAllowedOrigins(List.of("http://localhost:4200"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", config);
-        
         return new CorsFilter(source);
     }
 }
 ```
 
-Start Spring Boot in development mode:
+Start Spring Boot with the `dev` profile active:
 ```bash
-DEV_MODE=true ./mvnw spring-boot:run
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 ## Testing Your Application
