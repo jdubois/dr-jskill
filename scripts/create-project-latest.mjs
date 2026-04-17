@@ -85,7 +85,7 @@ try {
   // Apply dotfiles and editor-recommended settings
   const hasDatabase = projectType === 'fullstack';
   const hasFrontend = projectType === 'fullstack';
-  applyDotfiles(projectName, { database: hasDatabase, frontend: hasFrontend });
+  applyDotfiles(projectName, { database: hasDatabase, frontend: hasFrontend, packageName });
 } catch (err) {
   console.error(`✗ Failed to create project: ${err?.message || String(err)}`);
   process.exit(1);

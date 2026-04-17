@@ -1,0 +1,111 @@
+package __PACKAGE__.config;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.ansi.AnsiColor;
+import org.springframework.boot.ansi.AnsiOutput;
+import org.springframework.boot.ansi.AnsiStyle;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
+
+/**
+ * Prints a friendly banner at startup showing the URLs where the
+ * application (and, if present, the Vite dev server) can be reached.
+ */
+@Component
+public class StartupInfoListener implements ApplicationListener<ApplicationReadyEvent> {
+
+    private static final Logger log = LoggerFactory.getLogger(StartupInfoListener.class);
+
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        Environment env = event.getApplicationContext().getEnvironment();
+
+        String protocol = "true".equalsIgnoreCase(env.getProperty("server.ssl.enabled")) ? "https" : "http";
+        String serverPort = env.getProperty("server.port", "8080");
+        String contextPath = env.getProperty("server.servlet.context-path", "/");
+        if (!contextPath.endsWith("/")) {
+            contextPath = contextPath + "/";
+        }
+
+        String hostAddress = "localhost";
+        try {
+            hostAddress = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            log.warn("Could not determine host address, defaulting to 'localhost'");
+        }
+
+        String appName = env.getProperty("spring.application.name", "Application");
+        String profiles = env.getActiveProfiles().length == 0
+                ? String.join(", ", env.getDefaultProfiles())
+                : String.join(", ", env.getActiveProfiles());
+
+        String viteHint = viteDevServerHint();
+
+        String banner = AnsiOutput.toString(
+                "\n",
+                AnsiColor.GREEN, "----------------------------------------------------------\n",
+                AnsiColor.GREEN, "  ", AnsiStyle.BOLD, appName, AnsiStyle.NORMAL,
+                AnsiColor.GREEN, " is running! Access URLs:\n",
+                AnsiColor.GREEN, "  Local:       ", AnsiColor.DEFAULT,
+                protocol, "://localhost:", serverPort, contextPath, "\n",
+                AnsiColor.GREEN, "  External:    ", AnsiColor.DEFAULT,
+                protocol, "://", hostAddress, ":", serverPort, contextPath, "\n",
+                AnsiColor.GREEN, "  API:         ", AnsiColor.DEFAULT,
+                protocol, "://localhost:", serverPort, "/api\n",
+                AnsiColor.GREEN, "  Actuator:    ", AnsiColor.DEFAULT,
+                protocol, "://localhost:", serverPort, "/actuator\n",
+                AnsiColor.GREEN, "  Profile(s):  ", AnsiColor.DEFAULT, profiles, "\n",
+                viteHint,
+                AnsiColor.GREEN, "----------------------------------------------------------",
+                AnsiColor.DEFAULT);
+
+        log.info(banner);
+    }
+
+    /** If a {@code frontend/} folder exists next to the process, hint at the Vite dev URL. */
+    private String viteDevServerHint() {
+        Path frontend = Paths.get(System.getProperty("user.dir"), "frontend");
+        if (!Files.isDirectory(frontend)) {
+            return "";
+        }
+        int vitePort = readVitePort(frontend).orElse(5173);
+        return AnsiOutput.toString(
+                AnsiColor.GREEN, "  Front-end:   ", AnsiColor.DEFAULT,
+                "http://localhost:", String.valueOf(vitePort),
+                "  ", AnsiStyle.FAINT, "(run 'npm run dev' in frontend/ for hot-reload)",
+                AnsiStyle.NORMAL, "\n");
+    }
+
+    private Optional<Integer> readVitePort(Path frontendDir) {
+        try {
+            Path cfg = frontendDir.resolve("vite.config.js");
+            if (!Files.isRegularFile(cfg)) {
+                cfg = frontendDir.resolve("vite.config.ts");
+            }
+            if (!Files.isRegularFile(cfg)) {
+                return Optional.empty();
+            }
+            String body = Files.readString(cfg);
+            return Arrays.stream(body.split("\n"))
+                    .map(String::trim)
+                    .filter(line -> line.startsWith("port:"))
+                    .findFirst()
+                    .map(line -> line.replaceAll("[^0-9]", ""))
+                    .filter(digits -> !digits.isEmpty())
+                    .map(Integer::parseInt);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+}

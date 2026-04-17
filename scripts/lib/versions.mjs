@@ -291,9 +291,32 @@ function stripFrontendCopyLines(filePath) {
 }
 
 /**
+ * Write the StartupInfoListener.java to the project's `<root-package>/config/` folder
+ * (REQUIRED per references/SPRING-BOOT-4.md). No-op if the file already exists or no
+ * package name is provided.
+ */
+export function writeStartupInfoListener(projectDir, packageName) {
+  if (!packageName) return;
+  const templatePath = resolve(ASSETS_DIR, 'StartupInfoListener.java.tmpl');
+  if (!existsSync(templatePath)) return;
+  const packagePath = packageName.replace(/\./g, '/');
+  const destPath = join(
+    projectDir,
+    'src', 'main', 'java',
+    packagePath, 'config', 'StartupInfoListener.java'
+  );
+  if (existsSync(destPath)) return;
+  const template = readFileSync(templatePath, 'utf8');
+  const content = template.replace(/__PACKAGE__/g, packageName);
+  const destDir = dirname(destPath);
+  if (!existsSync(destDir)) mkdirSync(destDir, { recursive: true });
+  writeFileSync(destPath, content, 'utf8');
+}
+
+/**
  * Apply additional dotfiles after project extraction.
  * @param {string} projectDir
- * @param {{ database?: boolean, frontend?: boolean }} [options]
+ * @param {{ database?: boolean, frontend?: boolean, packageName?: string }} [options]
  */
 export function applyDotfiles(projectDir, options = {}) {
   const hasDatabase = options.database === true;
@@ -332,6 +355,8 @@ export function applyDotfiles(projectDir, options = {}) {
   copyAssetIfMissing(join('ci', 'github-actions.yml'), join(projectDir, '.github', 'workflows', 'ci.yml'));
   // Copilot CLI LSP config (wires JDTLS for Java)
   copyAssetIfMissing('lsp.json', join(projectDir, '.github', 'lsp.json'));
+  // StartupInfoListener (REQUIRED per SPRING-BOOT-4.md) — prints access URLs at boot.
+  writeStartupInfoListener(projectDir, options.packageName);
   // Optional Node version pinning if front-end present
   try {
     const nodeVersion = getNodeVersion();

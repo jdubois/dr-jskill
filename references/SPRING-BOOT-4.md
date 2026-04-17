@@ -672,6 +672,8 @@ For war deployment to Tomcat:
 
 > ⚠️ Non-default ports, running alongside other projects, or forgetting which profile is active are everyday sources of confusion ("I opened `localhost:8080` but nothing works"). Every generated project **must** print a clear banner at startup that tells the developer exactly where the app is reachable.
 
+> ✅ The `create-*-project.mjs` scripts now scaffold this file automatically into `<root-package>/config/StartupInfoListener.java` (template: `assets/StartupInfoListener.java.tmpl`). The reference below is kept for manual setups, custom packages, or customization.
+
 Create `src/main/java/<root-package>/config/StartupInfoListener.java`. Adjust the `package` line to match the project's root package:
 
 ```java
