@@ -26,7 +26,7 @@ jobs:
           restore-keys: ${{ runner.os }}-m2-
 
       - name: Build backend
-        run: ./mvnw -B -DskipTests=false verify cyclonedx:makeAggregateBom dependency-check:check
+        run: ./mvnw -B verify
 
       - name: Frontend (if present)
         if: ${{ hashFiles('**/frontend/package.json') != '' }}

@@ -31,21 +31,26 @@ let dependencies = 'web,actuator,validation,devtools,native';
 
 console.error(`Creating Spring Boot web application with Boot=${bootVersion}, Java=${javaVersion}`);
 
-await downloadAndExtractProject({
-  type: 'maven-project',
-  language: 'java',
-  bootVersion,
-  baseDir: projectName,
-  groupId,
-  artifactId,
-  name: artifactId,
-  description: 'Spring+Boot+web+application',
-  packageName,
-  packaging: 'jar',
-  javaVersion,
-  dependencies,
-});
-applyDotfiles(projectName, { database: false, frontend: false });
+try {
+  await downloadAndExtractProject({
+    type: 'maven-project',
+    language: 'java',
+    bootVersion,
+    baseDir: projectName,
+    groupId,
+    artifactId,
+    name: artifactId,
+    description: 'Spring+Boot+web+application',
+    packageName,
+    packaging: 'jar',
+    javaVersion,
+    dependencies,
+  });
+  applyDotfiles(projectName, { database: false, frontend: false });
+} catch (err) {
+  console.error(`✗ Failed to create project: ${err?.message || String(err)}`);
+  process.exit(1);
+}
 
 console.log(`✓ Spring Boot web application created successfully in ./${projectName}`);
 console.log(`  cd ${projectName}`);

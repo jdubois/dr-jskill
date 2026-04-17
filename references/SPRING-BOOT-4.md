@@ -13,8 +13,8 @@
 
 This guide covers the key changes in Spring Boot 4.0 and what to consider when creating new Spring Boot 4 projects.
 
-**Release Date:** November 21, 2024  
-**Major Version:** 4.0.x  
+**Release Date:** November 20, 2025 (4.0.0 GA)
+**Major Version:** 4.0.x
 **Based on:** Spring Framework 7.0, Jakarta EE 11
 
 ## System Requirements

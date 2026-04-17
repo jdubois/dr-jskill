@@ -31,21 +31,26 @@ let dependencies = 'web,actuator,devtools,native';
 
 console.error(`Creating basic Spring Boot project with Boot=${bootVersion}, Java=${javaVersion}`);
 
-await downloadAndExtractProject({
-  type: 'maven-project',
-  language: 'java',
-  bootVersion,
-  baseDir: projectName,
-  groupId,
-  artifactId,
-  name: artifactId,
-  description: 'Basic+Spring+Boot+application',
-  packageName,
-  packaging: 'jar',
-  javaVersion,
-  dependencies,
-});
-applyDotfiles(projectName, { database: false, frontend: false });
+try {
+  await downloadAndExtractProject({
+    type: 'maven-project',
+    language: 'java',
+    bootVersion,
+    baseDir: projectName,
+    groupId,
+    artifactId,
+    name: artifactId,
+    description: 'Basic+Spring+Boot+application',
+    packageName,
+    packaging: 'jar',
+    javaVersion,
+    dependencies,
+  });
+  applyDotfiles(projectName, { database: false, frontend: false });
+} catch (err) {
+  console.error(`✗ Failed to create project: ${err?.message || String(err)}`);
+  process.exit(1);
+}
 
 console.log(`✓ Basic Spring Boot project created successfully in ./${projectName}`);
 console.log(`  cd ${projectName}`);

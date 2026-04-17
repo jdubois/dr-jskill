@@ -31,21 +31,26 @@ let dependencies = 'web,data-jpa,actuator,validation,devtools,postgresql,docker-
 
 console.error(`Creating full-stack Spring Boot application with Boot=${bootVersion}, Java=${javaVersion}`);
 
-await downloadAndExtractProject({
-  type: 'maven-project',
-  language: 'java',
-  bootVersion,
-  baseDir: projectName,
-  groupId,
-  artifactId,
-  name: artifactId,
-  description: 'Full-stack+Spring+Boot+application',
-  packageName,
-  packaging: 'jar',
-  javaVersion,
-  dependencies,
-});
-applyDotfiles(projectName, { database: true, frontend: true });
+try {
+  await downloadAndExtractProject({
+    type: 'maven-project',
+    language: 'java',
+    bootVersion,
+    baseDir: projectName,
+    groupId,
+    artifactId,
+    name: artifactId,
+    description: 'Full-stack+Spring+Boot+application',
+    packageName,
+    packaging: 'jar',
+    javaVersion,
+    dependencies,
+  });
+  applyDotfiles(projectName, { database: true, frontend: true });
+} catch (err) {
+  console.error(`✗ Failed to create project: ${err?.message || String(err)}`);
+  process.exit(1);
+}
 
 console.log(`✓ Full-stack Spring Boot application created successfully in ./${projectName}`);
 console.log('Includes:');

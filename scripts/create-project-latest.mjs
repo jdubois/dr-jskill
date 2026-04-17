@@ -66,25 +66,30 @@ switch (projectType) {
     process.exit(1);
 }
 
-await downloadAndExtractProject({
-  type: 'maven-project',
-  language: 'java',
-  bootVersion,
-  baseDir: projectName,
-  groupId,
-  artifactId,
-  name: artifactId,
-  description,
-  packageName,
-  packaging: 'jar',
-  javaVersion,
-  dependencies,
-});
+try {
+  await downloadAndExtractProject({
+    type: 'maven-project',
+    language: 'java',
+    bootVersion,
+    baseDir: projectName,
+    groupId,
+    artifactId,
+    name: artifactId,
+    description,
+    packageName,
+    packaging: 'jar',
+    javaVersion,
+    dependencies,
+  });
 
-// Apply dotfiles and editor-recommended settings
-const hasDatabase = projectType === 'fullstack';
-const hasFrontend = projectType === 'fullstack';
-applyDotfiles(projectName, { database: hasDatabase, frontend: hasFrontend });
+  // Apply dotfiles and editor-recommended settings
+  const hasDatabase = projectType === 'fullstack';
+  const hasFrontend = projectType === 'fullstack';
+  applyDotfiles(projectName, { database: hasDatabase, frontend: hasFrontend });
+} catch (err) {
+  console.error(`✗ Failed to create project: ${err?.message || String(err)}`);
+  process.exit(1);
+}
 
 console.log('');
 console.log(`✓ Spring Boot project created successfully in ./${projectName}`);
