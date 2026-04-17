@@ -119,17 +119,17 @@ export default defineConfig({
     }
   },
   
+  esbuild: {
+    // Drop console.log / console.debug in production builds; keep warn/error.
+    pure: ['console.log', 'console.debug']
+  },
+
   build: {
     outDir: '../src/main/resources/static',
     emptyOutDir: true,
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true
-      }
-    }
+    minify: 'esbuild'
   }
 })
 ```
