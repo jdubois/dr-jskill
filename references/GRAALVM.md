@@ -473,45 +473,7 @@ build-time initialization, by adding this configuration to the
 </plugin>
 ```
 
-**Issue 6: `UnsupportedFeatureException` for `com.fasterxml.jackson.core.Base64Variant`**
-
-Symptom — after fixing Issue 5 the build fails with:
-
-```
-An object of type 'com.fasterxml.jackson.core.Base64Variant' was found in the image heap.
-  scanning root ... embedded in com.fasterxml.jackson.core.Base64Variants.getDefaultVariant(...)
-```
-
-**Root cause.** Two Jackson lineages on the classpath. Spring Boot 4 uses
-Jackson 3.x under the new `tools.jackson.*` group; a transitive dependency
-(most commonly `com.azure:azure-identity-extensions` used for Azure
-passwordless JDBC auth) still pulls the old Jackson 2.x under
-`com.fasterxml.jackson.*`. AOT processing ends up with both sets of classes
-and their native-image initialization configs conflict.
-
-**Solution.** Exclude Jackson 2.x from the offending dependency:
-
-```xml
-<dependency>
-    <groupId>com.azure</groupId>
-    <artifactId>azure-identity-extensions</artifactId>
-    <version>1.2.2</version>
-    <exclusions>
-        <exclusion>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>*</artifactId>
-        </exclusion>
-    </exclusions>
-</dependency>
-```
-
-Apply the same pattern to any other dependency that drags in Jackson 2.x.
-
-**Issue 7: `native-image` classpath contains only `target/classes` (no `target/spring-aot/main/classes`)**
+**Issue 6: `native-image` classpath contains only `target/classes` (no `target/spring-aot/main/classes`)**
 
 Symptom — the `native-image` invocation logged by Maven shows a classpath
 like `-cp /app/target/classes:...` with no `spring-aot` entry, and the build
