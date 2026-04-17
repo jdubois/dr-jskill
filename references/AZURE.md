@@ -169,10 +169,26 @@ az acr create \
   --sku Basic \
   --admin-enabled false
 
+# Log Analytics workspace — create EXPLICITLY rather than letting
+# `containerapp env create` auto-provision one. The auto-provisioning path
+# uses an outdated API version and now fails with
+# `InvalidApiVersionParameter: The api-version '2021-12-01-preview' is invalid`.
+LAW_NAME="${APP_NAME}-law"
+az monitor log-analytics workspace create \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$LAW_NAME" \
+  --location "$LOCATION"
+LAW_CUSTOMER_ID=$(az monitor log-analytics workspace show \
+  -g "$RESOURCE_GROUP" -n "$LAW_NAME" --query customerId -o tsv)
+LAW_KEY=$(az monitor log-analytics workspace get-shared-keys \
+  -g "$RESOURCE_GROUP" -n "$LAW_NAME" --query primarySharedKey -o tsv)
+
 az containerapp env create \
   --name "$CONTAINER_APP_ENV" \
   --resource-group "$RESOURCE_GROUP" \
-  --location "$LOCATION"
+  --location "$LOCATION" \
+  --logs-workspace-id "$LAW_CUSTOMER_ID" \
+  --logs-workspace-key "$LAW_KEY"
 ```
 
 ### 3. Build the image in ACR (no local Docker required)
@@ -385,17 +401,24 @@ DB_HOST=$(az postgres flexible-server show \
   --resource-group "$RESOURCE_GROUP" --name "$DB_SERVER_NAME" \
   --query fullyQualifiedDomainName -o tsv)
 
-# CRITICAL: link the private DNS zone to the VNET. `az postgres flexible-server
-# create` auto-creates the zone `<dbname>.private.postgres.database.azure.com`
-# but leaves `VirtualNetworkLinks = 0` — so from inside the VNET, `$DB_HOST`
-# does not resolve. Without this step every client gets NXDOMAIN.
-VNET_ID=$(az network vnet show -g "$RESOURCE_GROUP" -n "$VNET_NAME" --query id -o tsv)
-az network private-dns link vnet create \
-  --resource-group "$RESOURCE_GROUP" \
-  --zone-name "${DB_SERVER_NAME}.private.postgres.database.azure.com" \
-  --name "${VNET_NAME}-link" \
-  --virtual-network "$VNET_ID" \
-  --registration-enabled false
+# Verify the private DNS zone is linked to the VNET. Current `az postgres
+# flexible-server create --vnet/--subnet` auto-creates BOTH the zone
+# `<dbname>.private.postgres.database.azure.com` AND a VNET link for the
+# target VNET. Older CLI versions used to leave `VirtualNetworkLinks = 0`,
+# which produced NXDOMAIN from inside the VNET. This block is idempotent:
+# it lists the links, and creates one only if none exist.
+DNS_ZONE="${DB_SERVER_NAME}.private.postgres.database.azure.com"
+LINK_COUNT=$(az network private-dns link vnet list \
+  -g "$RESOURCE_GROUP" --zone-name "$DNS_ZONE" --query "length(@)" -o tsv)
+if [ "${LINK_COUNT:-0}" -eq 0 ]; then
+  VNET_ID=$(az network vnet show -g "$RESOURCE_GROUP" -n "$VNET_NAME" --query id -o tsv)
+  az network private-dns link vnet create \
+    --resource-group "$RESOURCE_GROUP" \
+    --zone-name "$DNS_ZONE" \
+    --name "${VNET_NAME}-link" \
+    --virtual-network "$VNET_ID" \
+    --registration-enabled false
+fi
 ```
 
 > The server is VNET-injected (private). **Do not** add a public firewall
@@ -404,10 +427,24 @@ az network private-dns link vnet create \
 ### 5. Container Apps Environment inside the VNET
 
 ```bash
+# Create the Log Analytics workspace explicitly — see Quick Start §2 for why
+# letting `containerapp env create` auto-provision one is currently broken.
+LAW_NAME="${APP_NAME}-law"
+az monitor log-analytics workspace create \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$LAW_NAME" \
+  --location "$LOCATION"
+LAW_CUSTOMER_ID=$(az monitor log-analytics workspace show \
+  -g "$RESOURCE_GROUP" -n "$LAW_NAME" --query customerId -o tsv)
+LAW_KEY=$(az monitor log-analytics workspace get-shared-keys \
+  -g "$RESOURCE_GROUP" -n "$LAW_NAME" --query primarySharedKey -o tsv)
+
 az containerapp env create \
   --name "$CONTAINER_APP_ENV" \
   --resource-group "$RESOURCE_GROUP" \
   --location "$LOCATION" \
+  --logs-workspace-id "$LAW_CUSTOMER_ID" \
+  --logs-workspace-key "$LAW_KEY" \
   --enable-workload-profiles \
   --infrastructure-subnet-resource-id "$SUBNET_APP_ID"
 ```
@@ -701,7 +738,8 @@ Common failures:
 | App stuck in `Activating`, readiness probe failing | Actuator not exposed, or `management.endpoints.web.exposure.include` missing `health`. |
 | `SSL required` from PG driver | `sslmode=require` missing from JDBC URL. |
 | App can't resolve Key Vault secret (`keyvaultref:...`) / starts with empty password | Either the Key Vault URI is wrong (needs trailing `/secrets/...`), the MI is not granted `Key Vault Secrets User`, or the vault is not in RBAC mode. |
-| DNS resolution failure from inside the VNET (`could not translate host name "<db>.postgres.database.azure.com"`) | Private DNS zone exists but has zero VNET links. Run `az network private-dns link vnet create` (step 4). |
+| DNS resolution failure from inside the VNET (`could not translate host name "<db>.postgres.database.azure.com"`) | Private DNS zone exists but has zero VNET links. Current CLI auto-creates the link in step 4, but older versions leave `VirtualNetworkLinks = 0` — run `az network private-dns link vnet create` (the idempotent block in step 4 handles both cases). |
+| `InvalidApiVersionParameter: The api-version '2021-12-01-preview' is invalid` on `containerapp env create` | The containerapp CLI extension tries to auto-provision a Log Analytics workspace using an outdated API version. Create the workspace explicitly with `az monitor log-analytics workspace create` and pass `--logs-workspace-id` / `--logs-workspace-key` to `containerapp env create` (as shown in steps 2 and 5). |
 | `SubnetIsNotDelegatedToContainerApps` on env create | The app subnet was not delegated. Add `--delegations Microsoft.App/environments` at subnet creation, or update it afterwards. |
 | `ResourceNotFound` for auto-created Log Analytics workspace | `Microsoft.OperationalInsights` provider not registered. Re-run `az provider register --namespace Microsoft.OperationalInsights --wait`. |
 | `PostgreSQL SKU not available in <region>` / `The location is restricted` | Region silently has zero PG Flex SKUs for your sub. Run the region preflight (top of Prerequisites) and pick another region. |
