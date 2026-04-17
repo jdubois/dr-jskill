@@ -39,26 +39,9 @@ Dr JSkill builds on the JHipster experience:
 
 At the moment, Dr JSkill is an experiment. If it is successful, it might join the JHipster organization.
 
-## Sample usage
+## Workshop
 
-Here is an example you can use to try out this skill with an AI assistant like GitHub Copilot CLI .
-
-To create a new project:
-```
-Use Dr JSkill to create a new Todo List application.
-
-- Features: add/edit/remove todos
-- A fancy UI using Vite + Vue, with nice effects
-- Data stored in a database
-- No security
-``` 
-
-Once the project is created, you can ask the assistant to add features, for example:
-```
-I want to assign those todos to users, but I don't want to implement authentication. Can you use a simple user management system with hardcoded users in the database?
-There would be a dropdown to select the user when creating a todo, and the list of todos would be filtered by user.
-User names are: julien, alice, bob.
-```
+A full hands-on workshop — **GitHub Copilot CLI + Java, using Dr JSkill** — walks you through generating, extending, testing, and deploying a real Spring Boot + Vue application: **[workshop/](workshop/)**.
 
 ## Documentation
 
