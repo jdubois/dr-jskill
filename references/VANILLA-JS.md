@@ -602,7 +602,6 @@ export function renderHomePage() {
 
 ```javascript
 import { itemService } from '../services/itemService.js'
-import { navigate } from '../router.js'
 
 let items = []
 
