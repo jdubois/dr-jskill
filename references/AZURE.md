@@ -250,36 +250,36 @@ az containerapp registry set \
 ### 5. Add liveness & readiness probes
 
 Spring Boot Actuator (enabled by the skill) exposes `/actuator/health/liveness`
-and `/actuator/health/readiness`. Wire them in so Container Apps restarts
-unhealthy replicas and delays traffic until the app is ready:
+and `/actuator/health/readiness` when `management.endpoint.health.probes.enabled=true`
+is set in `application.properties` (see `references/CONFIGURATION.md`). Wire
+them into Container Apps so unhealthy replicas are restarted and traffic is
+delayed until the app is ready:
 
 ```bash
-# Use YAML ingress/probe update because the CLI flags for probes are limited.
-cat > probes.yaml <<'YAML'
-properties:
-  template:
-    containers:
-      - name: myapp
-        probes:
-          - type: Liveness
-            httpGet: { path: "/actuator/health/liveness", port: 8080 }
-            initialDelaySeconds: 30
-            periodSeconds: 20
-          - type: Readiness
-            httpGet: { path: "/actuator/health/readiness", port: 8080 }
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          - type: Startup
-            httpGet: { path: "/actuator/health/readiness", port: 8080 }
-            failureThreshold: 30
-            periodSeconds: 5
-YAML
+# The CLI flags for probes are limited, so patch the current spec in place.
+# `az containerapp update --yaml` REPLACES arrays wholesale (including containers),
+# so fetch the current spec, inject the probes with jq, and re-apply — this
+# preserves image, env vars, resources, and secrets. JSON is valid YAML, so
+# we can feed the jq output straight to `--yaml`.
+az containerapp show -n "$CONTAINER_APP_NAME" -g "$RESOURCE_GROUP" -o json \
+  | jq '.properties.template.containers |= map(. + {probes:[
+      {type:"Liveness",  httpGet:{path:"/actuator/health/liveness", port:8080}, initialDelaySeconds:30, periodSeconds:20},
+      {type:"Readiness", httpGet:{path:"/actuator/health/readiness",port:8080}, initialDelaySeconds:5,  periodSeconds:10},
+      {type:"Startup",   httpGet:{path:"/actuator/health/readiness",port:8080}, failureThreshold:30,    periodSeconds:5}
+    ]})' > app-with-probes.json
 
 az containerapp update \
   --name "$CONTAINER_APP_NAME" \
   --resource-group "$RESOURCE_GROUP" \
-  --yaml probes.yaml
+  --yaml app-with-probes.json
+
+rm app-with-probes.json
 ```
+
+> **Startup probe for native images.** Native (GraalVM) images start in under
+> a second, so `failureThreshold: 30, periodSeconds: 5` (150 s budget) is very
+> generous. Keep it — it costs nothing when the app is healthy and protects
+> you on the rare cold-image pull.
 
 ### 6. Test
 
@@ -535,6 +535,43 @@ az containerapp update --name "$CONTAINER_APP_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --revision-suffix "rot$(date +%s)"
 ```
+
+### 7. Add liveness & readiness probes
+
+Same as the no-database flow — Container Apps does not configure HTTP probes
+by default, so you must wire them in explicitly. Spring Boot Actuator exposes
+`/actuator/health/liveness` and `/actuator/health/readiness` when
+`management.endpoint.health.probes.enabled=true` is set in
+`application.properties` (see `references/CONFIGURATION.md`).
+
+```bash
+az containerapp show -n "$CONTAINER_APP_NAME" -g "$RESOURCE_GROUP" -o json \
+  | jq '.properties.template.containers |= map(. + {probes:[
+      {type:"Liveness",  httpGet:{path:"/actuator/health/liveness", port:8080}, initialDelaySeconds:30, periodSeconds:20},
+      {type:"Readiness", httpGet:{path:"/actuator/health/readiness",port:8080}, initialDelaySeconds:5,  periodSeconds:10},
+      {type:"Startup",   httpGet:{path:"/actuator/health/readiness",port:8080}, failureThreshold:30,    periodSeconds:5}
+    ]})' > app-with-probes.json
+
+az containerapp update \
+  --name "$CONTAINER_APP_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --yaml app-with-probes.json
+
+rm app-with-probes.json
+
+# Verify
+APP_URL="https://$(az containerapp show \
+  --name "$CONTAINER_APP_NAME" --resource-group "$RESOURCE_GROUP" \
+  --query properties.configuration.ingress.fqdn -o tsv)"
+curl "$APP_URL/actuator/health/liveness"   # {"status":"UP"}
+curl "$APP_URL/actuator/health/readiness"  # {"status":"UP"}
+```
+
+> **Readiness depends on the DB.** With `db` in the default readiness group,
+> the pod will stay `NotReady` if PostgreSQL is unreachable — exactly what you
+> want. If you'd rather keep DB health separate from readiness, set
+> `management.endpoint.health.group.readiness.include=readinessState` (drops
+> `db` from the readiness group).
 
 ## Deploy the native image
 

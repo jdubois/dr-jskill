@@ -68,6 +68,7 @@ spring.jpa.open-in-view=false
 # Actuator Configuration
 management.endpoints.web.exposure.include=health,info,metrics,prometheus
 management.endpoint.health.show-details=when-authorized
+management.endpoint.health.probes.enabled=true
 management.metrics.export.prometheus.enabled=true
 ```
 
