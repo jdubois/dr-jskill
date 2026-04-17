@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  docs-drift:
+    name: Docs drift check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Kept in sync with versions.json:nodeVersion by scripts/sync-versions-in-docs.mjs.
+          # Major is enough here; exact patch comes from versions.json at generation time.
+          node-version: '24'
+
+      - name: Verify reference docs are in sync with versions.json
+        run: node scripts/sync-versions-in-docs.mjs --check
+
+      - name: Syntax-check scripts
+        run: |
+          for f in scripts/*.mjs scripts/lib/*.mjs; do
+            node --check "$f"
+          done

@@ -56,6 +56,17 @@ function renderTable(rows) {
   return `${header}\n${body}`;
 }
 
+/**
+ * Rewrite <nodeVersion>vX.Y.Z</nodeVersion> and <npmVersion>X.Y.Z</npmVersion>
+ * tags inside maven-frontend-plugin example snippets so they track versions.json.
+ * Returns the possibly-modified content.
+ */
+function rewritePluginVersions(content) {
+  return content
+    .replace(/<nodeVersion>v[^<]*<\/nodeVersion>/g, `<nodeVersion>v${versions.nodeVersion}</nodeVersion>`)
+    .replace(/<npmVersion>[^<]*<\/npmVersion>/g, `<npmVersion>${versions.npmVersion}</npmVersion>`);
+}
+
 const checkMode = process.argv.includes('--check');
 
 let changed = 0;
@@ -75,7 +86,8 @@ for (const [rel, rows] of Object.entries(docs)) {
   }
   const before = content.slice(0, start + START.length);
   const after = content.slice(end);
-  const next = `${before}\n${renderTable(rows)}\n${after}`;
+  const withTable = `${before}\n${renderTable(rows)}\n${after}`;
+  const next = rewritePluginVersions(withTable);
   if (next === content) {
     console.log(`  ∙ ${rel} up to date`);
     continue;
