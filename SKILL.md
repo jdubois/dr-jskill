@@ -211,7 +211,7 @@ Spring Boot automatically manages Docker containers during development via `spri
 
 ## GraalVM Native Images
 
-Build native images via Docker (no local GraalVM needed) or locally with `./mvnw native:compile`. See the [GraalVM Guide](references/GRAALVM.md) for configuration, runtime hints, testing, and CI/CD integration.
+Build native images via Docker (no local GraalVM needed) or locally with `./mvnw -Pnative -DskipTests package native:compile`. See the [GraalVM Guide](references/GRAALVM.md) for configuration, runtime hints, testing, and CI/CD integration.
 
 ## Azure Deployment
 

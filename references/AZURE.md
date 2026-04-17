@@ -390,6 +390,14 @@ az containerapp create \
     "JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0"
 ```
 
+> **Native image users:** `AzureIdentityPostgresqlAuthenticationPlugin` ships
+> in `com.azure:azure-identity-extensions`, which transitively pulls Jackson
+> 2.x (`com.fasterxml.jackson.*`). Spring Boot 4 uses Jackson 3.x
+> (`tools.jackson.*`), and mixing the two breaks `native-image`. When
+> building the GraalVM native image, exclude Jackson 2.x from that
+> dependency — see the *Jackson version conflict* entry in
+> [GRAALVM.md → Troubleshooting](GRAALVM.md#troubleshooting).
+
 > **`ddl-auto=validate` in production.** The skill uses Hibernate `ddl-auto`
 > for schema initialization during development; for deployed environments the
 > app should only *validate* the schema. Initialize/migrate the schema out of

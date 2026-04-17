@@ -24,8 +24,14 @@ COPY src ./src
 # If no frontend/ exists, comment out or remove this line
 COPY frontend ./frontend
 
-# Build native image (compile → process-aot → native compile)
-RUN ./mvnw native:compile -Pnative -DskipTests
+# Build native image (compile → process-aot → native compile).
+# Must invoke `package` so Spring Boot's `process-aot` goal (bound to
+# prepare-package by the `native` profile) actually runs and generates AOT
+# sources + native-image hints. Running `native:compile` on its own skips the
+# prior phases and produces a native-image call with an empty AOT classpath,
+# which fails with misleading errors (e.g. SLF4J falling back to the NOP
+# provider when HikariConfig is initialized at build time).
+RUN ./mvnw -Pnative -DskipTests package native:compile
 
 # Move native executable to a known path (artifact name varies per project)
 RUN if [ -f target/$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout 2>/dev/null) ]; then \

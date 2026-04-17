@@ -141,8 +141,14 @@ COPY src ./src
 # If no frontend/ exists, comment out or remove this line
 COPY frontend ./frontend
 
-# Build native image (compile → process-aot → native compile)
-RUN ./mvnw native:compile -Pnative -DskipTests
+# Build native image (compile → process-aot → native compile).
+# Must invoke `package` so Spring Boot's `process-aot` goal (bound to
+# prepare-package by the `native` profile) actually runs and generates AOT
+# sources + native-image hints. Running `native:compile` on its own skips the
+# prior phases and produces a native-image call with an empty AOT classpath,
+# which fails with misleading errors (e.g. SLF4J falling back to the NOP
+# provider when HikariConfig is initialized at build time).
+RUN ./mvnw -Pnative -DskipTests package native:compile
 
 # Move native executable to a known path (artifact name varies per project)
 RUN if [ -f target/$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout 2>/dev/null) ]; then \
@@ -180,7 +186,7 @@ ENTRYPOINT ["./native-app"]
 **Key Points:**
 
 1. **Build Stage**: Uses GraalVM 25 Community Edition (Oracle Linux 9) — includes the `native-image` toolchain and JDK 25.
-2. **Native Compile**: `./mvnw native:compile -Pnative -DskipTests` invokes GraalVM's `native-image` via the `native-maven-plugin`.
+2. **Native Compile**: `./mvnw -Pnative -DskipTests package native:compile` invokes GraalVM's `native-image` via the `native-maven-plugin`. The explicit `package` phase is required so Spring Boot's `process-aot` goal runs first — otherwise AOT sources and native-image hints are never generated and the build fails with cryptic errors inside `native-image`.
 3. **Portable Copy**: First tries `target/<artifactId>` (the default native output), then falls back to `find` so the Dockerfile works regardless of Maven's output name.
 4. **Distroless Runtime**: Final image is `gcr.io/distroless/base-debian12` (~20 MB, glibc-based) — ships the shared libraries the native binary needs, nothing else. No shell, no package manager.
 5. **Non-Root User**: Runs as the built-in `nonroot` user (UID **65532**) provided by distroless.
@@ -348,7 +354,7 @@ public class MyRuntimeHints implements RuntimeHintsRegistrar {
 
 ```bash
 # Build native image locally (requires GraalVM installed)
-./mvnw native:compile -Pnative -DskipTests
+./mvnw -Pnative -DskipTests package native:compile
 
 # Run the native executable (name matches your artifactId)
 ./target/myapp
@@ -426,6 +432,102 @@ Native compilation is CPU and memory intensive. Strategies to improve:
 2. **Build in CI/CD**: Offload builds to powerful CI/CD servers
 3. **Parallel Builds**: Use buildpack for parallel layer building
 4. **Skip During Development**: Use JVM mode for faster iteration
+
+**Issue 5: `UnsupportedFeatureException` for SLF4J/Logback helpers (HikariConfig)**
+
+Symptoms — `native-image` aborts with one of:
+
+```
+An object of type 'org.slf4j.helpers.NOP_FallbackServiceProvider' was found in the image heap.
+An object of type 'org.slf4j.helpers.SubstituteServiceProvider' was found in the image heap.
+An object of type 'ch.qos.logback.classic.spi.LogbackServiceProvider' was found in the image heap.
+```
+
+with a trace pointing at `com.zaxxer.hikari.HikariConfig.<clinit>`.
+
+**Root cause.** The GraalVM reachability-metadata repository bundled with
+`native-maven-plugin` has no config for the newer library versions Spring
+Boot 4.0.5 ships (HikariCP 7.x, logback-classic 1.5.32, Jackson 2.21.x) and
+silently falls back to stale configs for HikariCP 6.0.0 / logback 1.5.7.
+Those stale configs force `HikariConfig` to be initialized at build time,
+which calls `LoggerFactory.getLogger(...)` and pulls SLF4J's internal
+provider objects into the image heap — but those classes are (correctly)
+marked for run-time init by default.
+
+**Solution.** Disable the stale metadata repo and mark SLF4J / Logback for
+build-time initialization, by adding this configuration to the
+`native-maven-plugin` in `pom.xml`:
+
+```xml
+<plugin>
+    <groupId>org.graalvm.buildtools</groupId>
+    <artifactId>native-maven-plugin</artifactId>
+    <configuration>
+        <metadataRepository>
+            <enabled>false</enabled>
+        </metadataRepository>
+        <buildArgs>
+            <buildArg>--initialize-at-build-time=org.slf4j,ch.qos.logback</buildArg>
+        </buildArgs>
+    </configuration>
+</plugin>
+```
+
+**Issue 6: `UnsupportedFeatureException` for `com.fasterxml.jackson.core.Base64Variant`**
+
+Symptom — after fixing Issue 5 the build fails with:
+
+```
+An object of type 'com.fasterxml.jackson.core.Base64Variant' was found in the image heap.
+  scanning root ... embedded in com.fasterxml.jackson.core.Base64Variants.getDefaultVariant(...)
+```
+
+**Root cause.** Two Jackson lineages on the classpath. Spring Boot 4 uses
+Jackson 3.x under the new `tools.jackson.*` group; a transitive dependency
+(most commonly `com.azure:azure-identity-extensions` used for Azure
+passwordless JDBC auth) still pulls the old Jackson 2.x under
+`com.fasterxml.jackson.*`. AOT processing ends up with both sets of classes
+and their native-image initialization configs conflict.
+
+**Solution.** Exclude Jackson 2.x from the offending dependency:
+
+```xml
+<dependency>
+    <groupId>com.azure</groupId>
+    <artifactId>azure-identity-extensions</artifactId>
+    <version>1.2.2</version>
+    <exclusions>
+        <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>*</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+```
+
+Apply the same pattern to any other dependency that drags in Jackson 2.x.
+
+**Issue 7: `native-image` classpath contains only `target/classes` (no `target/spring-aot/main/classes`)**
+
+Symptom — the `native-image` invocation logged by Maven shows a classpath
+like `-cp /app/target/classes:...` with no `spring-aot` entry, and the build
+fails with seemingly unrelated `UnsupportedFeatureException`s.
+
+**Root cause.** `./mvnw native:compile` was invoked without running the
+`package` phase first, so Spring Boot's `process-aot` goal never executed
+and no AOT sources / native-image hints were generated.
+
+**Solution.** Always invoke the `package` phase before `native:compile`:
+
+```bash
+./mvnw -Pnative -DskipTests package native:compile
+```
+
+This is what the skill's `Dockerfile-native` uses.
 
 ### Validation Checklist
 

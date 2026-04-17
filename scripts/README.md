@@ -245,7 +245,7 @@ cd my-project
 ### GraalVM Native Build
 ```bash
 cd my-project
-./mvnw native:compile
+./mvnw -Pnative -DskipTests package native:compile
 ./target/my-project
 ```
 
