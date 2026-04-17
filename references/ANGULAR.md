@@ -86,7 +86,7 @@ From your Spring Boot project root:
 npm install -g @angular/cli
 
 # Create Angular project
-ng new frontend --routing --style=css --skip-git
+ng new frontend --style=css --ssr=false --skip-git
 
 cd frontend
 
