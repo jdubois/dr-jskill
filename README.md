@@ -41,7 +41,7 @@ At the moment, Dr JSkill is an experiment. If it is successful, it might join th
 
 ## Workshop
 
-A full hands-on workshop — **GitHub Copilot CLI + Java, using Dr JSkill** — walks you through generating, extending, testing, and deploying a real Spring Boot + Vue application: **[workshop/](workshop/)**.
+A full hands-on workshop — **GitHub Copilot CLI + Java, using Dr JSkill** — walks you through generating, extending, testing, and deploying a real Spring Boot + Vue application: **[workshop/README.md](workshop/README.md)**.
 
 ## Documentation
 
