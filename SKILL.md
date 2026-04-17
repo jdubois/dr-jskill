@@ -215,7 +215,7 @@ Build native images via Docker (no local GraalVM needed) or locally with `./mvnw
 
 ## Azure Deployment
 
-Deploy to Azure Container Apps with Azure Database for PostgreSQL. See the [Azure Deployment Guide](references/AZURE.md).
+Deploy to Azure Container Apps with an optional VNET-injected Azure Database for PostgreSQL Flexible Server. Uses managed identity for ACR image pulls and Microsoft Entra ID (passwordless) authentication for the database, plus a GitHub Actions OIDC workflow — no client secrets or DB passwords committed. Supports both the JVM and GraalVM native image variants. See the [Azure Deployment Guide](references/AZURE.md).
 
 ## Validation
 
@@ -261,4 +261,4 @@ Once the project is generated, go through the steps above to ensure that the gen
 **Deployment:**
 - [Docker Deployment Guide](references/DOCKER.md) - Docker, Docker Compose, development automation
 - [GraalVM Native Images Guide](references/GRAALVM.md) - Docker-based native builds, optimization
-- [Azure Deployment Guide](references/AZURE.md) - Azure Container Apps, Azure Database for PostgreSQL
+- [Azure Deployment Guide](references/AZURE.md) - Azure Container Apps, PostgreSQL Flexible Server, managed-identity ACR pull, Entra ID passwordless DB auth, GitHub Actions OIDC

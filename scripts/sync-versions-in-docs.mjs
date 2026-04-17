@@ -48,6 +48,10 @@ const docs = {
     ['Vite', `${versions.viteVersion}.x`],
     ['Bootstrap', '5.3+'],
   ],
+  'references/AZURE.md': [
+    ['PostgreSQL', versions.postgresVersion],
+    ['Java (Temurin)', versions.temurinVersion],
+  ],
 };
 
 function renderTable(rows) {

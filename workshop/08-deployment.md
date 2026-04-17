@@ -129,7 +129,7 @@ Review and commit.
 
 Full cloud deployment is out of scope for this workshop, but the skill has you covered:
 
-- **Azure** — see [`references/AZURE.md`](../references/AZURE.md). Covers Azure Container Apps, App Service, and Azure Database for PostgreSQL with a generated Bicep/Terraform template.
+- **Azure** — see [`references/AZURE.md`](../references/AZURE.md). Azure CLI deployment to Azure Container Apps with an optional VNET-injected Azure Database for PostgreSQL Flexible Server. Uses managed identity for ACR pulls and Microsoft Entra ID (passwordless) for the database.
 - **Any Docker-based host** — your generated image runs anywhere: AWS ECS/Fargate, Google Cloud Run, Fly.io, DigitalOcean App Platform, a VPS with `docker run`. Pair with a managed Postgres.
 - **Kubernetes** — not covered by the skill directly. The generated image is standard — any Helm chart for a generic Spring Boot app will work.
 
