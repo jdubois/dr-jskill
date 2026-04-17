@@ -3,6 +3,7 @@
 ## Contents
 - [Overview](#overview)
 - [Testing Dependencies](#testing-dependencies)
+- [Activate Maven Failsafe (REQUIRED for `*IT.java`)](#activate-maven-failsafe-required-for-itjava)
 - [Testcontainers 2 + @ServiceConnection quickstart](#testcontainers-2--serviceconnection-quickstart)
 - [Unit Tests with Mocks](#unit-tests-with-mocks)
 - [Integration Tests with TestContainers](#integration-tests-with-testcontainers)
@@ -60,6 +61,31 @@ Add these dependencies to your `pom.xml`:
     </dependency>
 </dependencies>
 ```
+
+## Activate Maven Failsafe (REQUIRED for `*IT.java`)
+
+> ⚠️ **Silent failure trap.** Spring Boot's parent POM declares `maven-failsafe-plugin` under `<pluginManagement>` only. If you do **not** also declare it in `<build><plugins>`, Failsafe never runs, `./mvnw verify` reports **BUILD SUCCESS**, and every `*IT.java` integration test is silently skipped. Surefire's default includes do not pick up `*IT.java`.
+>
+> Every generated project that has integration tests ending in `IT` **must** include the snippet below.
+
+Add this plugin declaration to `<build><plugins>` in `pom.xml` (no `<version>` — the Spring Boot parent manages it):
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-failsafe-plugin</artifactId>
+</plugin>
+```
+
+Verify it's active by running `./mvnw verify` and checking the log for a line like:
+
+```
+[INFO] --- failsafe:3.x.x:integration-test (default) @ ...
+[INFO] Running com.example.app.UserIntegrationIT
+[INFO] Tests run: N, Failures: 0, Errors: 0, Skipped: 0
+```
+
+If you only see `surefire:test` and no `failsafe` section, the plugin declaration is missing.
 
 ## Testcontainers 2 + @ServiceConnection quickstart
 
