@@ -575,6 +575,24 @@ az acr delete                --name "$ACR_NAME"           --resource-group "$RES
 az postgres flexible-server delete --name "$DB_SERVER_NAME" --resource-group "$RESOURCE_GROUP" --yes
 ```
 
+### Tenant-scoped artifacts (not in the resource group)
+
+Role assignments and the GitHub Actions app registration live at the
+subscription / Entra ID tenant level, so deleting the resource group leaves
+them behind. Remove them explicitly:
+
+```bash
+# Orphaned role assignments on the deleted RG's scope
+SUB_ID=$(az account show --query id -o tsv)
+az role assignment list \
+  --scope "/subscriptions/$SUB_ID/resourceGroups/$RESOURCE_GROUP" \
+  --query "[].id" -o tsv \
+  | xargs -r -n1 az role assignment delete --ids
+
+# GitHub Actions app registration (only if you created one for OIDC)
+az ad app delete --id "$APP_ID"
+```
+
 ## Additional resources
 
 - [Azure Container Apps documentation](https://learn.microsoft.com/azure/container-apps/)
