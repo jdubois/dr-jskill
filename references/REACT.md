@@ -544,6 +544,8 @@ export function useItems() {
     }
   }, [])
 
+  const clearError = useCallback(() => setError(null), [])
+
   return {
     items,
     loading,
@@ -551,7 +553,8 @@ export function useItems() {
     fetchItems,
     createItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    clearError
   }
 }
 ```
@@ -600,7 +603,7 @@ import { Link } from 'react-router-dom'
 import { useItems } from '../hooks/useItems'
 
 export default function ItemsPage() {
-  const { items, loading, error, fetchItems, deleteItem } = useItems()
+  const { items, loading, error, fetchItems, deleteItem, clearError } = useItems()
 
   useEffect(() => {
     fetchItems()
@@ -632,7 +635,7 @@ export default function ItemsPage() {
           <button
             type="button"
             className="btn-close"
-            onClick={() => {}}
+            onClick={clearError}
           ></button>
         </div>
       )}
