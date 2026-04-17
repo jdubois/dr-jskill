@@ -99,7 +99,8 @@ When creating Spring Boot projects:
 13. Add Spring Security only when needed - see [Security Guide](references/SECURITY.md) for best practices
 14. Configure Docker for containerized deployments - see [Docker Guide](references/DOCKER.md)
 15. Enable GraalVM native image support for faster startup - see [GraalVM Guide](references/GRAALVM.md)
-16. The user must review changes before they are committed to git. Ask the user before initializing a Git repository, or running git commands.
+16. **Always ship a startup banner** that prints access URLs when the app is ready - see [Startup Banner](references/SPRING-BOOT-4.md#startup-banner-required)
+17. The user must review changes before they are committed to git. Ask the user before initializing a Git repository, or running git commands.
 
 ## Java Code Intelligence (JDTLS) ⭐
 

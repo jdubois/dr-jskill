@@ -7,6 +7,7 @@
 - [Major Changes from Spring Boot 3](#major-changes-from-spring-boot-3)
 - [Migration Strategy](#migration-strategy)
 - [Best Practices for Spring Boot 4 Projects](#best-practices-for-spring-boot-4-projects)
+- [Startup Banner (REQUIRED)](#startup-banner-required)
 - [Performance](#performance)
 - [Resources](#resources)
 
@@ -665,6 +666,157 @@ For war deployment to Tomcat:
 6. **Virtual threads** - Consider enabling for IO-bound workloads (see [Performance](#performance))
 7. **OpenTelemetry** - Use new starter for observability
 8. **Health probes** - Leverage default liveness/readiness endpoints
+9. **Startup banner** - Always ship a `StartupInfoListener` that prints access URLs — see [Startup Banner](#startup-banner-required)
+
+## Startup Banner (REQUIRED)
+
+> ⚠️ Non-default ports, running alongside other projects, or forgetting which profile is active are everyday sources of confusion ("I opened `localhost:8080` but nothing works"). Every generated project **must** print a clear banner at startup that tells the developer exactly where the app is reachable.
+
+Create `src/main/java/<root-package>/config/StartupInfoListener.java`. Adjust the `package` line to match the project's root package:
+
+```java
+package com.example.app.config;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.ansi.AnsiColor;
+import org.springframework.boot.ansi.AnsiOutput;
+import org.springframework.boot.ansi.AnsiStyle;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
+
+/**
+ * Prints a friendly banner at startup showing the URLs where the
+ * application (and, if present, the Vite dev server) can be reached.
+ */
+@Component
+public class StartupInfoListener implements ApplicationListener<ApplicationReadyEvent> {
+
+    private static final Logger log = LoggerFactory.getLogger(StartupInfoListener.class);
+
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        Environment env = event.getApplicationContext().getEnvironment();
+
+        String protocol = "true".equalsIgnoreCase(env.getProperty("server.ssl.enabled")) ? "https" : "http";
+        String serverPort = env.getProperty("server.port", "8080");
+        String contextPath = env.getProperty("server.servlet.context-path", "/");
+        if (!contextPath.endsWith("/")) {
+            contextPath = contextPath + "/";
+        }
+
+        String hostAddress = "localhost";
+        try {
+            hostAddress = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            log.warn("Could not determine host address, defaulting to 'localhost'");
+        }
+
+        String appName = env.getProperty("spring.application.name", "Application");
+        String profiles = env.getActiveProfiles().length == 0
+                ? String.join(", ", env.getDefaultProfiles())
+                : String.join(", ", env.getActiveProfiles());
+
+        String viteHint = viteDevServerHint();
+
+        String banner = AnsiOutput.toString(
+                "\n",
+                AnsiColor.GREEN, "----------------------------------------------------------\n",
+                AnsiColor.GREEN, "  ", AnsiStyle.BOLD, appName, AnsiStyle.NORMAL,
+                AnsiColor.GREEN, " is running! Access URLs:\n",
+                AnsiColor.GREEN, "  Local:       ", AnsiColor.DEFAULT,
+                protocol, "://localhost:", serverPort, contextPath, "\n",
+                AnsiColor.GREEN, "  External:    ", AnsiColor.DEFAULT,
+                protocol, "://", hostAddress, ":", serverPort, contextPath, "\n",
+                AnsiColor.GREEN, "  API:         ", AnsiColor.DEFAULT,
+                protocol, "://localhost:", serverPort, "/api\n",
+                AnsiColor.GREEN, "  Actuator:    ", AnsiColor.DEFAULT,
+                protocol, "://localhost:", serverPort, "/actuator\n",
+                AnsiColor.GREEN, "  Profile(s):  ", AnsiColor.DEFAULT, profiles, "\n",
+                viteHint,
+                AnsiColor.GREEN, "----------------------------------------------------------",
+                AnsiColor.DEFAULT);
+
+        log.info(banner);
+    }
+
+    /** If a {@code frontend/} folder exists next to the process, hint at the Vite dev URL. */
+    private String viteDevServerHint() {
+        Path frontend = Paths.get(System.getProperty("user.dir"), "frontend");
+        if (!Files.isDirectory(frontend)) {
+            return "";
+        }
+        int vitePort = readVitePort(frontend).orElse(5173);
+        return AnsiOutput.toString(
+                AnsiColor.GREEN, "  Front-end:   ", AnsiColor.DEFAULT,
+                "http://localhost:", String.valueOf(vitePort),
+                "  ", AnsiStyle.FAINT, "(run 'npm run dev' in frontend/ for hot-reload)",
+                AnsiStyle.NORMAL, "\n");
+    }
+
+    private Optional<Integer> readVitePort(Path frontendDir) {
+        try {
+            Path cfg = frontendDir.resolve("vite.config.js");
+            if (!Files.isRegularFile(cfg)) {
+                cfg = frontendDir.resolve("vite.config.ts");
+            }
+            if (!Files.isRegularFile(cfg)) {
+                return Optional.empty();
+            }
+            String body = Files.readString(cfg);
+            return Arrays.stream(body.split("\n"))
+                    .map(String::trim)
+                    .filter(line -> line.startsWith("port:"))
+                    .findFirst()
+                    .map(line -> line.replaceAll("[^0-9]", ""))
+                    .filter(digits -> !digits.isEmpty())
+                    .map(Integer::parseInt);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+}
+```
+
+### What it prints
+
+In a terminal with ANSI support, the output looks like:
+
+```
+----------------------------------------------------------
+  todoapp is running! Access URLs:
+  Local:       http://localhost:8080/
+  External:    http://192.168.1.42:8080/
+  API:         http://localhost:8080/api
+  Actuator:    http://localhost:8080/actuator
+  Profile(s):  default
+  Front-end:   http://localhost:5173  (run 'npm run dev' in frontend/ for hot-reload)
+----------------------------------------------------------
+```
+
+### Design notes
+
+- **Triggered on `ApplicationReadyEvent`** — fires after Tomcat has bound its port, so what's printed is the real port (including `server.port=0` random-port mode).
+- **HTTPS-aware** — flips the protocol when `server.ssl.enabled=true`.
+- **Context-path aware** — respects a non-root `server.servlet.context-path`.
+- **`Front-end:` line is conditional** — only printed when a `frontend/` folder exists next to the process, so standalone backends don't get a misleading line. The listener tries to read a `port:` from `vite.config.{js,ts}` and falls back to Vite's default (5173).
+- **No new dependencies** — uses only Spring Boot classes (`AnsiOutput`, `ApplicationReadyEvent`) already on the classpath.
+
+### Reminders for the agent
+
+- Do **not** log the banner as `System.out.println` — keep it on the SLF4J logger so it respects the configured log format and is captured by file appenders.
+- Do **not** swallow the `frontend/` check behind a profile; developers running tests with `@SpringBootTest` also benefit from the banner when an embedded server boots.
+- When adding tests, don't assert on the banner output — it's informational and ANSI escape codes make test assertions brittle.
 
 ## Performance
 
