@@ -46,7 +46,7 @@ try {
     javaVersion,
     dependencies,
   });
-  applyDotfiles(projectName, { database: false, frontend: false });
+  applyDotfiles(projectName, { database: false, frontend: false, packageName });
 } catch (err) {
   console.error(`✗ Failed to create project: ${err?.message || String(err)}`);
   process.exit(1);
