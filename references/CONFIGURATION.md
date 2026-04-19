@@ -438,23 +438,9 @@ kubectl create secret generic app-secrets \
   --from-literal=database-password=prod-password \
   --from-literal=api-key=prod-api-key
 
-# Azure Key Vault
+# Azure Container Apps secrets
 # AWS Secrets Manager
 # Google Cloud Secret Manager
-```
-
-**Spring Boot with Azure Key Vault:**
-
-```xml
-<dependency>
-    <groupId>com.azure.spring</groupId>
-    <artifactId>spring-cloud-azure-starter-keyvault</artifactId>
-</dependency>
-```
-
-```properties
-spring.cloud.azure.keyvault.secret.endpoint=https://my-vault.vault.azure.net/
-spring.cloud.azure.keyvault.secret.credential.managed-identity-enabled=true
 ```
 
 ## Common Configuration Patterns
