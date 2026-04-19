@@ -222,200 +222,69 @@ See [`references/CONFIGURATION.md`](../references/CONFIGURATION.md) and [`refere
 
 ## 6. (Optional) Deploy to Azure Container Apps
 
-> **Prerequisites for this section:**
+> **Prerequisites:**
 > - An Azure account with an active subscription ([free trial](https://azure.microsoft.com/free) works)
-> - [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) ≥ 2.85 installed
+> - [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) ≥ 2.85 installed and logged in (`az login`)
 > - `jq` installed (`brew install jq` / `apt install jq` / `winget install jqlang.jq`)
 >
-> This section creates billable Azure resources. The cheapest configuration costs roughly **$0.02–0.05/hour** while running. Run `az group delete` at the end to clean up everything.
+> This section creates billable Azure resources. The cheapest configuration costs roughly **$0.02–0.05/hour** while running. Delete the resource group afterwards to stop all charges.
 
-You have a working Docker image. The fastest path to a public URL is **Azure Container Apps** — a serverless container platform that gives you HTTPS, scale-to-zero, and rolling deployments out of the box.
+You have a working Docker image. The skill's reference file [`references/AZURE.md`](../references/AZURE.md) contains a complete, production-grade deployment recipe for **Azure Container Apps** — HTTPS by default, scale-to-zero, rolling deployments, and optional VNET-injected PostgreSQL with the DB password stored as a Container Apps secret.
 
-### 6.1 Install prerequisites and log in
+Rather than copy-pasting every command by hand, let the agent drive it. Start with the quick start (app only, no database) to get a public URL in a few minutes, then add PostgreSQL if you want persistence.
 
-```bash
-az extension add --name containerapp --upgrade
+### Quick start — app only
 
-az provider register --namespace Microsoft.App                 --wait
-az provider register --namespace Microsoft.OperationalInsights --wait
+```
+Deploy this app to Azure Container Apps following the "Quick Start (no database)"
+section in references/AZURE.md.
 
-az login
-az account set --subscription "YOUR_SUBSCRIPTION_ID"
+- Ask me for RESOURCE_GROUP, LOCATION, and APP_NAME before creating anything.
+- Walk me through each step and confirm before running any `az` command that
+  creates or modifies Azure resources.
+- At the end, print the public URL.
 ```
 
-### 6.2 Set variables
-
-Replace the values below with your own. `APP_NAME` must be lowercase, 3–20 characters, and unique within your subscription (it becomes part of resource names).
+Once the app is up, the agent will print the public URL. Verify it:
 
 ```bash
-export RESOURCE_GROUP="todo-rg"
-export LOCATION="eastus"          # or: francecentral, westeurope, uksouth
-export APP_NAME="todo"            # lowercase, 3-20 chars
-export ACR_NAME="${APP_NAME}acr$RANDOM"
-export CONTAINER_APP_ENV="${APP_NAME}-env"
-export CONTAINER_APP_NAME="${APP_NAME}-app"
-```
-
-### 6.3 Create infrastructure
-
-```bash
-az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
-
-# Container Registry — admin user disabled; pulls use managed identity
-az acr create \
-  --resource-group "$RESOURCE_GROUP" \
-  --name "$ACR_NAME" \
-  --sku Basic \
-  --admin-enabled false
-
-# Log Analytics workspace (create explicitly — the auto-provisioned one is broken)
-LAW_NAME="${APP_NAME}-law"
-az monitor log-analytics workspace create \
-  --resource-group "$RESOURCE_GROUP" \
-  --workspace-name "$LAW_NAME" \
-  --location "$LOCATION"
-LAW_CUSTOMER_ID=$(az monitor log-analytics workspace show \
-  -g "$RESOURCE_GROUP" -n "$LAW_NAME" --query customerId -o tsv)
-LAW_KEY=$(az monitor log-analytics workspace get-shared-keys \
-  -g "$RESOURCE_GROUP" -n "$LAW_NAME" --query primarySharedKey -o tsv)
-
-az containerapp env create \
-  --name "$CONTAINER_APP_ENV" \
-  --resource-group "$RESOURCE_GROUP" \
-  --location "$LOCATION" \
-  --logs-workspace-id "$LAW_CUSTOMER_ID" \
-  --logs-workspace-key "$LAW_KEY"
-```
-
-### 6.4 Build and push the image
-
-`az acr build` compiles the image **in Azure** — no local Docker push needed.
-
-```bash
-az acr build \
-  --registry "$ACR_NAME" \
-  --image "$APP_NAME:latest" \
-  --file Dockerfile \
-  .
-
-ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)
-ACR_ID=$(az acr show --name "$ACR_NAME" --query id -o tsv)
-```
-
-> **Want to deploy the native image instead?** Replace `--file Dockerfile` with `--file Dockerfile-native` and `--image "$APP_NAME:latest"` with `--image "$APP_NAME:native"`. The rest of the steps are identical; after deploying update the Container App to use `--cpu 0.25 --memory 0.5Gi` and remove `JAVA_TOOL_OPTIONS` (there's no JVM heap to configure). See the [deploy the native image](../references/AZURE.md#deploy-the-native-image) section of `references/AZURE.md`.
-
-### 6.5 Deploy the Container App
-
-The app needs a system-assigned managed identity so it can pull images from ACR without storing any credentials.
-
-```bash
-# Create the Container App with a system-assigned identity
-az containerapp create \
-  --name "$CONTAINER_APP_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --environment "$CONTAINER_APP_ENV" \
-  --image "$ACR_LOGIN_SERVER/$APP_NAME:latest" \
-  --system-assigned \
-  --target-port 8080 \
-  --ingress external \
-  --transport auto \
-  --cpu 0.5 --memory 1Gi \
-  --min-replicas 0 --max-replicas 10 \
-  --env-vars \
-    "SPRING_PROFILES_ACTIVE=prod" \
-    "JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0"
-
-# Grant the identity permission to pull images
-PRINCIPAL_ID=$(az containerapp show \
-  --name "$CONTAINER_APP_NAME" --resource-group "$RESOURCE_GROUP" \
-  --query identity.principalId -o tsv)
-
-az role assignment create \
-  --assignee "$PRINCIPAL_ID" \
-  --role AcrPull \
-  --scope "$ACR_ID"
-
-# Attach the registry (uses the managed identity — no password stored)
-az containerapp registry set \
-  --name "$CONTAINER_APP_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --server "$ACR_LOGIN_SERVER" \
-  --identity system
-```
-
-> **Why `JAVA_TOOL_OPTIONS` and not `JAVA_OPTS`?** The Dockerfile runs `java -jar` directly (no shell wrapper), so `JAVA_OPTS` is silently ignored. The JVM reads `JAVA_TOOL_OPTIONS` automatically.
-
-### 6.6 Add health probes
-
-Container Apps does not configure HTTP health probes by default. Wire in the Spring Boot Actuator endpoints so unhealthy replicas are restarted and traffic waits until the app is ready:
-
-```bash
-az containerapp show -n "$CONTAINER_APP_NAME" -g "$RESOURCE_GROUP" -o json \
-  | jq '.properties.template.containers |= map(. + {probes:[
-      {type:"Liveness",  httpGet:{path:"/actuator/health/liveness", port:8080}, initialDelaySeconds:30, periodSeconds:20},
-      {type:"Readiness", httpGet:{path:"/actuator/health/readiness",port:8080}, initialDelaySeconds:5,  periodSeconds:10},
-      {type:"Startup",   httpGet:{path:"/actuator/health/readiness",port:8080}, failureThreshold:30,    periodSeconds:5}
-    ]})' > /tmp/app-with-probes.json
-
-az containerapp update \
-  --name "$CONTAINER_APP_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --yaml /tmp/app-with-probes.json
-
-rm /tmp/app-with-probes.json
-```
-
-> **Liveness vs readiness probes.** Liveness restarts the container if the app stops responding. Readiness removes it from the load balancer until it's ready to serve traffic. The startup probe gives the app 150 s to come up before any other probe fires — generous for a JVM, instant for a native image.
-
-### 6.7 Test
-
-```bash
-APP_URL="https://$(az containerapp show \
-  --name "$CONTAINER_APP_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --query properties.configuration.ingress.fqdn -o tsv)"
-
-curl "$APP_URL/actuator/health"
+# Replace <YOUR_APP_FQDN> with the URL the agent printed
+curl https://<YOUR_APP_FQDN>/actuator/health
 # {"status":"UP"}
-
-echo "App is live at $APP_URL"
 ```
 
-Open the URL in a browser. Your Todo app is now running publicly with TLS managed by Azure.
+Open the URL in a browser — your Todo app is live with TLS managed by Azure.
 
-### 6.8 View logs
-
-```bash
-az containerapp logs show \
-  --name "$CONTAINER_APP_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --follow
-```
-
-### 6.9 (Sub-optional) Add a PostgreSQL database
-
-The app above uses the in-memory H2 database (because no external database is configured). For a persistent production setup, add an **Azure Database for PostgreSQL Flexible Server** and connect it to the Container App.
-
-Ask the agent:
+### Add a PostgreSQL database
 
 ```
-Follow references/AZURE.md — the "With PostgreSQL (VNET-injected, Key Vault-backed
-password)" section — to add a managed PostgreSQL database to my Azure deployment.
-Use RESOURCE_GROUP, LOCATION, APP_NAME, ACR_NAME, CONTAINER_APP_ENV, and
-CONTAINER_APP_NAME variables already set in my shell. Walk me through the commands
-one section at a time and ask for confirmation before running anything that creates
-or modifies Azure resources.
+Now follow the "With PostgreSQL (VNET-injected)" section in references/AZURE.md
+to add a managed PostgreSQL database to my existing Azure deployment.
+
+Use the RESOURCE_GROUP, LOCATION, APP_NAME, CONTAINER_APP_ENV, and
+CONTAINER_APP_NAME values from the previous deployment. Walk me through one
+section at a time and confirm before running anything destructive.
 ```
 
-The agent will guide you through creating a VNET, a Key Vault (so the database password never appears in source code or shell history), and a private PostgreSQL server that's only reachable from inside the VNET.
+The agent will create a VNET, a private PostgreSQL Flexible Server, and store the database password as a Container Apps secret — no credentials committed to source code.
 
-### 6.10 Clean up
+### Deploy the native image instead
+
+```
+Redeploy my Azure Container App using the GraalVM native image (Dockerfile-native)
+instead of the JVM image.
+
+After redeploying, set --cpu 0.25 --memory 0.5Gi and remove JAVA_TOOL_OPTIONS
+(there is no JVM heap to configure). Follow references/AZURE.md.
+```
+
+### Clean up
 
 ```bash
 az group delete --name "$RESOURCE_GROUP" --yes --no-wait
 ```
 
-This deletes the resource group and every resource inside it (Container App, ACR, Log Analytics workspace). It takes a few minutes to complete in the background.
+This removes the resource group and everything inside it. Takes a few minutes in the background.
 
 ---
 
@@ -423,7 +292,7 @@ This deletes the resource group and every resource inside it (Container App, ACR
 
 - Run the native version next to the JVM version (different ports) and time `curl` against both. Compare first-response latency after a fresh start.
 - Push your image to Docker Hub (or GitHub Container Registry) and pull it on another machine.
-- Ask the agent: *"Set up CI/CD using GitHub Actions and OIDC so every push to main rebuilds the image in ACR and updates the Container App — no secrets stored in the repo."* (See [`references/AZURE.md`](../references/AZURE.md#cicd-with-github-actions-oidc-no-secrets).)
+- Ask the agent: *"Set up CI/CD using GitHub Actions and OIDC so every push to main rebuilds and redeploys the Container App — no secrets stored in the repo."* (See [`references/AZURE.md`](../references/AZURE.md#cicd-with-github-actions-oidc-no-secrets).)
 
 ---
 
