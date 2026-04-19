@@ -277,15 +277,23 @@ function writeTextFileIfMissing(destPath, content) {
 }
 
 /**
- * Remove the frontend COPY lines from a Dockerfile when no frontend is present.
+ * Comment out the frontend COPY lines in a Dockerfile when no frontend is present.
+ *
+ * We intentionally *comment* the lines rather than delete them: if the user later
+ * scaffolds a `frontend/` directory (e.g. adds a Vue/React app to a `web` project),
+ * they simply uncomment one line instead of hunting down why `docker build` fails
+ * with "/app/frontend doesn't exist".
  */
 function stripFrontendCopyLines(filePath) {
   if (!existsSync(filePath)) return;
   let content = readFileSync(filePath, 'utf8');
-  // Remove the comment + COPY frontend block (2-3 lines)
+  // Replace the comment + COPY frontend block with a commented-out version
+  // that includes a clear hint for future-you.
   content = content.replace(
-    /# Copy frontend directory[^\n]*\n(?:#[^\n]*\n)*COPY frontend [^\n]*\n/g,
-    ''
+    /(^|\n)# Copy frontend directory[^\n]*\n(?:#[^\n]*\n)*COPY frontend ([^\n]+)\n/g,
+    '$1# Uncomment the next line if you add a frontend/ directory\n' +
+    '# (e.g. Vue/React/Angular via the frontend-maven-plugin build).\n' +
+    '# COPY frontend $2\n'
   );
   writeFileSync(filePath, content, 'utf8');
 }
