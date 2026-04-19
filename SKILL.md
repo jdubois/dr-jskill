@@ -91,6 +91,8 @@ When creating Spring Boot projects:
 5. Use PostgreSQL for database - see [Database Best Practices](references/DATABASE.md) for optimization
 6. Use properties files for configuration - see [Configuration Best Practices](references/CONFIGURATION.md)
 7. Set up foundational dotfiles: `.gitignore`, `.env.sample`, `.editorconfig`, `.gitattributes`, `.dockerignore`, optional `.vscode/`, `.devcontainer/` - see [Project Setup & Dotfiles](references/PROJECT-SETUP.md)
+   - The `.env` file is the canonical location for local secrets; instruct users to copy `.env.sample` → `.env` and fill in real values
+   - **NEVER read or expose `.env`**: it contains real secrets — do not `cat`, view, or print its contents; only `.env.sample` (placeholder values) may be read or displayed
 8. Use `spring-boot-docker-compose` for automatic database startup during development - see [Docker Guide](references/DOCKER.md)
 9. Follow RESTful API design principles
 10. Configure proper logging with Logback - see [Logging Best Practices](references/LOGGING.md)
@@ -183,6 +185,8 @@ Generated projects include: Spring Web, Spring Data JPA, Spring Boot Actuator, D
 ## Configuration
 
 Use `.properties` files (not YAML), externalize secrets via environment variables, and leverage `@ConfigurationProperties` for type safety. See the [Configuration Guide](references/CONFIGURATION.md) for profiles, secrets management, and common patterns.
+
+The `.env` file is the single local secret store — never read or print it; only `.env.sample` (placeholder values) may be shown.
 
 **For database optimization**, see the [Database Best Practices Guide](references/DATABASE.md).
 
