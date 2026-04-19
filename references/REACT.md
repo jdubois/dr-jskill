@@ -81,7 +81,13 @@ From your Spring Boot project root:
 
 ```bash
 # Create React project with Vite
-npm create vite@latest frontend -- --template react
+# Note: `-y` MUST come before the package name — it tells npm to auto-accept
+# its own "Ok to proceed?" install prompt. Flags after `--` go to create-vite.
+# Without this, the command hangs in non-interactive shells (CI, agents, etc.).
+npm create -y vite@latest frontend -- --template react
+
+# Equivalent, also non-interactive:
+# npx --yes create-vite@latest frontend --template react
 
 cd frontend
 npm install

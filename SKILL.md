@@ -209,6 +209,8 @@ Choose a front-end framework:
 
 All options include: Vite/CLI dev server with hot reload, Bootstrap 5.3+, SPA routing, and automatic build into the Spring Boot JAR.
 
+> **Non-interactive scaffolding (important for CI and AI agents).** When scaffolding with `npm create …`, always place `-y` **before** the package name so npm auto-accepts its own "Ok to proceed?" install prompt — otherwise the command hangs in non-TTY shells. Use `npm create -y vite@latest frontend -- --template react` (or `vue@latest` / `--template vanilla`), or equivalently `npx --yes create-vite@latest frontend --template react`. Flags placed *after* `--` go to the scaffolder, not to npm, so `-y` there does not suppress npm's own prompt.
+
 ## Docker Deployment
 
 Spring Boot automatically manages Docker containers during development via `spring-boot-docker-compose`. For production, use the provided `Dockerfile` (JVM) or `Dockerfile-native` (GraalVM). See the [Docker Guide](references/DOCKER.md) for full setup, health checks, and deployment patterns.

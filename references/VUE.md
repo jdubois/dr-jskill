@@ -81,8 +81,11 @@ my-spring-boot-app/
 From your Spring Boot project root:
 
 ```bash
-# Create Vue.js project with Vite
-npm create vue@latest frontend
+# Create Vue.js project with Vite — interactive (answer the prompts yourself):
+# Note: `-y` MUST come before the package name — it tells npm to auto-accept
+# its own "Ok to proceed?" install prompt (otherwise the command hangs in
+# non-interactive shells like CI or AI agents).
+npm create -y vue@latest frontend
 
 # Follow the prompts:
 # ✔ Add TypeScript? … No
@@ -93,6 +96,9 @@ npm create vue@latest frontend
 # ✔ Add an End-to-End Testing Solution? › No
 # ✔ Add ESLint for code quality? … Yes
 # ✔ Add Prettier for code formatting? … Yes
+
+# Fully non-interactive alternative (skips all prompts, picks the features via flags):
+# npm create -y vue@latest frontend -- --router --pinia --vitest --eslint --prettier
 
 cd frontend
 npm install
