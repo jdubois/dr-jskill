@@ -22,7 +22,7 @@ table aligned with `versions.json`.
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
 - [Quick Start (no database)](#quick-start-no-database)
-- [With PostgreSQL (VNET-injected, Key Vault-backed password)](#with-postgresql-vnet-injected-key-vault-backed-password)
+- [With PostgreSQL (VNET-injected)](#with-postgresql-vnet-injected)
 - [Deploy the native image](#deploy-the-native-image)
 - [CI/CD with GitHub Actions (OIDC, no secrets)](#cicd-with-github-actions-oidc-no-secrets)
 - [Day-2 operations](#day-2-operations)
@@ -36,14 +36,13 @@ table aligned with `versions.json`.
 Core components:
 
 - **Azure Container Apps** — serverless container platform, HTTPS by default, scale-to-zero.
-- **Azure Container Registry (ACR)** — private image registry; image pull uses **managed identity** (no admin user, no passwords).
-- **Azure Database for PostgreSQL Flexible Server** *(optional)* — VNET-injected; **database password stored in Azure Key Vault** and injected into the app as a Container Apps secret reference.
-- **Azure Key Vault** *(when a DB is used)* — single source of truth for the DB password; rotated centrally; the app's managed identity is granted read-only access via RBAC.
+- **GitHub Container Registry (GHCR)** — image registry at `ghcr.io`; Container Apps pulls using a long-lived GitHub PAT stored as a Container Apps secret (no Azure resource to create or pay for).
+- **Azure Database for PostgreSQL Flexible Server** *(optional)* — VNET-injected; **database password stored as a Container Apps secret** and injected into the app via `secretref`.
 - **Azure CLI** only — no Terraform/Bicep/Buildpacks.
 
 Why this shape:
 
-- No secrets in source control, no secrets in shell history (the admin password is generated into Key Vault in one step), no secrets in env-var dumps.
+- No secrets in source control. The admin password is generated at deploy time, stored as a Container Apps secret, and never committed to version control.
 - Vanilla Spring Boot: `SPRING_DATASOURCE_URL/USERNAME/PASSWORD` — no Azure-specific JDBC plugin, so the exact same configuration works locally, in Testcontainers, and in Azure. GraalVM native image builds cleanly.
 - One image, two runtimes: JVM Dockerfile *or* the GraalVM native Dockerfile.
 - Scripts are plain `az` commands you can run interactively or paste into a `.sh` / `.ps1`.
@@ -123,7 +122,7 @@ different name. Do not silently `az group create` on top of an existing RG.
 
 Some subscriptions are **silently restricted** from creating PostgreSQL
 Flexible Server in certain regions (commonly `westeurope`). The error only
-surfaces after you've created the RG, ACR, VNET, and identity — forcing a
+surfaces after you've created the RG, VNET, and identity — forcing a
 full tear-down. Always run this check **before** creating any resource:
 
 ```bash
@@ -152,7 +151,8 @@ placeholders if the user gave you real values.
 export RESOURCE_GROUP="myapp-rg"          # ← from user
 export LOCATION="eastus"                  # ← from user
 export APP_NAME="myapp"                   # ← from user
-export ACR_NAME="${APP_NAME}acr$RANDOM"
+export GHCR_OWNER="myusername"            # ← replace with your GitHub username or org
+export GHCR_IMAGE="ghcr.io/$GHCR_OWNER/$APP_NAME"
 export CONTAINER_APP_ENV="${APP_NAME}-env"
 export CONTAINER_APP_NAME="${APP_NAME}-app"
 ```
@@ -161,13 +161,6 @@ export CONTAINER_APP_NAME="${APP_NAME}-app"
 
 ```bash
 az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
-
-# ACR — admin user DISABLED; we will pull using managed identity.
-az acr create \
-  --resource-group "$RESOURCE_GROUP" \
-  --name "$ACR_NAME" \
-  --sku Basic \
-  --admin-enabled false
 
 # Log Analytics workspace — create EXPLICITLY rather than letting
 # `containerapp env create` auto-provision one. The auto-provisioning path
@@ -191,55 +184,74 @@ az containerapp env create \
   --logs-workspace-key "$LAW_KEY"
 ```
 
-### 3. Build the image in ACR (no local Docker required)
+### 3. Build and push the image to GitHub Container Registry
+
+You need a GitHub **Personal Access Token** (PAT) with the `write:packages`
+scope to push from your laptop (a PAT with `write:packages` also includes
+`read:packages`, so you can reuse it for the Container Apps pull secret below).
+In CI the `GITHUB_TOKEN` is used instead — no long-lived PAT required for the
+push step.
 
 ```bash
-az acr build \
-  --registry "$ACR_NAME" \
-  --image "$APP_NAME:latest" \
-  --file Dockerfile \
-  .
+# Log in to GHCR (replace $GHCR_PAT with your PAT, or use a stored env var)
+echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_OWNER" --password-stdin
 
-ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)
-ACR_ID=$(az acr show --name "$ACR_NAME" --query id -o tsv)
+# Build and push
+docker build -t "$GHCR_IMAGE:latest" -f Dockerfile .
+docker push "$GHCR_IMAGE:latest"
 ```
 
-### 4. Create the Container App with a system-assigned identity and grant `AcrPull`
+> **Public vs private packages.** By default GitHub Packages are private. If
+> you want Container Apps to pull without credentials, navigate to the package
+> settings on GitHub and set visibility to **Public**. Skip the PAT-secret
+> steps in §4 if you do that.
+
+### 4. Create the Container App with GHCR registry credentials
+
+For a **private** GHCR package, Container Apps needs a long-lived GitHub PAT
+with the `read:packages` scope stored as a secret. For a **public** package,
+omit the `--secrets` and `--registry-*` flags.
 
 ```bash
-# First create without a registry, then grant AcrPull, then attach the registry
-# (required because the identity must exist before the role assignment).
+# Store the GHCR pull PAT as a Container Apps secret (private packages only).
+# A PAT with write:packages scope already includes read:packages, so you can
+# reuse the same token you used to push the image. Generate one at
+# https://github.com/settings/tokens.
 az containerapp create \
   --name "$CONTAINER_APP_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --environment "$CONTAINER_APP_ENV" \
-  --image "$ACR_LOGIN_SERVER/$APP_NAME:latest" \
-  --system-assigned \
+  --image "$GHCR_IMAGE:latest" \
   --target-port 8080 \
   --ingress external \
   --transport auto \
   --cpu 0.5 --memory 1Gi \
   --min-replicas 0 --max-replicas 10 \
+  --secrets "ghcr-pat=$GHCR_PAT" \
+  --registry-server ghcr.io \
+  --registry-username "$GHCR_OWNER" \
+  --registry-password-secret-name ghcr-pat \
   --env-vars \
     "SPRING_PROFILES_ACTIVE=prod" \
     "JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0"
-
-PRINCIPAL_ID=$(az containerapp show \
-  --name "$CONTAINER_APP_NAME" --resource-group "$RESOURCE_GROUP" \
-  --query identity.principalId -o tsv)
-
-az role assignment create \
-  --assignee "$PRINCIPAL_ID" \
-  --role AcrPull \
-  --scope "$ACR_ID"
-
-# Attach the registry using the system-assigned identity (no username/password).
-az containerapp registry set \
-  --name "$CONTAINER_APP_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --server "$ACR_LOGIN_SERVER" \
-  --identity system
 ```
+
+> **Public package (no credentials needed)**
+> ```bash
+> az containerapp create \
+>   --name "$CONTAINER_APP_NAME" \
+>   --resource-group "$RESOURCE_GROUP" \
+>   --environment "$CONTAINER_APP_ENV" \
+>   --image "$GHCR_IMAGE:latest" \
+>   --target-port 8080 \
+>   --ingress external \
+>   --transport auto \
+>   --cpu 0.5 --memory 1Gi \
+>   --min-replicas 0 --max-replicas 10 \
+>   --env-vars \
+>     "SPRING_PROFILES_ACTIVE=prod" \
+>     "JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0"
+> ```
 
 > **Why `JAVA_TOOL_OPTIONS` and not `JAVA_OPTS`?** The skill's Dockerfile
 > runs `java -jar app.jar` directly (no shell wrapper), so `JAVA_OPTS` is
@@ -292,13 +304,12 @@ APP_URL="https://$(az containerapp show \
 curl "$APP_URL/actuator/health"     # {"status":"UP"}
 ```
 
-## With PostgreSQL (VNET-injected, Key Vault-backed password)
+## With PostgreSQL (VNET-injected)
 
 Adds a managed PostgreSQL Flexible Server, VNET-integrates both the database
-and Container Apps, stores the DB password in **Azure Key Vault**, and hands
-it to the app via a **Container Apps `keyvaultref:` secret**. The password
-never appears in source, env-var listings, or shell history beyond the one
-`openssl rand` line that generates it into Key Vault.
+and Container Apps, and stores the DB password as a **Container Apps secret**
+injected into the app via `secretref`. The password never appears in source
+control or env-var listings.
 
 ### 1. Extra configuration
 
@@ -309,7 +320,6 @@ export DB_ADMIN_USER="pgadmin"
 export VNET_NAME="${APP_NAME}-vnet"
 export SUBNET_APP="subnet-app"
 export SUBNET_DB="subnet-db"
-export KV_NAME="${APP_NAME}kv$RANDOM"   # Key Vault names are globally unique, 3–24 chars, alphanum + hyphen
 ```
 
 ### 2. Virtual network
@@ -334,41 +344,15 @@ SUBNET_APP_ID=$(az network vnet subnet show \
   --name "$SUBNET_APP" --query id -o tsv)
 ```
 
-### 3. Key Vault + generate the DB password straight into it
+### 3. PostgreSQL Flexible Server (private, password auth)
+
+Generate the DB password into a shell variable and create the server in one go.
+The password is also passed to the Container Apps secret in step 5, then unset.
 
 ```bash
-az keyvault create \
-  --name "$KV_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --location "$LOCATION" \
-  --enable-rbac-authorization true
+# Generate password. It lives only in memory for the duration of this session.
+DB_ADMIN_PASSWORD=$(openssl rand -base64 24)
 
-KV_ID=$(az keyvault show -n "$KV_NAME" -g "$RESOURCE_GROUP" --query id -o tsv)
-KV_URI=$(az keyvault show -n "$KV_NAME" -g "$RESOURCE_GROUP" --query properties.vaultUri -o tsv)
-
-# Grant YOU (the deployer) permission to write secrets — RBAC-mode vaults do
-# not grant creators access automatically.
-ME_OID=$(az ad signed-in-user show --query id -o tsv)
-az role assignment create --assignee-object-id "$ME_OID" \
-  --assignee-principal-type User \
-  --role "Key Vault Secrets Officer" --scope "$KV_ID"
-
-# Generate the password directly into Key Vault. It never lives in a shell
-# variable or in history.
-az keyvault secret set \
-  --vault-name "$KV_NAME" --name "db-admin-password" \
-  --value "$(openssl rand -base64 24)" \
-  --output none
-
-# Fetch the secret value ONLY for the one command that needs it — creating
-# the PG server. It's immediately unset after use.
-DB_ADMIN_PASSWORD=$(az keyvault secret show \
-  --vault-name "$KV_NAME" --name "db-admin-password" --query value -o tsv)
-```
-
-### 4. PostgreSQL Flexible Server (private, password auth)
-
-```bash
 az postgres flexible-server create \
   --resource-group "$RESOURCE_GROUP" \
   --name "$DB_SERVER_NAME" \
@@ -384,8 +368,8 @@ az postgres flexible-server create \
   --backup-retention 7 \
   --yes
 
-# Never needed again in this shell.
-unset DB_ADMIN_PASSWORD
+# Keep $DB_ADMIN_PASSWORD in memory — it is needed again in step 5 to set the
+# Container Apps secret. It will be unset after that step.
 
 az postgres flexible-server parameter set \
   --resource-group "$RESOURCE_GROUP" \
@@ -424,7 +408,7 @@ fi
 > The server is VNET-injected (private). **Do not** add a public firewall
 > rule — it would have no effect and signals the wrong intent.
 
-### 5. Container Apps Environment inside the VNET
+### 4. Container Apps Environment inside the VNET
 
 ```bash
 # Create the Log Analytics workspace explicitly — see Quick Start §2 for why
@@ -449,29 +433,13 @@ az containerapp env create \
   --infrastructure-subnet-resource-id "$SUBNET_APP_ID"
 ```
 
-### 6. Deploy the app with a user-assigned identity
+### 5. Deploy the app with GHCR registry credentials
 
-The managed identity has two jobs: pull the image from ACR, and read the DB
-password from Key Vault. **No database role bootstrap step is needed** — the
-app logs in with the PG admin credentials the server already knows about.
+The DB password is stored directly as a Container Apps secret. GHCR pull
+credentials are stored as a second Container Apps secret. No managed identity
+is needed.
 
 ```bash
-MI_NAME="${APP_NAME}-mi"
-az identity create --resource-group "$RESOURCE_GROUP" --name "$MI_NAME"
-MI_ID=$(az identity show -g "$RESOURCE_GROUP" -n "$MI_NAME" --query id -o tsv)
-MI_PRINCIPAL_ID=$(az identity show -g "$RESOURCE_GROUP" -n "$MI_NAME" --query principalId -o tsv)
-
-# Grant AcrPull on the registry
-ACR_ID=$(az acr show --name "$ACR_NAME" --query id -o tsv)
-az role assignment create --assignee-object-id "$MI_PRINCIPAL_ID" \
-  --assignee-principal-type ServicePrincipal \
-  --role AcrPull --scope "$ACR_ID"
-
-# Grant read-only access to Key Vault secrets
-az role assignment create --assignee-object-id "$MI_PRINCIPAL_ID" \
-  --assignee-principal-type ServicePrincipal \
-  --role "Key Vault Secrets User" --scope "$KV_ID"
-
 # Standard JDBC URL — no Azure-specific plugin.
 DB_URL="jdbc:postgresql://${DB_HOST}:5432/${DB_NAME}?sslmode=require"
 
@@ -479,14 +447,16 @@ az containerapp create \
   --name "$CONTAINER_APP_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --environment "$CONTAINER_APP_ENV" \
-  --image "$ACR_LOGIN_SERVER/$APP_NAME:latest" \
-  --user-assigned "$MI_ID" \
-  --registry-server "$ACR_LOGIN_SERVER" \
-  --registry-identity "$MI_ID" \
+  --image "$GHCR_IMAGE:latest" \
   --target-port 8080 --ingress external --transport auto \
   --cpu 0.5 --memory 1Gi \
   --min-replicas 1 --max-replicas 10 \
-  --secrets "db-password=keyvaultref:${KV_URI}secrets/db-admin-password,identityref:${MI_ID}" \
+  --secrets \
+    "db-password=$DB_ADMIN_PASSWORD" \
+    "ghcr-pat=$GHCR_PAT" \
+  --registry-server ghcr.io \
+  --registry-username "$GHCR_OWNER" \
+  --registry-password-secret-name ghcr-pat \
   --env-vars \
     "SPRING_PROFILES_ACTIVE=prod" \
     "SPRING_DATASOURCE_URL=$DB_URL" \
@@ -494,7 +464,12 @@ az containerapp create \
     "SPRING_DATASOURCE_PASSWORD=secretref:db-password" \
     "SPRING_JPA_HIBERNATE_DDL_AUTO=update" \
     "JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0"
+
+# Clear the password from memory now that both PG and Container Apps have it.
+unset DB_ADMIN_PASSWORD
 ```
+
+> **Public GHCR package.** If the package is public, omit the `"ghcr-pat=..."` secret and the `--registry-server/--registry-username/--registry-password-secret-name` flags — Container Apps will pull without credentials.
 
 > **`ddl-auto=update` on first deploy.** The app has no tables yet; `validate`
 > would crash on startup. Once the schema is stable, flip to `validate` and
@@ -510,7 +485,7 @@ az containerapp create \
 > GRANT ALL ON ALL TABLES IN SCHEMA public TO app;
 > ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO app;
 > ```
-> Store `app`'s password as a second Key Vault secret and point
+> Store `app`'s password as a second Container Apps secret and point
 > `SPRING_DATASOURCE_USERNAME/PASSWORD` at it. Because the server is private,
 > run this via a Container Apps Job: spin up a one-shot `postgres:17`
 > container in the same VNET, with `PGPASSWORD` set from a `secretref` to
@@ -519,16 +494,23 @@ az containerapp create \
 
 ### Password rotation
 
-Rotate in Key Vault; the next revision picks up the new value. `keyvaultref`
-is resolved at revision-creation time, so you need to force a new revision:
+Generate a new password, update both the Container Apps secret and the PG
+server, then force a new revision:
 
 ```bash
-az keyvault secret set --vault-name "$KV_NAME" --name "db-admin-password" \
-  --value "$NEW_PASSWORD" --output none
+NEW_PASSWORD=$(openssl rand -base64 24)
+
+# Update the Container Apps secret
+az containerapp secret set \
+  --name "$CONTAINER_APP_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --secrets "db-password=$NEW_PASSWORD"
 
 az postgres flexible-server update \
   --resource-group "$RESOURCE_GROUP" --name "$DB_SERVER_NAME" \
   --admin-password "$NEW_PASSWORD"
+
+unset NEW_PASSWORD
 
 # Force a new revision so Container Apps re-reads the secret
 az containerapp update --name "$CONTAINER_APP_NAME" \
@@ -536,7 +518,7 @@ az containerapp update --name "$CONTAINER_APP_NAME" \
   --revision-suffix "rot$(date +%s)"
 ```
 
-### 7. Add liveness & readiness probes
+### 6. Add liveness & readiness probes
 
 Same as the no-database flow — Container Apps does not configure HTTP probes
 by default, so you must wire them in explicitly. Spring Boot Actuator exposes
@@ -580,18 +562,15 @@ image starts in sub-second time and uses ~150 MB RAM at idle — ideal for
 `min-replicas 0`.
 
 ```bash
-# Build the native image in ACR (takes ~5–10 minutes).
-az acr build \
-  --registry "$ACR_NAME" \
-  --image "$APP_NAME:native" \
-  --file Dockerfile-native \
-  .
+# Build the native image and push to GHCR (takes ~5–10 minutes).
+docker build -t "$GHCR_IMAGE:native" -f Dockerfile-native .
+docker push "$GHCR_IMAGE:native"
 
 # Point the app at the native tag. Tune CPU down and drop JAVA_TOOL_OPTIONS
 # (no JVM heap to size).
 az containerapp update \
   --name "$CONTAINER_APP_NAME" --resource-group "$RESOURCE_GROUP" \
-  --image "$ACR_LOGIN_SERVER/$APP_NAME:native" \
+  --image "$GHCR_IMAGE:native" \
   --cpu 0.25 --memory 0.5Gi \
   --remove-env-vars JAVA_TOOL_OPTIONS
 ```
@@ -634,36 +613,55 @@ Use **federated credentials** so GitHub Actions gets a short-lived Azure token
      push:
        branches: [main]
    permissions:
-     id-token: write   # required for OIDC
+     id-token: write   # required for OIDC (Azure login)
      contents: read
+     packages: write   # required for GHCR push
    jobs:
      deploy:
        runs-on: ubuntu-latest
        env:
          RESOURCE_GROUP: myapp-rg
-         ACR_NAME: myappacr
          APP_NAME: myapp
          CONTAINER_APP_NAME: myapp-app
+         GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/myapp
        steps:
          - uses: actions/checkout@v5
+         - name: Log in to GitHub Container Registry
+           uses: docker/login-action@v3
+           with:
+             registry: ghcr.io
+             username: ${{ github.actor }}
+             password: ${{ secrets.GITHUB_TOKEN }}
+         - name: Build and push image to GHCR
+           uses: docker/build-push-action@v6
+           with:
+             context: .
+             push: true
+             tags: |
+               ${{ env.GHCR_IMAGE }}:${{ github.sha }}
+               ${{ env.GHCR_IMAGE }}:latest
+             cache-from: type=gha
+             cache-to: type=gha,mode=max
          - uses: azure/login@v2
            with:
              client-id: ${{ vars.AZURE_CLIENT_ID }}
              tenant-id: ${{ vars.AZURE_TENANT_ID }}
              subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-         - name: Build image in ACR
-           run: |
-             az acr build --registry "$ACR_NAME" \
-               --image "$APP_NAME:${{ github.sha }}" \
-               --file Dockerfile .
          - name: Update Container App
            run: |
-             ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)
              az containerapp update \
                --name "$CONTAINER_APP_NAME" \
                --resource-group "$RESOURCE_GROUP" \
-               --image "$ACR_LOGIN_SERVER/$APP_NAME:${{ github.sha }}"
+               --image "$GHCR_IMAGE:${{ github.sha }}"
    ```
+
+> **Note on the GHCR pull PAT.** The `GITHUB_TOKEN` used above is short-lived
+> and only valid during the workflow run — Container Apps cannot use it to pull
+> the image later. The long-lived PAT with `read:packages` scope that you
+> stored in Container Apps during initial setup (Quick Start §4) is what
+> Container Apps uses for every pull. If the package is **public**, no pull
+> credentials are needed and you can remove the `--secrets`/`--registry-*`
+> flags from the `az containerapp create` command.
 
 ## Day-2 operations
 
@@ -771,10 +769,9 @@ Common failures:
 
 | Symptom | Likely cause |
 |---|---|
-| `ImagePullBackOff` / `UNAUTHORIZED` from ACR | Managed identity missing `AcrPull`; re-run the `az role assignment create` step. |
+| `ImagePullBackOff` / `UNAUTHORIZED` from GHCR | Container Apps missing valid GHCR credentials; re-run the initial setup to store a `read:packages` PAT as a secret, or make the GitHub Package public. |
 | App stuck in `Activating`, readiness probe failing | Actuator not exposed, or `management.endpoints.web.exposure.include` missing `health`. |
 | `SSL required` from PG driver | `sslmode=require` missing from JDBC URL. |
-| App can't resolve Key Vault secret (`keyvaultref:...`) / starts with empty password | Either the Key Vault URI is wrong (needs trailing `/secrets/...`), the MI is not granted `Key Vault Secrets User`, or the vault is not in RBAC mode. |
 | DNS resolution failure from inside the VNET (`could not translate host name "<db>.postgres.database.azure.com"`) | Private DNS zone exists but has zero VNET links. Current CLI auto-creates the link in step 4, but older versions leave `VirtualNetworkLinks = 0` — run `az network private-dns link vnet create` (the idempotent block in step 4 handles both cases). |
 | `InvalidApiVersionParameter: The api-version '2021-12-01-preview' is invalid` on `containerapp env create` | The containerapp CLI extension tries to auto-provision a Log Analytics workspace using an outdated API version. Create the workspace explicitly with `az monitor log-analytics workspace create` and pass `--logs-workspace-id` / `--logs-workspace-key` to `containerapp env create` (as shown in steps 2 and 5). |
 | `SubnetIsNotDelegatedToContainerApps` on env create | The app subnet was not delegated. Add `--delegations Microsoft.App/environments` at subnet creation, or update it afterwards. |
@@ -795,7 +792,6 @@ Individual resources:
 ```bash
 az containerapp delete       --name "$CONTAINER_APP_NAME" --resource-group "$RESOURCE_GROUP" --yes
 az containerapp env delete   --name "$CONTAINER_APP_ENV"  --resource-group "$RESOURCE_GROUP" --yes
-az acr delete                --name "$ACR_NAME"           --resource-group "$RESOURCE_GROUP" --yes
 az postgres flexible-server delete --name "$DB_SERVER_NAME" --resource-group "$RESOURCE_GROUP" --yes
 ```
 
@@ -820,8 +816,8 @@ az ad app delete --id "$APP_ID"
 ## Additional resources
 
 - [Azure Container Apps documentation](https://learn.microsoft.com/azure/container-apps/)
-- [Container Apps — managed identity for ACR](https://learn.microsoft.com/azure/container-apps/managed-identity-image-pull)
-- [Container Apps — Key Vault secret references](https://learn.microsoft.com/azure/container-apps/manage-secrets#reference-secret-from-key-vault)
+- [GitHub Container Registry documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
+- [Container Apps — manage secrets](https://learn.microsoft.com/azure/container-apps/manage-secrets)
 - [Azure Login GitHub Action — OIDC](https://github.com/Azure/login#login-with-openid-connect-oidc-recommended)
 - [`references/DATABASE.md`](DATABASE.md) — schema initialization conventions
 - [`references/DOCKER.md`](DOCKER.md) — image anatomy (JVM and native)

@@ -104,6 +104,8 @@ dependency-check-report.*
 - **Docker Compose** and `spring-boot-docker-compose` can load variables via `env_file: .env` entries.
 - For CI, set secrets via the platform’s secret store (GitHub Actions `secrets`, Azure DevOps variable groups, etc.).
 
+> **⚠️ AI Agent Security Rule**: the `.env` file contains real secrets. AI agents and scripts **must never** read, `cat`, view, or print its contents — not to the console, not in output, not in any log. Only `.env.sample` (placeholder values) may be read or displayed. If a task requires knowing a current value, ask the user to share only that specific variable, never the whole file.
+
 **Suggested `./.env.sample`:**
 
 ```dotenv
