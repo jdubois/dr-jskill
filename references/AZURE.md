@@ -142,6 +142,16 @@ az provider show -n Microsoft.App \
 
 ## Quick Start (no database)
 
+> **Precondition — the project must be published to GitHub.** Publishing is
+> optional for local development, but it is required for Azure deployment:
+> every step below assumes `GHCR_OWNER`, `GHCR_REPO`, and `GHCR_IMAGE` are
+> exported, that you can push images to `ghcr.io`, and (for CI/CD) that the
+> OIDC federated credential can pin an exact
+> `repo:<owner>/<repo>:ref:refs/heads/main` subject. If you haven't done this
+> yet, follow
+> [PROJECT-SETUP.md → Publish the project to GitHub](PROJECT-SETUP.md#publish-the-project-to-github)
+> first and then come back here.
+
 ### 1. Configuration
 
 Fill these in from the answers collected above — do not keep the `myapp`
@@ -151,8 +161,12 @@ placeholders if the user gave you real values.
 export RESOURCE_GROUP="myapp-rg"          # ← from user
 export LOCATION="eastus"                  # ← from user
 export APP_NAME="myapp"                   # ← from user
-export GHCR_OWNER="myusername"            # ← replace with your GitHub username or org
-export GHCR_IMAGE="ghcr.io/$GHCR_OWNER/$APP_NAME"
+# GHCR_OWNER, GHCR_REPO, GHCR_IMAGE must already be exported — see
+# PROJECT-SETUP.md § "Publish the project to GitHub". If they are not set,
+# stop here and create the GitHub repo first.
+: "${GHCR_OWNER:?Run the Publish-to-GitHub steps in PROJECT-SETUP.md first}"
+: "${GHCR_REPO:?Run the Publish-to-GitHub steps in PROJECT-SETUP.md first}"
+: "${GHCR_IMAGE:?Run the Publish-to-GitHub steps in PROJECT-SETUP.md first}"
 export CONTAINER_APP_ENV="${APP_NAME}-env"
 export CONTAINER_APP_NAME="${APP_NAME}-app"
 ```
@@ -594,13 +608,18 @@ Use **federated credentials** so GitHub Actions gets a short-lived Azure token
      --assignee "$APP_ID" \
      --scope "/subscriptions/$SUB_ID/resourceGroups/$RESOURCE_GROUP"
 
-   az ad app federated-credential create --id "$APP_ID" --parameters '{
-     "name": "main",
-     "issuer": "https://token.actions.githubusercontent.com",
-     "subject": "repo:OWNER/REPO:ref:refs/heads/main",
-     "audiences": ["api://AzureADTokenExchange"]
-   }'
+   az ad app federated-credential create --id "$APP_ID" --parameters "{
+     \"name\": \"main\",
+     \"issuer\": \"https://token.actions.githubusercontent.com\",
+     \"subject\": \"repo:${GHCR_OWNER}/${GHCR_REPO}:ref:refs/heads/main\",
+     \"audiences\": [\"api://AzureADTokenExchange\"]
+   }"
    ```
+
+   The `subject` must match `repo:<owner>/<repo>:ref:refs/heads/<branch>`
+   **exactly** — a typo here is the single most common reason the
+   `azure/login@v2` step fails with `AADSTS70021: No matching federated
+   identity record found`.
 
 2. Add three **repo variables** (not secrets): `AZURE_CLIENT_ID`,
    `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`.

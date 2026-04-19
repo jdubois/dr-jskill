@@ -11,6 +11,7 @@
 - [`.dockerignore`](#dockerignore)
 - [DevContainer Setup](#devcontainer-setup)
 - [Optional dotfiles & folders](#optional-dotfiles--folders)
+- [Publish the project to GitHub](#publish-the-project-to-github)
 - [How the generator handles these](#how-the-generator-handles-these)
 - [Validation](#validation)
 - [References](#references)
@@ -25,6 +26,7 @@
 - **.devcontainer/** (optional) → reproducible Dev Container with Java 25, Node 24, PostgreSQL
 - **.vscode/** (optional) → recommended extensions/settings (Java, Spring, YAML, Docker)
 - **.nvmrc / .node-version** (optional) → pin Node 24.x for front-end builds
+- **GitHub remote** (optional, recommended) → unlock GHCR, CI/CD, OIDC deploy to Azure
 
 ---
 
@@ -376,7 +378,124 @@ spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:password}
 
 ---
 
-## How the generator handles these
+## Publish the project to GitHub
+
+**Optional but strongly recommended.** Nothing in the generated project
+*requires* a remote — you can develop, build, and run locally without one.
+However, publishing to GitHub unlocks almost everything else this skill
+documents, and several downstream guides treat a GitHub remote as a hard
+prerequisite:
+
+- **Deployment to Azure Container Apps** — the [AZURE.md](AZURE.md) guide
+  assumes your image is on GHCR (`ghcr.io/<owner>/<repo>`) and uses an OIDC
+  federated credential pinned to `repo:<owner>/<repo>:ref:refs/heads/main`.
+  Without a GitHub repo, neither step is possible.
+- **CI/CD** — the generated `.github/workflows/ci.yml` only runs once the
+  project is pushed to GitHub.
+- **Collaboration & automation** — issues, PR review, Dependabot, and
+  Copilot coding agent all need a repo to attach to.
+
+If you choose to skip this step, you can always come back and run it later —
+`git init` / `gh repo create` don't touch the generated files.
+
+> **Agent instructions — ask before acting.** Per skill rules, the user
+> reviews changes before any git operation. Before running `git init` or
+> `gh repo create`, confirm with the user:
+>
+> | Question | Why it matters |
+> |---|---|
+> | Do you want a GitHub repo at all? | This whole section is optional. |
+> | Personal account or organisation? | Changes the URL and who owns the GHCR package. |
+> | Repository **name**? | Default: the Maven `artifactId`. |
+> | **Public** or **private**? | Public is simplest for GHCR (Container Apps can pull anonymously). Private needs a `read:packages` PAT downstream. |
+> | Default **branch** name (`main` assumed)? | OIDC federated-credential subjects pin an exact branch. |
+
+### 1. Initialise the local repository
+
+From the generated project root:
+
+```bash
+cd my-app                     # ← the generated project directory
+git init -b main
+git add .
+git commit -m "Initial commit from Dr JSkill"
+```
+
+The generator-supplied `.gitignore` already excludes `.env`, `target/`,
+`node_modules/`, IDE artefacts, and the JDTLS workspace — run `git status`
+before committing to confirm nothing sensitive is staged.
+
+### 2. Create the remote on GitHub
+
+Use the GitHub CLI (`gh`) — it handles auth, remote wiring, and the first
+push in one command.
+
+```bash
+# Install and authenticate gh once:
+#   brew install gh            (macOS)
+#   winget install GitHub.cli  (Windows)
+#   apt install gh             (Debian/Ubuntu)
+gh auth login
+
+# Personal account — public repo (simplest path for GHCR)
+gh repo create "$APP_NAME" \
+  --public \
+  --source=. \
+  --remote=origin \
+  --push
+
+# Or organisation — private repo
+gh repo create "myorg/$APP_NAME" \
+  --private \
+  --source=. \
+  --remote=origin \
+  --push
+```
+
+If you prefer the web UI:
+
+1. Create an empty repo at https://github.com/new — do **not** initialise with
+   a README, `.gitignore`, or license (the generated project already has them;
+   otherwise the first push will be rejected as a non-fast-forward).
+2. Wire and push from your terminal:
+   ```bash
+   git remote add origin https://github.com/OWNER/REPO.git
+   git push -u origin main
+   ```
+
+### 3. Capture `owner/repo` for downstream steps
+
+The Azure deployment guide ([AZURE.md](AZURE.md)) expects `GHCR_OWNER`,
+`GHCR_REPO`, and `GHCR_IMAGE` to be in the environment. Export them once so
+later snippets stay consistent:
+
+```bash
+export GHCR_OWNER="$(gh repo view --json owner --jq .owner.login)"
+export GHCR_REPO="$(gh repo view --json name --jq .name)"
+export GHCR_IMAGE="ghcr.io/${GHCR_OWNER}/${GHCR_REPO}"
+```
+
+### 4. Verify before moving on
+
+```bash
+# Remote is wired
+git remote -v | grep -q origin
+
+# .env is actually ignored (critical — .env holds real secrets)
+git check-ignore -v .env || echo "⚠  .env is NOT ignored — fix .gitignore before pushing"
+
+# GHCR login works using gh's token (no extra PAT required for interactive use)
+gh auth token | docker login ghcr.io -u "$GHCR_OWNER" --password-stdin
+```
+
+> **GHCR visibility vs. pull credentials.** A GHCR package inherits the
+> visibility of the first repo that pushes to it. Public package → any puller
+> (Azure Container Apps, a teammate's laptop) can pull anonymously. Private
+> package → consumers need a PAT with `read:packages` — see AZURE.md for how
+> Container Apps stores this as a secret.
+
+---
+
 
 - After downloading the project from start.spring.io, the scripts **patch in** or **append**:
   - `.gitignore` (merged with template in `assets/gitignore`)
