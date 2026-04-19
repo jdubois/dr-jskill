@@ -22,7 +22,7 @@ table aligned with `versions.json`.
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
 - [Quick Start (no database)](#quick-start-no-database)
-- [With PostgreSQL (VNET-injected, Key Vault-backed password)](#with-postgresql-vnet-injected-key-vault-backed-password)
+- [With PostgreSQL (VNET-injected)](#with-postgresql-vnet-injected)
 - [Deploy the native image](#deploy-the-native-image)
 - [CI/CD with GitHub Actions (OIDC, no secrets)](#cicd-with-github-actions-oidc-no-secrets)
 - [Day-2 operations](#day-2-operations)
@@ -37,13 +37,12 @@ Core components:
 
 - **Azure Container Apps** — serverless container platform, HTTPS by default, scale-to-zero.
 - **Azure Container Registry (ACR)** — private image registry; image pull uses **managed identity** (no admin user, no passwords).
-- **Azure Database for PostgreSQL Flexible Server** *(optional)* — VNET-injected; **database password stored in Azure Key Vault** and injected into the app as a Container Apps secret reference.
-- **Azure Key Vault** *(when a DB is used)* — single source of truth for the DB password; rotated centrally; the app's managed identity is granted read-only access via RBAC.
+- **Azure Database for PostgreSQL Flexible Server** *(optional)* — VNET-injected; **database password stored as a Container Apps secret** and injected into the app via `secretref`.
 - **Azure CLI** only — no Terraform/Bicep/Buildpacks.
 
 Why this shape:
 
-- No secrets in source control, no secrets in shell history (the admin password is generated into Key Vault in one step), no secrets in env-var dumps.
+- No secrets in source control. The admin password is generated at deploy time, stored as a Container Apps secret, and never committed to version control.
 - Vanilla Spring Boot: `SPRING_DATASOURCE_URL/USERNAME/PASSWORD` — no Azure-specific JDBC plugin, so the exact same configuration works locally, in Testcontainers, and in Azure. GraalVM native image builds cleanly.
 - One image, two runtimes: JVM Dockerfile *or* the GraalVM native Dockerfile.
 - Scripts are plain `az` commands you can run interactively or paste into a `.sh` / `.ps1`.
@@ -292,13 +291,12 @@ APP_URL="https://$(az containerapp show \
 curl "$APP_URL/actuator/health"     # {"status":"UP"}
 ```
 
-## With PostgreSQL (VNET-injected, Key Vault-backed password)
+## With PostgreSQL (VNET-injected)
 
 Adds a managed PostgreSQL Flexible Server, VNET-integrates both the database
-and Container Apps, stores the DB password in **Azure Key Vault**, and hands
-it to the app via a **Container Apps `keyvaultref:` secret**. The password
-never appears in source, env-var listings, or shell history beyond the one
-`openssl rand` line that generates it into Key Vault.
+and Container Apps, and stores the DB password as a **Container Apps secret**
+injected into the app via `secretref`. The password never appears in source
+control or env-var listings.
 
 ### 1. Extra configuration
 
@@ -309,7 +307,6 @@ export DB_ADMIN_USER="pgadmin"
 export VNET_NAME="${APP_NAME}-vnet"
 export SUBNET_APP="subnet-app"
 export SUBNET_DB="subnet-db"
-export KV_NAME="${APP_NAME}kv$RANDOM"   # Key Vault names are globally unique, 3–24 chars, alphanum + hyphen
 ```
 
 ### 2. Virtual network
@@ -334,41 +331,15 @@ SUBNET_APP_ID=$(az network vnet subnet show \
   --name "$SUBNET_APP" --query id -o tsv)
 ```
 
-### 3. Key Vault + generate the DB password straight into it
+### 3. PostgreSQL Flexible Server (private, password auth)
+
+Generate the DB password into a shell variable and create the server in one go.
+The password is also passed to the Container Apps secret in step 5, then unset.
 
 ```bash
-az keyvault create \
-  --name "$KV_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --location "$LOCATION" \
-  --enable-rbac-authorization true
+# Generate password. It lives only in memory for the duration of this session.
+DB_ADMIN_PASSWORD=$(openssl rand -base64 24)
 
-KV_ID=$(az keyvault show -n "$KV_NAME" -g "$RESOURCE_GROUP" --query id -o tsv)
-KV_URI=$(az keyvault show -n "$KV_NAME" -g "$RESOURCE_GROUP" --query properties.vaultUri -o tsv)
-
-# Grant YOU (the deployer) permission to write secrets — RBAC-mode vaults do
-# not grant creators access automatically.
-ME_OID=$(az ad signed-in-user show --query id -o tsv)
-az role assignment create --assignee-object-id "$ME_OID" \
-  --assignee-principal-type User \
-  --role "Key Vault Secrets Officer" --scope "$KV_ID"
-
-# Generate the password directly into Key Vault. It never lives in a shell
-# variable or in history.
-az keyvault secret set \
-  --vault-name "$KV_NAME" --name "db-admin-password" \
-  --value "$(openssl rand -base64 24)" \
-  --output none
-
-# Fetch the secret value ONLY for the one command that needs it — creating
-# the PG server. It's immediately unset after use.
-DB_ADMIN_PASSWORD=$(az keyvault secret show \
-  --vault-name "$KV_NAME" --name "db-admin-password" --query value -o tsv)
-```
-
-### 4. PostgreSQL Flexible Server (private, password auth)
-
-```bash
 az postgres flexible-server create \
   --resource-group "$RESOURCE_GROUP" \
   --name "$DB_SERVER_NAME" \
@@ -384,8 +355,8 @@ az postgres flexible-server create \
   --backup-retention 7 \
   --yes
 
-# Never needed again in this shell.
-unset DB_ADMIN_PASSWORD
+# Keep $DB_ADMIN_PASSWORD in memory — it is needed again in step 5 to set the
+# Container Apps secret. It will be unset after that step.
 
 az postgres flexible-server parameter set \
   --resource-group "$RESOURCE_GROUP" \
@@ -424,7 +395,7 @@ fi
 > The server is VNET-injected (private). **Do not** add a public firewall
 > rule — it would have no effect and signals the wrong intent.
 
-### 5. Container Apps Environment inside the VNET
+### 4. Container Apps Environment inside the VNET
 
 ```bash
 # Create the Log Analytics workspace explicitly — see Quick Start §2 for why
@@ -449,11 +420,10 @@ az containerapp env create \
   --infrastructure-subnet-resource-id "$SUBNET_APP_ID"
 ```
 
-### 6. Deploy the app with a user-assigned identity
+### 5. Deploy the app with a user-assigned identity
 
-The managed identity has two jobs: pull the image from ACR, and read the DB
-password from Key Vault. **No database role bootstrap step is needed** — the
-app logs in with the PG admin credentials the server already knows about.
+The managed identity's job is to pull the image from ACR. The DB password is
+stored directly as a Container Apps secret.
 
 ```bash
 MI_NAME="${APP_NAME}-mi"
@@ -466,11 +436,6 @@ ACR_ID=$(az acr show --name "$ACR_NAME" --query id -o tsv)
 az role assignment create --assignee-object-id "$MI_PRINCIPAL_ID" \
   --assignee-principal-type ServicePrincipal \
   --role AcrPull --scope "$ACR_ID"
-
-# Grant read-only access to Key Vault secrets
-az role assignment create --assignee-object-id "$MI_PRINCIPAL_ID" \
-  --assignee-principal-type ServicePrincipal \
-  --role "Key Vault Secrets User" --scope "$KV_ID"
 
 # Standard JDBC URL — no Azure-specific plugin.
 DB_URL="jdbc:postgresql://${DB_HOST}:5432/${DB_NAME}?sslmode=require"
@@ -486,7 +451,7 @@ az containerapp create \
   --target-port 8080 --ingress external --transport auto \
   --cpu 0.5 --memory 1Gi \
   --min-replicas 1 --max-replicas 10 \
-  --secrets "db-password=keyvaultref:${KV_URI}secrets/db-admin-password,identityref:${MI_ID}" \
+  --secrets "db-password=$DB_ADMIN_PASSWORD" \
   --env-vars \
     "SPRING_PROFILES_ACTIVE=prod" \
     "SPRING_DATASOURCE_URL=$DB_URL" \
@@ -494,6 +459,9 @@ az containerapp create \
     "SPRING_DATASOURCE_PASSWORD=secretref:db-password" \
     "SPRING_JPA_HIBERNATE_DDL_AUTO=update" \
     "JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0"
+
+# Clear the password from memory now that both PG and Container Apps have it.
+unset DB_ADMIN_PASSWORD
 ```
 
 > **`ddl-auto=update` on first deploy.** The app has no tables yet; `validate`
@@ -510,7 +478,7 @@ az containerapp create \
 > GRANT ALL ON ALL TABLES IN SCHEMA public TO app;
 > ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO app;
 > ```
-> Store `app`'s password as a second Key Vault secret and point
+> Store `app`'s password as a second Container Apps secret and point
 > `SPRING_DATASOURCE_USERNAME/PASSWORD` at it. Because the server is private,
 > run this via a Container Apps Job: spin up a one-shot `postgres:17`
 > container in the same VNET, with `PGPASSWORD` set from a `secretref` to
@@ -519,16 +487,23 @@ az containerapp create \
 
 ### Password rotation
 
-Rotate in Key Vault; the next revision picks up the new value. `keyvaultref`
-is resolved at revision-creation time, so you need to force a new revision:
+Generate a new password, update both the Container Apps secret and the PG
+server, then force a new revision:
 
 ```bash
-az keyvault secret set --vault-name "$KV_NAME" --name "db-admin-password" \
-  --value "$NEW_PASSWORD" --output none
+NEW_PASSWORD=$(openssl rand -base64 24)
+
+# Update the Container Apps secret
+az containerapp secret set \
+  --name "$CONTAINER_APP_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --secrets "db-password=$NEW_PASSWORD"
 
 az postgres flexible-server update \
   --resource-group "$RESOURCE_GROUP" --name "$DB_SERVER_NAME" \
   --admin-password "$NEW_PASSWORD"
+
+unset NEW_PASSWORD
 
 # Force a new revision so Container Apps re-reads the secret
 az containerapp update --name "$CONTAINER_APP_NAME" \
@@ -536,7 +511,7 @@ az containerapp update --name "$CONTAINER_APP_NAME" \
   --revision-suffix "rot$(date +%s)"
 ```
 
-### 7. Add liveness & readiness probes
+### 6. Add liveness & readiness probes
 
 Same as the no-database flow — Container Apps does not configure HTTP probes
 by default, so you must wire them in explicitly. Spring Boot Actuator exposes
@@ -774,7 +749,6 @@ Common failures:
 | `ImagePullBackOff` / `UNAUTHORIZED` from ACR | Managed identity missing `AcrPull`; re-run the `az role assignment create` step. |
 | App stuck in `Activating`, readiness probe failing | Actuator not exposed, or `management.endpoints.web.exposure.include` missing `health`. |
 | `SSL required` from PG driver | `sslmode=require` missing from JDBC URL. |
-| App can't resolve Key Vault secret (`keyvaultref:...`) / starts with empty password | Either the Key Vault URI is wrong (needs trailing `/secrets/...`), the MI is not granted `Key Vault Secrets User`, or the vault is not in RBAC mode. |
 | DNS resolution failure from inside the VNET (`could not translate host name "<db>.postgres.database.azure.com"`) | Private DNS zone exists but has zero VNET links. Current CLI auto-creates the link in step 4, but older versions leave `VirtualNetworkLinks = 0` — run `az network private-dns link vnet create` (the idempotent block in step 4 handles both cases). |
 | `InvalidApiVersionParameter: The api-version '2021-12-01-preview' is invalid` on `containerapp env create` | The containerapp CLI extension tries to auto-provision a Log Analytics workspace using an outdated API version. Create the workspace explicitly with `az monitor log-analytics workspace create` and pass `--logs-workspace-id` / `--logs-workspace-key` to `containerapp env create` (as shown in steps 2 and 5). |
 | `SubnetIsNotDelegatedToContainerApps` on env create | The app subnet was not delegated. Add `--delegations Microsoft.App/environments` at subnet creation, or update it afterwards. |
@@ -821,7 +795,7 @@ az ad app delete --id "$APP_ID"
 
 - [Azure Container Apps documentation](https://learn.microsoft.com/azure/container-apps/)
 - [Container Apps — managed identity for ACR](https://learn.microsoft.com/azure/container-apps/managed-identity-image-pull)
-- [Container Apps — Key Vault secret references](https://learn.microsoft.com/azure/container-apps/manage-secrets#reference-secret-from-key-vault)
+- [Container Apps — manage secrets](https://learn.microsoft.com/azure/container-apps/manage-secrets)
 - [Azure Login GitHub Action — OIDC](https://github.com/Azure/login#login-with-openid-connect-oidc-recommended)
 - [`references/DATABASE.md`](DATABASE.md) — schema initialization conventions
 - [`references/DOCKER.md`](DOCKER.md) — image anatomy (JVM and native)
