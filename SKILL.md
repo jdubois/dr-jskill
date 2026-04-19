@@ -219,7 +219,7 @@ Build native images via Docker (no local GraalVM needed) or locally with `./mvnw
 
 ## Azure Deployment
 
-Deploy to Azure Container Apps with an optional VNET-injected Azure Database for PostgreSQL Flexible Server. Uses managed identity for ACR image pulls and Azure Key Vault for the DB password (pulled into the app via a Container Apps secret reference) — no secrets in source, env dumps, or shell history. Includes a GitHub Actions OIDC workflow, and supports both the JVM and GraalVM native image variants. See the [Azure Deployment Guide](references/AZURE.md).
+Deploy to Azure Container Apps with an optional VNET-injected Azure Database for PostgreSQL Flexible Server. Uses GitHub Container Registry (GHCR) for image storage (pushed via `GITHUB_TOKEN` in CI, pulled by Container Apps using a stored PAT) and Container Apps secrets for the DB password — no secrets in source, env dumps, or shell history. Includes a GitHub Actions OIDC workflow, and supports both the JVM and GraalVM native image variants. See the [Azure Deployment Guide](references/AZURE.md).
 
 ## Validation
 
@@ -265,4 +265,4 @@ Once the project is generated, go through the steps above to ensure that the gen
 **Deployment:**
 - [Docker Deployment Guide](references/DOCKER.md) - Docker, Docker Compose, development automation
 - [GraalVM Native Images Guide](references/GRAALVM.md) - Docker-based native builds, optimization
-- [Azure Deployment Guide](references/AZURE.md) - Azure Container Apps, PostgreSQL Flexible Server, managed-identity ACR pull, Key Vault-backed DB password, GitHub Actions OIDC
+- [Azure Deployment Guide](references/AZURE.md) - Azure Container Apps, PostgreSQL Flexible Server, GitHub Container Registry (GHCR) image push/pull, Container Apps secrets for DB password, GitHub Actions OIDC
