@@ -112,25 +112,23 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        secure: false
       }
     }
-  },
-  
-  esbuild: {
-    // Drop console.log / console.debug in production builds; keep warn/error.
-    pure: ['console.log', 'console.debug']
   },
 
   build: {
     outDir: '../src/main/resources/static',
     emptyOutDir: true,
     assetsDir: 'assets',
-    sourcemap: false,
-    minify: 'esbuild'
+    sourcemap: false
   }
 })
 ```
+
+> Note: in Vite 8 the esbuild integration was made optional — `minify: 'esbuild'`
+> and the `esbuild: { pure: [...] }` block now require a separate `esbuild` install
+> (`npm i -D esbuild`). The default minifier in Vite 8 (Rolldown-based) works out
+> of the box, so this template omits both to keep the dependency list minimal.
 
 ### 3. Configure Maven for Frontend Build
 

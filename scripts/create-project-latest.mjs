@@ -18,11 +18,15 @@ function usage() {
 Environment / Flags:
   --boot-version <version>   Override Spring Boot version (otherwise resolves preferred major with fallback)
   --project-type <type>      basic | web | fullstack (default: web)
+  --frontend <type>          none | react | angular | vue | vanilla (default: none for web/basic, vue for fullstack)
+                             When set to a framework, keeps the COPY frontend ./frontend line in Dockerfile(s)
+                             so you can manually scaffold a frontend/ directory after generation.
   -h|--help                  Show this help
 
 Examples:
   node scripts/create-project-latest.mjs myapp com.acme myapp com.acme.myapp 21 fullstack
-  node scripts/create-project-latest.mjs --boot-version 4.0.0-M1 myapp`);
+  node scripts/create-project-latest.mjs --boot-version 4.0.0-M1 myapp
+  node scripts/create-project-latest.mjs --frontend react myapp com.acme myapp com.acme.myapp 25 web`);
 }
 
 const { flags, positional } = parseArgs(process.argv);
@@ -84,7 +88,10 @@ try {
 
   // Apply dotfiles and editor-recommended settings
   const hasDatabase = projectType === 'fullstack';
-  const hasFrontend = projectType === 'fullstack';
+  // A frontend is present if the project is fullstack, OR if the user
+  // explicitly asks for one via `--frontend <framework>` (anything except "none").
+  const explicitFrontend = flags.frontend && flags.frontend !== 'none';
+  const hasFrontend = projectType === 'fullstack' || Boolean(explicitFrontend);
   applyDotfiles(projectName, { database: hasDatabase, frontend: hasFrontend, packageName });
 } catch (err) {
   console.error(`✗ Failed to create project: ${err?.message || String(err)}`);
