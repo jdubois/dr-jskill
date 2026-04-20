@@ -346,6 +346,11 @@ export function applyDotfiles(projectDir, options = {}) {
     copyAssetIfMissing('compose.yaml', join(projectDir, 'compose.yaml'));
     copyAssetIfMissing('docker-compose.yml', join(projectDir, 'docker-compose.yml'));
     copyAssetIfMissing('docker-compose-native.yml', join(projectDir, 'docker-compose-native.yml'));
+  } else {
+    // No-DB projects still benefit from a single-service compose wrapper so
+    // `docker compose up --build` works out of the box for both JVM and native.
+    copyAssetIfMissing('docker-compose-nodb.yml', join(projectDir, 'docker-compose.yml'));
+    copyAssetIfMissing('docker-compose-native-nodb.yml', join(projectDir, 'docker-compose-native.yml'));
   }
   // Optional .vscode recommendations
   copyAssetIfMissing(join('vscode', 'extensions.json'), join(projectDir, '.vscode', 'extensions.json'));
