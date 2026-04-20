@@ -82,17 +82,22 @@ my-spring-boot-app/
 From your Spring Boot project root:
 
 ```bash
-# Install Angular CLI globally
-npm install -g @angular/cli
-
-# Create Angular project
-ng new frontend --style=css --ssr=false --skip-git
+# Create Angular project.
+# Angular CLI 21 poses interactive prompts (analytics opt-in, zoneless choice)
+# that `-y`/`--yes` do NOT silence. In non-TTY shells (CI, agents) you must
+# close stdin with `echo |` AND pass `--defaults` so the CLI accepts defaults
+# immediately. `--skip-install` avoids a duplicate npm install from the CLI.
+echo | npx --yes @angular/cli@21 new frontend \
+  --style=css --ssr=false --skip-git --defaults --skip-install
 
 cd frontend
+npm install
 
 # Install Bootstrap and Bootstrap Icons
 npm install bootstrap@5.3.8 bootstrap-icons@1.13.1
 ```
+
+> Interactive shells can use the shorter form `ng new frontend --style=css --ssr=false --skip-git` (after `npm install -g @angular/cli@21`).
 
 ### 2. Configure Angular for Spring Boot Integration
 

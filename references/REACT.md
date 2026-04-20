@@ -80,14 +80,15 @@ my-spring-boot-app/
 From your Spring Boot project root:
 
 ```bash
-# Create React project with Vite
-# Note: `-y` MUST come before the package name — it tells npm to auto-accept
-# its own "Ok to proceed?" install prompt. Flags after `--` go to create-vite.
-# Without this, the command hangs in non-interactive shells (CI, agents, etc.).
-npm create -y vite@latest frontend -- --template react
+# Create React project with Vite.
+# Two prompts must be silenced in non-interactive shells (CI, agents):
+#   1. npm's "Ok to proceed?" prompt → `-y` BEFORE the package name (or `--yes` with npx)
+#   2. create-vite 8.x's own prompts (e.g. "Use rolldown-vite?") → close stdin with `echo |`
+# Without `echo |` the command still hangs in non-TTY shells even with `-y`.
+echo | npx --yes create-vite@latest frontend --template react
 
-# Equivalent, also non-interactive:
-# npx --yes create-vite@latest frontend --template react
+# Interactive shells can also use:
+# npm create -y vite@latest frontend -- --template react
 
 cd frontend
 npm install

@@ -209,7 +209,14 @@ Choose a front-end framework:
 
 All options include: Vite/CLI dev server with hot reload, Bootstrap 5.3+, SPA routing, and automatic build into the Spring Boot JAR.
 
-> **Non-interactive scaffolding (important for CI and AI agents).** When scaffolding with `npm create …`, always place `-y` **before** the package name so npm auto-accepts its own "Ok to proceed?" install prompt — otherwise the command hangs in non-TTY shells. Use `npm create -y vite@latest frontend -- --template react` (or `vue@latest` / `--template vanilla`), or equivalently `npx --yes create-vite@latest frontend --template react`. Flags placed *after* `--` go to the scaffolder, not to npm, so `-y` there does not suppress npm's own prompt.
+> **Non-interactive scaffolding (important for CI and AI agents).** Two separate prompts must be silenced:
+> 1. **npm's own "Ok to proceed?" install prompt** — silence by placing `-y` **before** the package name (flags after `--` go to the scaffolder, not to npm). Use `npm create -y vite@latest …` or `npx --yes create-vite@latest …`.
+> 2. **The scaffolder's own prompts** — create-vite 8.x and Angular CLI 21 still pose interactive questions (e.g. "Use rolldown-vite?", analytics opt-in) that `-y` / `--yes` do **not** silence. The reliable fix is to close stdin: pipe `echo |` into the command so the scaffolder immediately sees EOF and accepts defaults.
+>
+> Canonical recipes:
+> - React / Vanilla: `echo | npx --yes create-vite@latest frontend --template react` (or `--template vanilla`)
+> - Vue: `npm create -y vue@latest frontend -- --router --pinia --vitest --eslint --prettier` (create-vue does not pose extra prompts)
+> - Angular: `echo | npx --yes @angular/cli@21 new frontend --style=css --ssr=false --skip-git --defaults --skip-install`, then `npm install`
 
 ## Docker Deployment
 
