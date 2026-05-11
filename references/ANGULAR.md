@@ -25,7 +25,7 @@ This guide covers creating front-end applications for Spring Boot using Angular 
 | Tool | Version |
 |------|---------|
 | Node.js | 24.15.0 |
-| npm | 11.12.1 |
+| npm | 11.14.1 |
 | Angular | 21.x |
 | Angular Router | 21.x |
 <!-- versions:end -->
@@ -174,7 +174,7 @@ Add to your `pom.xml`:
         <plugin>
             <groupId>com.github.eirslett</groupId>
             <artifactId>frontend-maven-plugin</artifactId>
-            <version>1.15.1</version>
+            <version>2.0.0</version>
             <configuration>
                 <workingDirectory>frontend</workingDirectory>
                 <installDirectory>target</installDirectory>
@@ -188,7 +188,7 @@ Add to your `pom.xml`:
                     </goals>
                     <configuration>
                         <nodeVersion>v24.15.0</nodeVersion>
-                        <npmVersion>11.12.1</npmVersion>
+                        <npmVersion>11.14.1</npmVersion>
                     </configuration>
                 </execution>
                 

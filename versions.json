@@ -1,15 +1,15 @@
 {
   "javaVersion": "25",
   "springBootPreferredMajor": "4",
-  "springBootFallback": "4.0.5",
+  "springBootFallback": "4.0.6",
   "postgresVersion": "18",
   "temurinVersion": "25",
   "mavenMinVersion": "3.8.0",
   "graalvmVersion": "25",
   "nodeVersion": "24.15.0",
-  "npmVersion": "11.12.1",
+  "npmVersion": "11.14.1",
   "viteVersion": "8",
-  "mavenFrontendPluginVersion": "1.15.1",
+  "mavenFrontendPluginVersion": "2.0.0",
   "bootstrapVersion": "5.3.8",
   "bootstrapIconsVersion": "1.13.1",
   "vueVersion": "3",
@@ -18,7 +18,7 @@
   "reactVersion": "19",
   "reactRouterVersion": "7",
   "angularVersion": "21",
-  "testcontainersVersion": "2.0.0",
+  "testcontainersVersion": "2.0.5",
   "springFrameworkVersion": "7.0",
-  "hibernateVersion": "7.1"
+  "hibernateVersion": "7.2"
 }

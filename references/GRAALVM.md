@@ -447,7 +447,7 @@ with a trace pointing at `com.zaxxer.hikari.HikariConfig.<clinit>`.
 
 **Root cause.** The GraalVM reachability-metadata repository bundled with
 `native-maven-plugin` has no config for the newer library versions Spring
-Boot 4.0.5 ships (HikariCP 7.x, logback-classic 1.5.32, Jackson 2.21.x) and
+Boot 4.0.6 ships (HikariCP 7.x, logback-classic 1.5.32, Jackson 3.1.x) and
 silently falls back to stale configs for HikariCP 6.0.0 / logback 1.5.7.
 Those stale configs force `HikariConfig` to be initialized at build time,
 which calls `LoggerFactory.getLogger(...)` and pulls SLF4J's internal

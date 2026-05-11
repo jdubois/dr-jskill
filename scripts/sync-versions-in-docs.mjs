@@ -103,14 +103,20 @@ function renderTable(rows) {
 }
 
 /**
- * Rewrite <nodeVersion>vX.Y.Z</nodeVersion> and <npmVersion>X.Y.Z</npmVersion>
- * tags inside maven-frontend-plugin example snippets so they track versions.json.
+ * Rewrite version markers inside reference docs that the table-renderer doesn't cover:
+ *   - <nodeVersion>vX.Y.Z</nodeVersion> / <npmVersion>X.Y.Z</npmVersion> tags in
+ *     maven-frontend-plugin example snippets.
+ *   - The plugin's own <version>X.Y.Z</version> in those same snippets.
  * Returns the possibly-modified content.
  */
 function rewritePluginVersions(content) {
   return content
     .replace(/<nodeVersion>v[^<]*<\/nodeVersion>/g, `<nodeVersion>v${versions.nodeVersion}</nodeVersion>`)
-    .replace(/<npmVersion>[^<]*<\/npmVersion>/g, `<npmVersion>${versions.npmVersion}</npmVersion>`);
+    .replace(/<npmVersion>[^<]*<\/npmVersion>/g, `<npmVersion>${versions.npmVersion}</npmVersion>`)
+    .replace(
+      /(<artifactId>frontend-maven-plugin<\/artifactId>\s*)<version>[^<]+<\/version>/g,
+      `$1<version>${versions.mavenFrontendPluginVersion}</version>`
+    );
 }
 
 const checkMode = process.argv.includes('--check');

@@ -34,15 +34,15 @@ function getVersionValue(key, defaultValue = '') {
 
 export function getJavaVersion() { return getVersionValue('javaVersion', '25'); }
 export function getBootPreferredMajor() { return getVersionValue('springBootPreferredMajor', '4'); }
-export function getBootFallback() { return getVersionValue('springBootFallback', '4.0.5'); }
+export function getBootFallback() { return getVersionValue('springBootFallback', '4.0.6'); }
 export function getPostgresVersion() { return getVersionValue('postgresVersion', '18'); }
 export function getTemurinVersion() { return getVersionValue('temurinVersion', '25'); }
 export function getMavenMinVersion() { return getVersionValue('mavenMinVersion', '3.8.0'); }
 export function getGraalvmVersion() { return getVersionValue('graalvmVersion', '25'); }
 export function getNodeVersion() { return getVersionValue('nodeVersion', '24.15.0'); }
-export function getNpmVersion() { return getVersionValue('npmVersion', '11.12.1'); }
+export function getNpmVersion() { return getVersionValue('npmVersion', '11.14.1'); }
 export function getViteVersion() { return getVersionValue('viteVersion', '8'); }
-export function getMavenFrontendPluginVersion() { return getVersionValue('mavenFrontendPluginVersion', '1.15.1'); }
+export function getMavenFrontendPluginVersion() { return getVersionValue('mavenFrontendPluginVersion', '2.0.0'); }
 export function getVueVersion() { return getVersionValue('vueVersion', '3'); }
 export function getPiniaVersion() { return getVersionValue('piniaVersion', '3'); }
 export function getVueRouterVersion() { return getVersionValue('vueRouterVersion', '5'); }
@@ -51,9 +51,9 @@ export function getReactRouterVersion() { return getVersionValue('reactRouterVer
 export function getAngularVersion() { return getVersionValue('angularVersion', '21'); }
 export function getBootstrapVersion() { return getVersionValue('bootstrapVersion', '5.3.8'); }
 export function getBootstrapIconsVersion() { return getVersionValue('bootstrapIconsVersion', '1.13.1'); }
-export function getTestcontainersVersion() { return getVersionValue('testcontainersVersion', '2.0.0'); }
+export function getTestcontainersVersion() { return getVersionValue('testcontainersVersion', '2.0.5'); }
 export function getSpringFrameworkVersion() { return getVersionValue('springFrameworkVersion', '7.0'); }
-export function getHibernateVersion() { return getVersionValue('hibernateVersion', '7.1'); }
+export function getHibernateVersion() { return getVersionValue('hibernateVersion', '7.2'); }
 
 /**
  * Strip legacy qualifiers (.RELEASE, .GA) that Spring Boot 4+ no longer uses.
