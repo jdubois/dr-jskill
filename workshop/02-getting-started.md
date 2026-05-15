@@ -37,11 +37,11 @@ Inside the Copilot CLI session you can switch models at any time with the `/mode
 
 | Model | When to pick it |
 |---|---|
-| **Claude Sonnet 4.6** | **Recommended default.** The most reliable of the three: slower, but produces more reliable working code, including the trickiest chapter (testing). Pick this one if you want to follow the workshop without detours. |
-| **GPT-5.3-Codex** | Solid middle ground. Faster than Sonnet and cheaper. Good choice if you want to exercise the GraalVM native-image path. |
+| **Claude Opus 4.7** | **Recommended default.** The most reliable of the three: slower, but produces more reliable working code, including the trickiest chapter (testing). Pick this one if you want to follow the workshop without detours. |
+| **GPT-5.5** | Solid middle ground. Faster than Opus and cheaper. Good choice if you want to exercise the GraalVM native-image path. |
 | **Claude Haiku 4.5** | Fastest and cheapest, but with regular minor bugs that you'll need to fix. You can use Haiku for a quick skim of the workshop, but **verify each checkpoint manually** (`curl`, `./mvnw verify`, read the log) and don't trust a "✅ all green" summary from the agent. |
 
-If you're not sure: **start with Sonnet 4.6**. You can always switch mid-session with `/model` if a step is taking too long.
+If you're not sure: **start with Opus 4.7**. You can always switch mid-session with `/model` if a step is taking too long.
 
 ## 3. Your first prompt
 
