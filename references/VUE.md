@@ -158,6 +158,26 @@ export default defineConfig(({ mode }) => {
 > (`npm i -D esbuild`). The default minifier in Vite 8 (Rolldown-based) works out
 > of the box, so this template omits both to keep the dependency list minimal.
 
+Because this Vite config exports a callback, update `frontend/vitest.config.js` so Vitest
+merges the resolved config object, not the callback itself:
+
+```javascript
+import { fileURLToPath } from 'node:url'
+import { mergeConfig, defineConfig, configDefaults } from 'vitest/config'
+import viteConfig from './vite.config'
+
+export default mergeConfig(
+  viteConfig({ mode: 'test', command: 'serve' }),
+  defineConfig({
+    test: {
+      environment: 'jsdom',
+      exclude: [...configDefaults.exclude, 'e2e/**'],
+      root: fileURLToPath(new URL('./', import.meta.url))
+    }
+  })
+)
+```
+
 ### 3. Configure Maven for Frontend Build
 
 Add to your `pom.xml`:

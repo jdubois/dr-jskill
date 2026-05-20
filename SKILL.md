@@ -228,6 +228,8 @@ When wiring the `frontend-maven-plugin`, bind the Node install, `npm install`, a
 > - React / Vanilla: `echo | npx --yes create-vite@latest frontend --template react` (or `--template vanilla`)
 > - Vue: `npm create -y vue@latest frontend -- --router --pinia --vitest --eslint --prettier` (create-vue does not pose extra prompts)
 > - Angular: `echo | npx --yes @angular/cli@21 new frontend --style=css --ssr=false --skip-git --defaults --skip-install`, then `npm install`
+>
+> **Vitest + callback Vite config.** If `vite.config.js` exports `defineConfig(({ mode }) => ...)`, do not let the generated `vitest.config.js` call `mergeConfig(viteConfig, ...)`. Resolve the callback first with `viteConfig({ mode: 'test', command: 'serve' })`; otherwise Vitest fails with `Cannot merge config in form of callback`. See [Vue.js Guide](references/VUE.md#2-configure-vite-for-spring-boot-integration).
 
 ## Docker Deployment
 
