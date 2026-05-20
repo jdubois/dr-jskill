@@ -196,15 +196,18 @@ Open `pom.xml` and look for `frontend-maven-plugin`:
   <executions>
     <execution>
       <id>install node and npm</id>
+      <phase>generate-resources</phase>
       <goals><goal>install-node-and-npm</goal></goals>
     </execution>
     <execution>
       <id>npm install</id>
+      <phase>generate-resources</phase>
       <goals><goal>npm</goal></goals>
       <configuration><arguments>install</arguments></configuration>
     </execution>
     <execution>
       <id>npm build</id>
+      <phase>generate-resources</phase>
       <goals><goal>npm</goal></goals>
       <configuration><arguments>run build</arguments></configuration>
     </execution>
@@ -212,7 +215,7 @@ Open `pom.xml` and look for `frontend-maven-plugin`:
 </plugin>
 ```
 
-When you run `./mvnw package` (or `./mvnw spring-boot:run` with the `prod` profile), Maven:
+Because these executions are bound to `generate-resources`, when you run `./mvnw package` or `./mvnw spring-boot:run`, Maven:
 
 1. Installs a local Node.js inside `frontend/node/` (doesn't touch your system Node)
 2. Runs `npm install` inside `frontend/`
