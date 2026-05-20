@@ -13,6 +13,7 @@ const ROOT_DIR = process.env.ROOT_DIR || resolve(__dirname, '..', '..');
 const VERSIONS_FILE = process.env.VERSIONS_FILE || resolve(ROOT_DIR, 'versions.json');
 const ASSETS_DIR = resolve(ROOT_DIR, 'assets');
 const DOTFILES_MARKER = '# === dr-jskill additions ===';
+let gitWorktreeHookSetupStatus = 'unknown';
 
 /** Default timeout for HTTP requests (10 seconds) */
 const FETCH_TIMEOUT_MS = 10_000;
@@ -458,6 +459,7 @@ export function applyDotfiles(projectDir, options = {}) {
     join('scripts', 'git', 'update-worktree-env.mjs'),
     join(projectDir, 'scripts', 'git', 'update-worktree-env.mjs')
   );
+  configureGitWorktreeHooks(projectDir);
   // StartupInfoListener (REQUIRED per SPRING-BOOT-4.md) — prints access URLs at boot.
   writeStartupInfoListener(projectDir, options.packageName);
   // Optional Node version pinning if front-end present
@@ -472,8 +474,29 @@ export function applyDotfiles(projectDir, options = {}) {
   }
 }
 
+function configureGitWorktreeHooks(projectDir) {
+  try {
+    const gitRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: projectDir, encoding: 'utf8' }).trim();
+    if (resolve(gitRoot) !== resolve(projectDir)) {
+      gitWorktreeHookSetupStatus = 'manual';
+      return;
+    }
+    execFileSync('git', ['config', 'core.hooksPath', '.githooks'], { cwd: projectDir, stdio: 'ignore' });
+    execFileSync('node', ['scripts/git/update-worktree-env.mjs'], { cwd: projectDir, stdio: 'ignore' });
+    gitWorktreeHookSetupStatus = 'configured';
+  } catch {
+    gitWorktreeHookSetupStatus = 'manual';
+  }
+}
+
 export function printGitWorktreeHookInstructions() {
   console.log('');
+  if (gitWorktreeHookSetupStatus === 'configured') {
+    console.log('Git worktree port setup:');
+    console.log('  ✅ Activated .githooks/post-checkout and created the first worktree-local .env.');
+    console.log('  Future git worktree add operations will create their own local .env ports automatically.');
+    return;
+  }
   console.log('Git worktree port setup (after initializing Git):');
   console.log('  git config core.hooksPath .githooks');
   console.log('  node scripts/git/update-worktree-env.mjs');

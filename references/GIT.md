@@ -184,7 +184,7 @@ SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:15432/mydb
 COMPOSE_PROJECT_NAME=my-app-main-a1b2c3
 ```
 
-The exact values should be generated per worktree. The defaults remain the usual ports (`8080`, `5173`, `5432`) when `.env` is absent.
+The exact values should be generated per worktree. The defaults remain the usual ports (`8080`, `5173`, `5432`) only when `.env` is absent and the hook has not run yet.
 
 ### Post-checkout hook for worktree-local ports
 
@@ -202,6 +202,12 @@ import { randomInt } from 'node:crypto';
 const envPath = resolve(process.cwd(), '.env');
 const managedStart = '# === dr-jskill worktree ports:start ===';
 const managedEnd = '# === dr-jskill worktree ports:end ===';
+const sampleDefaults = new Map([
+  ['SPRING_BOOT_PORT', '8080'],
+  ['VITE_PORT', '5173'],
+  ['POSTGRES_PORT', '5432'],
+  ['COMPOSE_PROJECT_NAME', 'my-spring-boot-app'],
+]);
 
 function sanitize(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'worktree';
@@ -217,6 +223,24 @@ function readExistingEnv() {
 function getExistingValue(content, key) {
   const match = content.match(new RegExp(`^${key}=(.*)$`, 'm'));
   return match?.[1]?.trim();
+}
+
+function getManagedBlock(content) {
+  const pattern = new RegExp(`${managedStart}[\\s\\S]*?${managedEnd}`, 'm');
+  return content.match(pattern)?.[0] ?? '';
+}
+
+function getPreservedValue(content, key) {
+  const managedBlock = getManagedBlock(content);
+  if (managedBlock) {
+    return getExistingValue(managedBlock, key);
+  }
+
+  const value = getExistingValue(content, key);
+  if (value === undefined || value === sampleDefaults.get(key)) {
+    return undefined;
+  }
+  return value;
 }
 
 function isPortAvailable(port) {
@@ -254,17 +278,17 @@ const existing = readExistingEnv();
 const usedPorts = new Set();
 
 for (const key of ['SPRING_BOOT_PORT', 'VITE_PORT', 'POSTGRES_PORT']) {
-  const value = Number(getExistingValue(existing, key));
+  const value = Number(getPreservedValue(existing, key));
   if (Number.isInteger(value)) {
     usedPorts.add(value);
   }
 }
 
-const springBootPort = getExistingValue(existing, 'SPRING_BOOT_PORT') ?? String(await randomAvailablePort(usedPorts));
-const vitePort = getExistingValue(existing, 'VITE_PORT') ?? String(await randomAvailablePort(usedPorts));
-const postgresPort = getExistingValue(existing, 'POSTGRES_PORT') ?? String(await randomAvailablePort(usedPorts));
+const springBootPort = getPreservedValue(existing, 'SPRING_BOOT_PORT') ?? String(await randomAvailablePort(usedPorts));
+const vitePort = getPreservedValue(existing, 'VITE_PORT') ?? String(await randomAvailablePort(usedPorts));
+const postgresPort = getPreservedValue(existing, 'POSTGRES_PORT') ?? String(await randomAvailablePort(usedPorts));
 const datasourceUrl = `jdbc:postgresql://localhost:${postgresPort}/mydb`;
-const composeProjectName = getExistingValue(existing, 'COMPOSE_PROJECT_NAME') ??
+const composeProjectName = getPreservedValue(existing, 'COMPOSE_PROJECT_NAME') ??
   `${sanitize(basename(process.cwd()))}-${randomInt(0x100000, 0xffffff).toString(16)}`;
 
 const block = `${managedStart}
@@ -285,15 +309,17 @@ Install it through a versioned hook directory:
 mkdir -p .githooks
 cat > .githooks/post-checkout <<'EOF'
 #!/usr/bin/env sh
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$repo_root" || exit 0
 node scripts/git/update-worktree-env.mjs
 EOF
 chmod +x .githooks/post-checkout
 git config core.hooksPath .githooks
 ```
 
-`git config core.hooksPath .githooks` is a required one-time local setup after `git init` or after cloning. The `.githooks/post-checkout` file is versioned, but Git ignores versioned hook directories until `core.hooksPath` is configured; this setting is local Git config and is not committed or pushed.
+Generated projects configure `core.hooksPath` automatically when they are created at the root of an existing Git worktree. If generation happens before Git is initialized, `git config core.hooksPath .githooks` remains a required one-time local setup after `git init` or after cloning. The `.githooks/post-checkout` file is versioned, but Git ignores versioned hook directories until `core.hooksPath` is configured; this setting is local Git config and is not committed or pushed.
 
-Run `node scripts/git/update-worktree-env.mjs` once in the initial checkout after enabling the hook to create the first local `.env`. The `post-checkout` hook then runs after branch checkouts and when Git populates a new worktree. The script preserves existing values, so a developer can override a port manually by editing `.env`.
+Generated projects also run `node scripts/git/update-worktree-env.mjs` automatically when they are created at the root of an existing Git worktree. If generation happens before Git is initialized, run it once in the initial checkout after enabling the hook to create the first local `.env`. The `post-checkout` hook then runs after branch checkouts and when Git populates a new worktree. The script preserves existing values inside its managed block, so a developer can override a port manually by editing `.env`; copied `.env.sample` defaults are treated as placeholders and replaced with random ports on first run.
 
 ### Spring Boot configuration
 

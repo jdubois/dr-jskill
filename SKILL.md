@@ -101,7 +101,7 @@ When creating Spring Boot projects:
    - The `.env` file is the canonical location for local secrets; instruct users to copy `.env.sample` → `.env` and fill in real values
    - **NEVER read or expose `.env`**: it contains real secrets — do not `cat`, view, or print its contents; only `.env.sample` (placeholder values) may be read or displayed
 8. Follow daily Git best practices for small branches, reviewed diffs, safe commits, pull requests, and worktrees - see [Git Best Practices](references/GIT.md)
-   - Generated projects ship `.githooks/post-checkout`, but Git will not use it until local config is set. After the user approves Git setup, run `git config core.hooksPath .githooks` and `node scripts/git/update-worktree-env.mjs` so each worktree gets local ports in its ignored `.env`.
+   - Generated projects ship `.githooks/post-checkout` and automatically activate it when generated at the root of an existing Git worktree, creating the first local ignored `.env`. If the project is generated before Git is initialized, after the user approves Git setup, run `git config core.hooksPath .githooks` and `node scripts/git/update-worktree-env.mjs` so each worktree gets local ports in its ignored `.env`.
 9. Use `spring-boot-docker-compose` for automatic database startup during development - see [Docker Guide](references/DOCKER.md)
 10. Follow RESTful API design principles
 11. Configure proper logging with Logback - see [Logging Best Practices](references/LOGGING.md)
