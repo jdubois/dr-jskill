@@ -93,16 +93,17 @@ When creating Spring Boot projects:
 7. Set up foundational dotfiles: `.gitignore`, `.env.sample`, `.editorconfig`, `.gitattributes`, `.dockerignore`, optional `.vscode/`, `.devcontainer/` - see [Project Setup & Dotfiles](references/PROJECT-SETUP.md)
    - The `.env` file is the canonical location for local secrets; instruct users to copy `.env.sample` → `.env` and fill in real values
    - **NEVER read or expose `.env`**: it contains real secrets — do not `cat`, view, or print its contents; only `.env.sample` (placeholder values) may be read or displayed
-8. Use `spring-boot-docker-compose` for automatic database startup during development - see [Docker Guide](references/DOCKER.md)
-9. Follow RESTful API design principles
-10. Configure proper logging with Logback - see [Logging Best Practices](references/LOGGING.md)
-11. Use Maven for dependency management
-12. Include Spring Boot DevTools for development productivity
-13. Add Spring Security only when needed - see [Security Guide](references/SECURITY.md) for best practices
-14. Configure Docker for containerized deployments - see [Docker Guide](references/DOCKER.md)
-15. Enable GraalVM native image support for faster startup - see [GraalVM Guide](references/GRAALVM.md)
-16. **Always ship a startup banner** that prints access URLs when the app is ready - see [Startup Banner](references/SPRING-BOOT-4.md#startup-banner-required)
-17. The user must review changes before they are committed to git. Ask the user before initializing a Git repository, or running git commands.
+8. Follow daily Git best practices for small branches, reviewed diffs, safe commits, pull requests, and worktrees - see [Git Best Practices](references/GIT.md)
+9. Use `spring-boot-docker-compose` for automatic database startup during development - see [Docker Guide](references/DOCKER.md)
+10. Follow RESTful API design principles
+11. Configure proper logging with Logback - see [Logging Best Practices](references/LOGGING.md)
+12. Use Maven for dependency management
+13. Include Spring Boot DevTools for development productivity
+14. Add Spring Security only when needed - see [Security Guide](references/SECURITY.md) for best practices
+15. Configure Docker for containerized deployments - see [Docker Guide](references/DOCKER.md)
+16. Enable GraalVM native image support for faster startup - see [GraalVM Guide](references/GRAALVM.md)
+17. **Always ship a startup banner** that prints access URLs when the app is ready - see [Startup Banner](references/SPRING-BOOT-4.md#startup-banner-required)
+18. The user must review changes before they are committed to git. Ask the user before initializing a Git repository, or running git commands.
 
 ## Java Code Intelligence (JDTLS) ⭐
 
@@ -270,6 +271,7 @@ Once the project is generated, go through the steps above to ensure that the gen
 
 **Project Setup:**
 - [Project Setup & Dotfiles](references/PROJECT-SETUP.md) - `.gitignore`, `.env.sample`, `.editorconfig`, `.gitattributes`, `.dockerignore`, `.devcontainer/`
+- [Git Best Practices](references/GIT.md) - daily Git workflow, branches, commits, pull requests, safe undo, stashing, and worktrees
 
 **Deployment:**
 - [Docker Deployment Guide](references/DOCKER.md) - Docker, Docker Compose, development automation

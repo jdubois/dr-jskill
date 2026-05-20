@@ -55,4 +55,4 @@ try {
 console.log(`✓ Spring Boot web application created successfully in ./${projectName}`);
 console.log(`  cd ${projectName}`);
 console.log('  ./mvnw spring-boot:run');
-console.log('  http://localhost:8080');
+console.log('  http://localhost:8080 (or SPRING_BOOT_PORT if overridden)');

@@ -51,7 +51,7 @@
     <pre><code># Terminal 1 — backend
 DEV_MODE=true ./mvnw spring-boot:run
 
-# Terminal 2 — frontend (hot-reload on http://localhost:5173)
+# Terminal 2 — frontend (hot-reload on http://localhost:${VITE_PORT:-5173})
 cd frontend &amp;&amp; npm run dev</code></pre>
 
     <h2>Option 2 — Full build</h2>

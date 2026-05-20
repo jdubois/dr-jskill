@@ -37,7 +37,7 @@ This guide covers creating front-end applications for Spring Boot using Angular 
 **Development Mode:**
 
 1. Angular dev server runs on port 4200 with hot reload
-2. Proxies API calls to Spring Boot backend on port 8080
+2. Proxies API calls to the Spring Boot backend on `SPRING_BOOT_PORT` with a default of 8080
 3. Fast incremental builds
 
 **Production Mode:**
@@ -134,7 +134,7 @@ Update `frontend/angular.json` - modify the `build` section. Angular 21's defaul
         },
         "serve": {
           "options": {
-            "proxyConfig": "proxy.conf.json"
+            "proxyConfig": "proxy.conf.cjs"
           }
         }
       }
@@ -143,16 +143,39 @@ Update `frontend/angular.json` - modify the `build` section. Angular 21's defaul
 }
 ```
 
-Create `frontend/proxy.conf.json`:
+Create `frontend/proxy.conf.cjs`:
 
-```json
-{
-  "/api": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true
+```javascript
+const { existsSync, readFileSync } = require('node:fs');
+const { resolve } = require('node:path');
+
+function readRootEnv() {
+  const envPath = resolve(__dirname, '..', '.env');
+  if (!existsSync(envPath)) {
+    return {};
   }
+  return Object.fromEntries(
+    readFileSync(envPath, 'utf8')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#') && line.includes('='))
+      .map((line) => {
+        const index = line.indexOf('=');
+        return [line.slice(0, index), line.slice(index + 1)];
+      })
+  );
 }
+
+const env = { ...readRootEnv(), ...process.env };
+const springBootPort = env.SPRING_BOOT_PORT ?? '8080';
+
+module.exports = {
+  '/api': {
+    target: `http://localhost:${springBootPort}`,
+    secure: false,
+    changeOrigin: true
+  }
+};
 ```
 
 ### 3. Configure Maven for Frontend Build
@@ -254,7 +277,7 @@ npm start
 
 Access the application at **http://localhost:4200** (Angular dev server with hot reload).
 
-API calls to `/api/*` are automatically proxied to Spring Boot at `http://localhost:8080`.
+API calls to `/api/*` are automatically proxied to Spring Boot at `http://localhost:${SPRING_BOOT_PORT:-8080}`.
 
 ### Production Build
 
@@ -265,7 +288,7 @@ API calls to `/api/*` are automatically proxied to Spring Boot at `http://localh
 # Run the packaged application
 java -jar target/my-app.jar
 
-# Access at http://localhost:8080
+# Access at http://localhost:${SPRING_BOOT_PORT:-8080}
 ```
 
 The frontend is built and bundled into the Spring Boot JAR automatically.
@@ -948,7 +971,7 @@ Start Spring Boot with the `dev` profile active:
 ### Production Testing
 1. Build: `./mvnw clean package`
 2. Run: `java -jar target/my-app.jar`
-3. Navigate to `http://localhost:8080`
+3. Navigate to `http://localhost:${SPRING_BOOT_PORT:-8080}`
 4. All routes should work including direct navigation to `/items`, `/about`, etc.
 
 ### Browser DevTools

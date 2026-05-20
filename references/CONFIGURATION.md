@@ -38,8 +38,11 @@ Spring Boot supports both `.properties` and `.yaml` files. **We recommend proper
 **Example: `application.properties`**
 
 ```properties
+# Local .env support
+spring.config.import=optional:file:.env[.properties]
+
 # Server Configuration
-server.port=8080
+server.port=${SPRING_BOOT_PORT:8080}
 server.compression.enabled=true
 server.compression.mime-types=text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
 
@@ -53,7 +56,7 @@ logging.level.com.example.myapp=DEBUG
 logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n
 
 # Database Configuration
-spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/mydb}
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/mydb}
 spring.datasource.username=${SPRING_DATASOURCE_USERNAME:user}
 spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:password}
 spring.datasource.hikari.maximum-pool-size=10
@@ -156,7 +159,7 @@ java -jar app.jar
 **Via Docker:**
 
 ```bash
-docker run -e SPRING_PROFILES_ACTIVE=prod -p 8080:8080 myapp:latest
+docker run -e SPRING_PROFILES_ACTIVE=prod -e SPRING_BOOT_PORT=8080 -p 8080:8080 myapp:latest
 ```
 
 **Via application.properties (not recommended for production):**
@@ -220,10 +223,11 @@ app.api.secret=${API_SECRET}
 
 ```bash
 # application.properties: server.port
-export SERVER_PORT=8080
+export SPRING_BOOT_PORT=8080
 
 # application.properties: spring.datasource.url
-export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/mydb
+export POSTGRES_PORT=5432
+export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:${POSTGRES_PORT}/mydb
 ```
 
 ### Docker and Environment Variables
@@ -235,9 +239,10 @@ services:
   app:
     image: myapp:latest
     ports:
-      - "8080:8080"
+      - "${SPRING_BOOT_PORT:-8080}:${SPRING_BOOT_PORT:-8080}"
     environment:
       SPRING_PROFILES_ACTIVE: prod
+      SPRING_BOOT_PORT: ${SPRING_BOOT_PORT:-8080}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mydb
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}  # From .env file
@@ -248,6 +253,8 @@ services:
 **.env file (never commit to Git):**
 
 ```bash
+SPRING_BOOT_PORT=8080
+POSTGRES_PORT=5432
 DB_PASSWORD=secret-password
 API_KEY=your-api-key
 API_SECRET=your-api-secret
@@ -498,7 +505,7 @@ management.metrics.tags.environment=${spring.profiles.active}
 
 ```properties
 # Port
-server.port=8080
+server.port=${SPRING_BOOT_PORT:8080}
 
 # Context path (if needed)
 # server.servlet.context-path=/api

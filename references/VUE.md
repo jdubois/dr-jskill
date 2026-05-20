@@ -38,8 +38,8 @@ This guide covers creating front-end applications for Spring Boot using **Vue.js
 
 **Development Mode:**
 
-1. Vite dev server runs on port 5173 with hot reload
-2. Proxies API calls to Spring Boot backend on port 8080
+1. Vite dev server runs on `VITE_PORT` with a default of 5173
+2. Proxies API calls to the Spring Boot backend on `SPRING_BOOT_PORT` with a default of 8080
 3. Fast HMR (Hot Module Replacement)
 
 **Production Mode:**
@@ -113,34 +113,42 @@ Update `frontend/vite.config.js`:
 
 ```javascript
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-export default defineConfig({
-  plugins: [vue()],
-  
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
-  },
-  
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false
-      }
-    }
-  },
+export default defineConfig(({ mode }) => {
+  const projectRoot = fileURLToPath(new URL('..', import.meta.url))
+  const env = loadEnv(mode, projectRoot, '')
+  const vitePort = Number(env.VITE_PORT ?? 5173)
+  const springBootPort = Number(env.SPRING_BOOT_PORT ?? 8080)
 
-  build: {
-    outDir: '../src/main/resources/static',
-    emptyOutDir: true,
-    assetsDir: 'assets',
-    sourcemap: false
+  return {
+    plugins: [vue()],
+
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url))
+      }
+    },
+
+    server: {
+      port: vitePort,
+      strictPort: true,
+      proxy: {
+        '/api': {
+          target: `http://localhost:${springBootPort}`,
+          changeOrigin: true,
+          secure: false
+        }
+      }
+    },
+
+    build: {
+      outDir: '../src/main/resources/static',
+      emptyOutDir: true,
+      assetsDir: 'assets',
+      sourcemap: false
+    }
   }
 })
 ```
@@ -248,9 +256,9 @@ cd frontend
 npm run dev
 ```
 
-Access the application at **http://localhost:5173** (Vue.js dev server with hot reload).
+Access the application at **http://localhost:${VITE_PORT:-5173}** (Vue.js dev server with hot reload).
 
-API calls to `/api/*` are automatically proxied to Spring Boot at `http://localhost:8080`.
+API calls to `/api/*` are automatically proxied to Spring Boot at `http://localhost:${SPRING_BOOT_PORT:-8080}`.
 
 ### Production Build
 
@@ -261,7 +269,7 @@ API calls to `/api/*` are automatically proxied to Spring Boot at `http://localh
 # Run the packaged application
 java -jar target/my-app.jar
 
-# Access at http://localhost:8080
+# Access at http://localhost:${SPRING_BOOT_PORT:-8080}
 ```
 
 The frontend is built and bundled into the Spring Boot JAR automatically.
@@ -977,6 +985,7 @@ package com.example.demo.config;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -989,16 +998,16 @@ import org.springframework.web.filter.CorsFilter;
 public class CorsConfig {
 
     /**
-     * Allows the Vite dev server (http://localhost:5173) to call the
+     * Allows the Vite dev server to call the
      * Spring Boot API during development. In production the Vue.js app
      * is served from the same origin, so no CORS configuration is
      * registered.
      */
     @Bean
-    public CorsFilter corsFilter() {
+    public CorsFilter corsFilter(@Value("${VITE_PORT:5173}") int vitePort) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(List.of("http://localhost:" + vitePort));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
@@ -1019,13 +1028,13 @@ Start Spring Boot with the `dev` profile active:
 ### Development Testing
 1. Start Spring Boot backend: `./mvnw spring-boot:run`
 2. Start Vite dev server: `cd frontend && npm run dev`
-3. Navigate to `http://localhost:5173`
+3. Navigate to `http://localhost:${VITE_PORT:-5173}`
 4. Make changes and see them instantly with hot reload
 
 ### Production Testing
 1. Build: `./mvnw clean package`
 2. Run: `java -jar target/my-app.jar`
-3. Navigate to `http://localhost:8080`
+3. Navigate to `http://localhost:${SPRING_BOOT_PORT:-8080}`
 4. All routes should work including direct navigation to `/items`, `/about`, etc.
 
 ### Browser DevTools
