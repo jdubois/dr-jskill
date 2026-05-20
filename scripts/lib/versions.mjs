@@ -323,7 +323,28 @@ function configureApplicationProperties(projectDir, { database = false } = {}) {
     );
     content = upsertProperty(content, 'spring.datasource.username', '${SPRING_DATASOURCE_USERNAME:user}');
     content = upsertProperty(content, 'spring.datasource.password', '${SPRING_DATASOURCE_PASSWORD:password}');
+    content = upsertProperty(
+      content,
+      'spring.jpa.hibernate.ddl-auto',
+      '${SPRING_JPA_HIBERNATE_DDL_AUTO:update}'
+    );
+    content = upsertProperty(content, 'spring.jpa.open-in-view', 'false');
   }
+
+  const destDir = dirname(target);
+  if (!existsSync(destDir)) mkdirSync(destDir, { recursive: true });
+  writeFileSync(target, content, 'utf8');
+}
+
+function configureTestApplicationProperties(projectDir, { database = false } = {}) {
+  if (!database) return;
+
+  const target = join(projectDir, 'src', 'test', 'resources', 'application.properties');
+  let content = existsSync(target) ? readFileSync(target, 'utf8') : '';
+
+  content = upsertProperty(content, 'spring.docker.compose.enabled', 'false');
+  content = upsertProperty(content, 'spring.jpa.hibernate.ddl-auto', 'create-drop');
+  content = upsertProperty(content, 'spring.jpa.open-in-view', 'false');
 
   const destDir = dirname(target);
   if (!existsSync(destDir)) mkdirSync(destDir, { recursive: true });
@@ -387,6 +408,7 @@ export function applyDotfiles(projectDir, options = {}) {
   mergeGitignore(projectDir);
   copyAssetIfMissing('env.sample', join(projectDir, '.env.sample'));
   configureApplicationProperties(projectDir, { database: hasDatabase });
+  configureTestApplicationProperties(projectDir, { database: hasDatabase });
   copyAssetIfMissing('editorconfig', join(projectDir, '.editorconfig'));
   copyAssetIfMissing('gitattributes', join(projectDir, '.gitattributes'));
   copyAssetIfMissing('dockerignore', join(projectDir, '.dockerignore'));
