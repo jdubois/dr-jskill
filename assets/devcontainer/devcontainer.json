@@ -5,6 +5,14 @@
     "dockerComposeFile": "docker-compose.yml",
     "service": "app",
     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "containerEnv": {
+        "SPRING_BOOT_PORT": "8080",
+        "VITE_PORT": "5173",
+        "SPRING_DATASOURCE_URL": "jdbc:postgresql://postgres:5432/mydb",
+        "SPRING_DATASOURCE_USERNAME": "user",
+        "SPRING_DATASOURCE_PASSWORD": "password",
+        "SPRING_DOCKER_COMPOSE_ENABLED": "false"
+    },
 
     // JDK 25 + Node 24 features
     "features": {
@@ -43,14 +51,12 @@
     "postCreateCommand": "./mvnw dependency:go-offline -q || true",
     "postStartCommand": "echo '✅ Dev container ready — run ./mvnw spring-boot:run'",
 
-    // Forward default app + front-end dev ports. Worktree-specific ports from .env
-    // are picked up by Docker Compose and Spring Boot; editors can auto-forward
-    // those additional ports when they start listening.
-    "forwardPorts": [8080, 5173, 5432],
+    // Keep standard internal ports inside the container; editors forward them
+    // to unique host ports automatically for each worktree.
+    "forwardPorts": [8080, 5173],
     "portsAttributes": {
         "8080": { "label": "Spring Boot", "onAutoForward": "notify" },
-        "5173": { "label": "Vite Dev Server", "onAutoForward": "silent" },
-        "5432": { "label": "PostgreSQL", "onAutoForward": "silent" }
+        "5173": { "label": "Vite Dev Server", "onAutoForward": "silent" }
     },
 
     // Run as non-root

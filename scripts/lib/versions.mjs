@@ -13,7 +13,6 @@ const ROOT_DIR = process.env.ROOT_DIR || resolve(__dirname, '..', '..');
 const VERSIONS_FILE = process.env.VERSIONS_FILE || resolve(ROOT_DIR, 'versions.json');
 const ASSETS_DIR = resolve(ROOT_DIR, 'assets');
 const DOTFILES_MARKER = '# === dr-jskill additions ===';
-let gitWorktreeHookSetupStatus = 'unknown';
 
 /** Default timeout for HTTP requests (10 seconds) */
 const FETCH_TIMEOUT_MS = 10_000;
@@ -444,6 +443,8 @@ export function applyDotfiles(projectDir, options = {}) {
   copyAssetIfMissing(join('devcontainer', 'devcontainer.json'), join(projectDir, '.devcontainer', 'devcontainer.json'));
   if (hasDatabase) {
     copyAssetIfMissing(join('devcontainer', 'docker-compose.yml'), join(projectDir, '.devcontainer', 'docker-compose.yml'));
+  } else {
+    copyAssetIfMissing(join('devcontainer', 'docker-compose-nodb.yml'), join(projectDir, '.devcontainer', 'docker-compose.yml'));
   }
   // Fallback index.html so the app shows a helpful page before the frontend is built
   if (hasFrontend) {
@@ -453,17 +454,6 @@ export function applyDotfiles(projectDir, options = {}) {
   copyAssetIfMissing(join('ci', 'github-actions.yml'), join(projectDir, '.github', 'workflows', 'ci.yml'));
   // Copilot CLI LSP config (wires JDTLS for Java)
   copyAssetIfMissing('lsp.json', join(projectDir, '.github', 'lsp.json'));
-  // Git worktree helpers: versioned hook + script for local per-worktree .env ports.
-  copyExecutableAssetIfMissing(join('githooks', 'post-checkout'), join(projectDir, '.githooks', 'post-checkout'));
-  copyExecutableAssetIfMissing(
-    join('scripts', 'git', 'update-worktree-env.mjs'),
-    join(projectDir, 'scripts', 'git', 'update-worktree-env.mjs')
-  );
-  copyExecutableAssetIfMissing(
-    join('scripts', 'git', 'setup-worktree-env.mjs'),
-    join(projectDir, 'scripts', 'git', 'setup-worktree-env.mjs')
-  );
-  configureGitWorktreeHooks(projectDir);
   // StartupInfoListener (REQUIRED per SPRING-BOOT-4.md) — prints access URLs at boot.
   writeStartupInfoListener(projectDir, options.packageName);
   // Optional Node version pinning if front-end present
@@ -478,31 +468,11 @@ export function applyDotfiles(projectDir, options = {}) {
   }
 }
 
-function configureGitWorktreeHooks(projectDir) {
-  try {
-    const gitRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: projectDir, encoding: 'utf8' }).trim();
-    if (resolve(gitRoot) !== resolve(projectDir)) {
-      gitWorktreeHookSetupStatus = 'manual';
-      return;
-    }
-    execFileSync('node', ['scripts/git/setup-worktree-env.mjs'], { cwd: projectDir, stdio: 'ignore' });
-    gitWorktreeHookSetupStatus = 'configured';
-  } catch {
-    gitWorktreeHookSetupStatus = 'manual';
-  }
-}
-
-export function printGitWorktreeHookInstructions() {
+export function printDevContainerInstructions() {
   console.log('');
-  if (gitWorktreeHookSetupStatus === 'configured') {
-    console.log('Git worktree port setup:');
-    console.log('  ✅ Activated .githooks/post-checkout and created the first worktree-local .env.');
-    console.log('  Future git worktree add operations will create their own local .env ports automatically.');
-    return;
-  }
-  console.log('Git worktree port setup (after initializing Git):');
-  console.log('  node scripts/git/setup-worktree-env.mjs');
-  console.log('This activates the versioned post-checkout hook and creates the first worktree-local .env.');
+  console.log('Dev Container workflow:');
+  console.log('  Open .devcontainer/devcontainer.json in VS Code or Codespaces for isolated worktree ports.');
+  console.log('  Each worktree gets its own container network, so Spring Boot, Vite, and PostgreSQL can stay on their default internal ports.');
 }
 
 /**

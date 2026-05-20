@@ -138,19 +138,13 @@ After downloading from start.spring.io, the scripts **patch in** dotfiles:
 - `.gitignore` (merged with `assets/gitignore` — covers Java + front-end + secrets)
 - `.env.sample` (real `.env` is gitignored)
 - `.editorconfig`, `.gitattributes`, `.dockerignore`
+- optional `.devcontainer/` for isolated worktree development
 - optional `.vscode/` recommendations
 - optional `.nvmrc` / `.node-version` (uses Node version from `versions.json`)
-- `.githooks/post-checkout`, `scripts/git/update-worktree-env.mjs`, and `scripts/git/setup-worktree-env.mjs` for worktree-local ports
 
 Existing files are preserved; `.gitignore` is appended once using a marker.
 
-When a project is generated at the root of an existing Git worktree, the scripts automatically activate the versioned hook and create the first ignored `.env`. If the project is generated before Git is initialized, run this after initializing or cloning:
-
-```bash
-node scripts/git/setup-worktree-env.mjs
-```
-
-This creates the first ignored `.env`; future `git worktree add` operations then get unique `SPRING_BOOT_PORT`, `VITE_PORT`, `POSTGRES_PORT`, and `COMPOSE_PROJECT_NAME` values automatically. If `.env` was copied from `.env.sample`, sample default ports are replaced on the first managed run rather than preserved.
+When you work on multiple Git worktrees at the same time, open each generated project in its own Dev Container or Codespace. The container network isolates PostgreSQL, while editor port forwarding keeps Spring Boot and Vite accessible without host port conflicts or Git hook setup.
 
 ## Keeping docs in sync with `versions.json`
 

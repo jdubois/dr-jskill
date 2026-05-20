@@ -3,7 +3,7 @@
 
 import {
   getJavaVersion, resolveBootVersion,
-  downloadAndExtractProject, parseArgs, applyDotfiles, resolveOutputDir, printGitWorktreeHookInstructions,
+  downloadAndExtractProject, parseArgs, applyDotfiles, resolveOutputDir, printDevContainerInstructions,
 } from './lib/versions.mjs';
 
 function usage() {
@@ -70,4 +70,4 @@ console.log('');
 console.log('Next steps:');
 console.log(`  cd ${projectDir}`);
 console.log('  ./mvnw spring-boot:run');
-printGitWorktreeHookInstructions();
+printDevContainerInstructions();

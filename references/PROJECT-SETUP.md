@@ -114,7 +114,7 @@ dependency-check-report.*
 # Spring profiles
 SPRING_PROFILES_ACTIVE=dev
 
-# Local ports (override per Git worktree when needed)
+# Local host ports (override when running outside a Dev Container)
 SPRING_BOOT_PORT=8080
 VITE_PORT=5173
 POSTGRES_PORT=5432
@@ -247,6 +247,14 @@ The skill ships two files in `assets/devcontainer/`; the generator copies them t
     "dockerComposeFile": "docker-compose.yml",
     "service": "app",
     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "containerEnv": {
+        "SPRING_BOOT_PORT": "8080",
+        "VITE_PORT": "5173",
+        "SPRING_DATASOURCE_URL": "jdbc:postgresql://postgres:5432/mydb",
+        "SPRING_DATASOURCE_USERNAME": "user",
+        "SPRING_DATASOURCE_PASSWORD": "password",
+        "SPRING_DOCKER_COMPOSE_ENABLED": "false"
+    },
 
     "features": {
         "ghcr.io/devcontainers/features/java:1": {
@@ -281,14 +289,12 @@ The skill ships two files in `assets/devcontainer/`; the generator copies them t
     "postCreateCommand": "./mvnw dependency:go-offline -q || true",
     "postStartCommand": "echo '✅ Dev container ready — run ./mvnw spring-boot:run'",
 
-    // Default forwarded ports. Worktree-specific ports from .env are picked up
-    // by Docker Compose and Spring Boot; editors can auto-forward additional
-    // ports when they start listening.
-    "forwardPorts": [8080, 5173, 5432],
+    // Keep standard internal ports in the container; editors forward them to
+    // unique host ports automatically for each worktree.
+    "forwardPorts": [8080, 5173],
     "portsAttributes": {
         "8080": { "label": "Spring Boot",   "onAutoForward": "notify" },
-        "5173": { "label": "Vite Dev Server","onAutoForward": "silent" },
-        "5432": { "label": "PostgreSQL",     "onAutoForward": "silent" }
+        "5173": { "label": "Vite Dev Server","onAutoForward": "silent" }
     },
 
     "remoteUser": "vscode"
@@ -299,12 +305,13 @@ The skill ships two files in `assets/devcontainer/`; the generator copies them t
 
 | Setting | Why |
 |---------|-----|
-| `dockerComposeFile` | Lets the container depend on a PostgreSQL service instead of requiring `spring-boot-docker-compose` to start one |
+| `dockerComposeFile` | Gives each worktree its own isolated Compose project and optional PostgreSQL sidecar |
+| `containerEnv` | Forces standard internal ports and points Spring Boot at the `postgres` service inside the container network |
 | `features/java` | Installs Eclipse Temurin 25 + Maven wrapper support |
 | `features/node` | Installs Node 24 so `npm run dev` works for the front-end |
 | `features/docker-in-docker` | Lets Testcontainers and `docker build` work inside the container |
 | `postCreateCommand` | Pre-fetches Maven dependencies so the first build is fast |
-| `forwardPorts` | Exposes the Spring Boot app (8080), Vite dev server (5173), and PostgreSQL (5432) |
+| `forwardPorts` | Exposes the Spring Boot app (8080) and Vite dev server (5173) without fixed host-port mappings |
 
 ### `.devcontainer/docker-compose.yml`
 
@@ -326,8 +333,6 @@ services:
       POSTGRES_DB: mydb
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "user"]
       interval: 10s
@@ -340,28 +345,31 @@ volumes:
   postgres_data:
 ```
 
-The `postgres` service mirrors the project's root `compose.yaml` so credentials stay consistent. The `app` service is a lightweight Ubuntu container that Dev Container features layer onto.
+The `postgres` service stays private to the Dev Container network, which avoids host port conflicts between worktrees. The `app` service is a lightweight Ubuntu container that Dev Container features layer onto.
 
 ### Customising the DevContainer
 
-- **No database needed?** Remove the `postgres` service from `docker-compose.yml`, remove `depends_on` from `app`, and delete port `5432` from `forwardPorts`.
+- **No database needed?** Remove the `postgres` service from `docker-compose.yml` and remove `depends_on` from `app`.
 - **No front-end?** Remove the `features/node` block and port `5173`.
 - **Add Redis, Kafka, etc.?** Add the service to `docker-compose.yml` and a matching `forwardPorts` entry.
 - **GitHub Codespaces**: works out of the box — push `.devcontainer/` and open the repo in Codespaces.
 
 ### Connecting the app to the DevContainer database
 
-Because the `postgres` service runs as a sibling Docker Compose service, the app connects via the configured local PostgreSQL port. Use these properties so `.env` is loaded automatically and Git worktrees can override ports:
+Because the `postgres` service runs as a sibling Docker Compose service, the Dev Container injects environment variables so the app talks to `postgres:5432` directly and does not start a second database container from the project root `compose.yaml`.
 
-```properties
-spring.config.import=optional:file:.env[.properties]
-server.port=${SPRING_BOOT_PORT:8080}
-spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/mydb}
-spring.datasource.username=${SPRING_DATASOURCE_USERNAME:user}
-spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:password}
+```jsonc
+"containerEnv": {
+    "SPRING_BOOT_PORT": "8080",
+    "VITE_PORT": "5173",
+    "SPRING_DATASOURCE_URL": "jdbc:postgresql://postgres:5432/mydb",
+    "SPRING_DATASOURCE_USERNAME": "user",
+    "SPRING_DATASOURCE_PASSWORD": "password",
+    "SPRING_DOCKER_COMPOSE_ENABLED": "false"
+}
 ```
 
-> **Tip:** With `spring-boot-docker-compose` enabled, Spring Boot may try to start *another* PostgreSQL container from the project root `compose.yaml`. To avoid duplication inside the DevContainer, set `spring.docker.compose.enabled=false` in a `dev` profile or pass `-Dspring.docker.compose.enabled=false`.
+This keeps the application on its standard internal ports while VS Code or Codespaces forwards them back to the host with no per-worktree Git hook setup.
 
 ---
 
@@ -428,7 +436,6 @@ From the generated project root:
 ```bash
 cd my-app                     # ← the generated project directory
 git init -b main
-node scripts/git/setup-worktree-env.mjs
 git add .
 git commit -m "Initial commit from Dr JSkill"
 ```

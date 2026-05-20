@@ -3,7 +3,7 @@
 
 import {
   getJavaVersion, resolveBootVersion,
-  downloadAndExtractProject, parseArgs, applyDotfiles, resolveOutputDir, printGitWorktreeHookInstructions,
+  downloadAndExtractProject, parseArgs, applyDotfiles, resolveOutputDir, printDevContainerInstructions,
 } from './lib/versions.mjs';
 
 function usage() {
@@ -59,5 +59,5 @@ try {
 console.log(`✓ Spring Boot web application created successfully in ${projectDir}`);
 console.log(`  cd ${projectDir}`);
 console.log('  ./mvnw spring-boot:run');
-printGitWorktreeHookInstructions();
-console.log('  http://localhost:8080 (or SPRING_BOOT_PORT if overridden)');
+printDevContainerInstructions();
+console.log('  http://localhost:8080 (or the forwarded Dev Container port)');
