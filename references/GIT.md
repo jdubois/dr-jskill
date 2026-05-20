@@ -314,12 +314,46 @@ cd "$repo_root" || exit 0
 node scripts/git/update-worktree-env.mjs
 EOF
 chmod +x .githooks/post-checkout
-git config core.hooksPath .githooks
 ```
 
-Generated projects configure `core.hooksPath` automatically when they are created at the root of an existing Git worktree. If generation happens before Git is initialized, `git config core.hooksPath .githooks` remains a required one-time local setup after `git init` or after cloning. The `.githooks/post-checkout` file is versioned, but Git ignores versioned hook directories until `core.hooksPath` is configured; this setting is local Git config and is not committed or pushed.
+Create `scripts/git/setup-worktree-env.mjs`:
 
-Generated projects also run `node scripts/git/update-worktree-env.mjs` automatically when they are created at the root of an existing Git worktree. If generation happens before Git is initialized, run it once in the initial checkout after enabling the hook to create the first local `.env`. The `post-checkout` hook then runs after branch checkouts and when Git populates a new worktree. The script preserves existing values inside its managed block, so a developer can override a port manually by editing `.env`; copied `.env.sample` defaults are treated as placeholders and replaced with random ports on first run.
+```javascript
+#!/usr/bin/env node
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
+
+function run(command, args, options = {}) {
+  return execFileSync(command, args, { encoding: 'utf8', ...options });
+}
+
+let repoRoot;
+try {
+  repoRoot = run('git', ['rev-parse', '--show-toplevel'], { cwd: process.cwd() }).trim();
+} catch {
+  console.error('Cannot set up worktree-local .env files because this directory is not a Git repository.');
+  console.error('Run `git init -b main` first, then run `node scripts/git/setup-worktree-env.mjs` again.');
+  process.exit(1);
+}
+
+const hookPath = resolve(repoRoot, '.githooks', 'post-checkout');
+const updaterPath = resolve(repoRoot, 'scripts', 'git', 'update-worktree-env.mjs');
+
+if (!existsSync(hookPath) || !existsSync(updaterPath)) {
+  console.error('Cannot set up worktree-local .env files because the Dr JSkill hook files are missing.');
+  console.error('Expected .githooks/post-checkout and scripts/git/update-worktree-env.mjs in the repository root.');
+  process.exit(1);
+}
+
+run('git', ['config', 'core.hooksPath', '.githooks'], { cwd: repoRoot, stdio: 'ignore' });
+execFileSync('node', ['scripts/git/update-worktree-env.mjs'], { cwd: repoRoot, stdio: 'inherit' });
+console.log('Activated .githooks/post-checkout for future git worktree add operations.');
+```
+
+Generated projects run `node scripts/git/setup-worktree-env.mjs` automatically when they are created at the root of an existing Git worktree. If generation happens before Git is initialized, run that setup script once after `git init` or after cloning. The `.githooks/post-checkout` file is versioned, but Git ignores versioned hook directories until `core.hooksPath` is configured; this setting is local Git config and is not committed or pushed.
+
+The setup script creates the first local `.env`. The `post-checkout` hook then runs after branch checkouts and when Git populates a new worktree. The updater script preserves existing values inside its managed block, so a developer can override a port manually by editing `.env`; copied `.env.sample` defaults are treated as placeholders and replaced with random ports on first run.
 
 ### Spring Boot configuration
 

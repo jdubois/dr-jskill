@@ -459,6 +459,10 @@ export function applyDotfiles(projectDir, options = {}) {
     join('scripts', 'git', 'update-worktree-env.mjs'),
     join(projectDir, 'scripts', 'git', 'update-worktree-env.mjs')
   );
+  copyExecutableAssetIfMissing(
+    join('scripts', 'git', 'setup-worktree-env.mjs'),
+    join(projectDir, 'scripts', 'git', 'setup-worktree-env.mjs')
+  );
   configureGitWorktreeHooks(projectDir);
   // StartupInfoListener (REQUIRED per SPRING-BOOT-4.md) — prints access URLs at boot.
   writeStartupInfoListener(projectDir, options.packageName);
@@ -481,8 +485,7 @@ function configureGitWorktreeHooks(projectDir) {
       gitWorktreeHookSetupStatus = 'manual';
       return;
     }
-    execFileSync('git', ['config', 'core.hooksPath', '.githooks'], { cwd: projectDir, stdio: 'ignore' });
-    execFileSync('node', ['scripts/git/update-worktree-env.mjs'], { cwd: projectDir, stdio: 'ignore' });
+    execFileSync('node', ['scripts/git/setup-worktree-env.mjs'], { cwd: projectDir, stdio: 'ignore' });
     gitWorktreeHookSetupStatus = 'configured';
   } catch {
     gitWorktreeHookSetupStatus = 'manual';
@@ -498,8 +501,7 @@ export function printGitWorktreeHookInstructions() {
     return;
   }
   console.log('Git worktree port setup (after initializing Git):');
-  console.log('  git config core.hooksPath .githooks');
-  console.log('  node scripts/git/update-worktree-env.mjs');
+  console.log('  node scripts/git/setup-worktree-env.mjs');
   console.log('This activates the versioned post-checkout hook and creates the first worktree-local .env.');
 }
 

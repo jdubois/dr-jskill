@@ -428,6 +428,7 @@ From the generated project root:
 ```bash
 cd my-app                     # ← the generated project directory
 git init -b main
+node scripts/git/setup-worktree-env.mjs
 git add .
 git commit -m "Initial commit from Dr JSkill"
 ```
