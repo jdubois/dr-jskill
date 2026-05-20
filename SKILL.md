@@ -213,6 +213,8 @@ Choose a front-end framework:
 
 All options include: Vite/CLI dev server with hot reload, Bootstrap 5.3+, SPA routing, and automatic build into the Spring Boot JAR.
 
+When wiring the `frontend-maven-plugin`, bind the Node install, `npm install`, and `npm run build` executions to the `generate-resources` phase. This makes `./mvnw spring-boot:run` build the frontend before Spring Boot starts, instead of only building it during explicit package-oriented commands.
+
 > **Non-interactive scaffolding (important for CI and AI agents).** Two separate prompts must be silenced:
 > 1. **npm's own "Ok to proceed?" install prompt** — silence by placing `-y` **before** the package name (flags after `--` go to the scaffolder, not to npm). Use `npm create -y vite@latest …` or `npx --yes create-vite@latest …`.
 > 2. **The scaffolder's own prompts** — create-vite 8.x and Angular CLI 21 still pose interactive questions (e.g. "Use rolldown-vite?", analytics opt-in) that `-y` / `--yes` do **not** silence. The reliable fix is to close stdin: pipe `echo |` into the command so the scaffolder immediately sees EOF and accepts defaults.

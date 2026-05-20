@@ -169,6 +169,7 @@ Add to your `pom.xml`:
                 <!-- Install Node and npm -->
                 <execution>
                     <id>install node and npm</id>
+                    <phase>generate-resources</phase>
                     <goals>
                         <goal>install-node-and-npm</goal>
                     </goals>
@@ -181,6 +182,7 @@ Add to your `pom.xml`:
                 <!-- Install npm dependencies -->
                 <execution>
                     <id>npm install</id>
+                    <phase>generate-resources</phase>
                     <goals>
                         <goal>npm</goal>
                     </goals>
@@ -192,6 +194,7 @@ Add to your `pom.xml`:
                 <!-- Build frontend -->
                 <execution>
                     <id>npm run build</id>
+                    <phase>generate-resources</phase>
                     <goals>
                         <goal>npm</goal>
                     </goals>
@@ -204,6 +207,8 @@ Add to your `pom.xml`:
     </plugins>
 </build>
 ```
+
+Bind all three executions to `generate-resources`. The Spring Boot `run` goal invokes Maven lifecycle phases before starting the application, so `./mvnw spring-boot:run` installs frontend dependencies and runs `npm run build` before Spring Boot serves `src/main/resources/static`.
 
 ### 4. Update Frontend package.json Scripts
 
