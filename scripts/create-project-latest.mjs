@@ -5,7 +5,7 @@
 import {
   getJavaVersion, getBootPreferredMajor, getBootFallback,
   resolveBootVersion, downloadAndExtractProject, parseArgs,
-  applyDotfiles,
+  applyDotfiles, resolveOutputDir,
 } from './lib/versions.mjs';
 
 const PREFERRED_BOOT_MAJOR = getBootPreferredMajor();
@@ -21,12 +21,13 @@ Environment / Flags:
   --frontend <type>          none | react | angular | vue | vanilla (default: none for web/basic, vue for fullstack)
                              When set to a framework, keeps the COPY frontend ./frontend line in Dockerfile(s)
                              so you can manually scaffold a frontend/ directory after generation.
+  --output-dir <path>        Directory where the project folder is created (default: current directory)
   -h|--help                  Show this help
 
 Examples:
   node scripts/create-project-latest.mjs myapp com.acme myapp com.acme.myapp 21 fullstack
   node scripts/create-project-latest.mjs --boot-version 4.0.0-M1 myapp
-  node scripts/create-project-latest.mjs --frontend react myapp com.acme myapp com.acme.myapp 25 web`);
+  node scripts/create-project-latest.mjs --output-dir /path/to/workspace --frontend react myapp com.acme myapp com.acme.myapp 25 web`);
 }
 
 const { flags, positional } = parseArgs(process.argv);
@@ -42,6 +43,8 @@ const artifactId = positional[2] || projectName;
 const packageName = positional[3] || `${groupId}.app`;
 const javaVersion = positional[4] || JAVA_VERSION_DEFAULT;
 const projectType = positional[5] || flags.projectType || 'web';
+const outputDir = resolveOutputDir(flags);
+let projectDir;
 
 const bootVersion = flags.bootVersion
   ? flags.bootVersion
@@ -71,7 +74,7 @@ switch (projectType) {
 }
 
 try {
-  await downloadAndExtractProject({
+  projectDir = await downloadAndExtractProject({
     type: 'maven-project',
     language: 'java',
     bootVersion,
@@ -84,6 +87,7 @@ try {
     packaging: 'jar',
     javaVersion,
     dependencies,
+    outputDir,
   });
 
   // Apply dotfiles and editor-recommended settings
@@ -92,17 +96,17 @@ try {
   // explicitly asks for one via `--frontend <framework>` (anything except "none").
   const explicitFrontend = flags.frontend && flags.frontend !== 'none';
   const hasFrontend = projectType === 'fullstack' || Boolean(explicitFrontend);
-  applyDotfiles(projectName, { database: hasDatabase, frontend: hasFrontend, packageName });
+  applyDotfiles(projectDir, { database: hasDatabase, frontend: hasFrontend, packageName });
 } catch (err) {
   console.error(`✗ Failed to create project: ${err?.message || String(err)}`);
   process.exit(1);
 }
 
 console.log('');
-console.log(`✓ Spring Boot project created successfully in ./${projectName}`);
+console.log(`✓ Spring Boot project created successfully in ${projectDir}`);
 console.log('');
 console.log('To get started:');
-console.log(`  cd ${projectName}`);
+console.log(`  cd ${projectDir}`);
 console.log('  ./mvnw spring-boot:run');
 console.log('');
 console.log('The application will be available at http://localhost:8080 (or SPRING_BOOT_PORT if overridden)');
