@@ -29,6 +29,8 @@ Before starting Chapter 1, make sure you have:
 
 Everything else (Node.js, Java, Docker, Copilot CLI, Dr JSkill) is installed in Chapter 1.
 
+**Recommended model:** Dr JSkill works best with **GPT-5.5**. Chapter 2 explains how to select it in Copilot CLI.
+
 ## Chapters
 
 | # | Chapter | You will… |

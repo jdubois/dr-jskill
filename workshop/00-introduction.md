@@ -72,7 +72,7 @@ This workshop has been executed end-to-end (chapters 02 → 08) with three AI mo
 - **Claude Opus 4.7**
 - **GPT-5.5**
 
-All three produced a running application, but the *quality* of the generated code varied — Haiku is the fastest but it regularly has minor bugs in the generated code. Chapter 2 gives concrete advice on which one to pick when you start your session.
+All three produced a running application, but the *quality* of the generated code varied. Dr JSkill works best with **GPT-5.5**, which is the recommended model for the workshop. Chapter 2 gives concrete advice on selecting it when you start your session.
 
 ---
 
