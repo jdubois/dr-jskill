@@ -114,8 +114,14 @@ dependency-check-report.*
 # Spring profiles
 SPRING_PROFILES_ACTIVE=dev
 
+# Local ports (override per Git worktree when needed)
+SPRING_BOOT_PORT=8080
+VITE_PORT=5173
+POSTGRES_PORT=5432
+COMPOSE_PROJECT_NAME=my-spring-boot-app
+
 # Database (PostgreSQL)
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/mydb
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:${POSTGRES_PORT}/mydb
 SPRING_DATASOURCE_USERNAME=user
 SPRING_DATASOURCE_PASSWORD=change-me
 
@@ -275,6 +281,9 @@ The skill ships two files in `assets/devcontainer/`; the generator copies them t
     "postCreateCommand": "./mvnw dependency:go-offline -q || true",
     "postStartCommand": "echo '✅ Dev container ready — run ./mvnw spring-boot:run'",
 
+    // Default forwarded ports. Worktree-specific ports from .env are picked up
+    // by Docker Compose and Spring Boot; editors can auto-forward additional
+    // ports when they start listening.
     "forwardPorts": [8080, 5173, 5432],
     "portsAttributes": {
         "8080": { "label": "Spring Boot",   "onAutoForward": "notify" },
@@ -318,7 +327,7 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "user"]
       interval: 10s
@@ -342,10 +351,12 @@ The `postgres` service mirrors the project's root `compose.yaml` so credentials 
 
 ### Connecting the app to the DevContainer database
 
-Because the `postgres` service runs as a sibling Docker Compose service, the app connects via `localhost:5432` — the same as local development. Use these properties (or set via `.env`):
+Because the `postgres` service runs as a sibling Docker Compose service, the app connects via the configured local PostgreSQL port. Use these properties so `.env` is loaded automatically and Git worktrees can override ports:
 
 ```properties
-spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/mydb}
+spring.config.import=optional:file:.env[.properties]
+server.port=${SPRING_BOOT_PORT:8080}
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/mydb}
 spring.datasource.username=${SPRING_DATASOURCE_USERNAME:user}
 spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:password}
 ```

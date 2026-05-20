@@ -23,8 +23,11 @@
 
 `src/main/resources/application.properties`:
 ```properties
+# Local .env support
+spring.config.import=optional:file:.env[.properties]
+
 # Datasource
-spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/mydb}
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/mydb}
 spring.datasource.username=${SPRING_DATASOURCE_USERNAME:user}
 spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:password}
 spring.datasource.driver-class-name=org.postgresql.Driver
@@ -105,7 +108,7 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "user"]
       interval: 10s

@@ -105,4 +105,4 @@ console.log('To get started:');
 console.log(`  cd ${projectName}`);
 console.log('  ./mvnw spring-boot:run');
 console.log('');
-console.log('The application will be available at http://localhost:8080');
+console.log('The application will be available at http://localhost:8080 (or SPRING_BOOT_PORT if overridden)');

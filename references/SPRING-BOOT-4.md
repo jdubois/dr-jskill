@@ -729,7 +729,7 @@ public class StartupInfoListener implements ApplicationListener<ApplicationReady
                 ? String.join(", ", env.getDefaultProfiles())
                 : String.join(", ", env.getActiveProfiles());
 
-        String viteHint = viteDevServerHint();
+        String viteHint = viteDevServerHint(env);
 
         String banner = AnsiOutput.toString(
                 "\n",
@@ -753,12 +753,14 @@ public class StartupInfoListener implements ApplicationListener<ApplicationReady
     }
 
     /** If a {@code frontend/} folder exists next to the process, hint at the Vite dev URL. */
-    private String viteDevServerHint() {
+    private String viteDevServerHint(Environment env) {
         Path frontend = Paths.get(System.getProperty("user.dir"), "frontend");
         if (!Files.isDirectory(frontend)) {
             return "";
         }
-        int vitePort = readVitePort(frontend).orElse(5173);
+        int vitePort = parsePort(env.getProperty("VITE_PORT"))
+                .or(() -> readVitePort(frontend))
+                .orElse(5173);
         return AnsiOutput.toString(
                 AnsiColor.GREEN, "  Front-end:   ", AnsiColor.DEFAULT,
                 "http://localhost:", String.valueOf(vitePort),
@@ -787,6 +789,17 @@ public class StartupInfoListener implements ApplicationListener<ApplicationReady
             return Optional.empty();
         }
     }
+
+    private Optional<Integer> parsePort(String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Integer.parseInt(value));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
 }
 ```
 
@@ -811,7 +824,7 @@ In a terminal with ANSI support, the output looks like:
 - **Triggered on `ApplicationReadyEvent`** — fires after Tomcat has bound its port, so what's printed is the real port (including `server.port=0` random-port mode).
 - **HTTPS-aware** — flips the protocol when `server.ssl.enabled=true`.
 - **Context-path aware** — respects a non-root `server.servlet.context-path`.
-- **`Front-end:` line is conditional** — only printed when a `frontend/` folder exists next to the process, so standalone backends don't get a misleading line. The listener tries to read a `port:` from `vite.config.{js,ts}` and falls back to Vite's default (5173).
+- **`Front-end:` line is conditional** — only printed when a `frontend/` folder exists next to the process, so standalone backends don't get a misleading line. The listener uses `VITE_PORT` first, then tries to read a `port:` from `vite.config.{js,ts}`, and falls back to Vite's default (5173).
 - **No new dependencies** — uses only Spring Boot classes (`AnsiOutput`, `ApplicationReadyEvent`) already on the classpath.
 
 ### Reminders for the agent

@@ -276,6 +276,54 @@ function writeTextFileIfMissing(destPath, content) {
   writeFileSync(destPath, content, 'utf8');
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function upsertProperty(content, key, value) {
+  const line = `${key}=${value}`;
+  const pattern = new RegExp(`^${escapeRegExp(key)}=.*$`, 'm');
+  if (pattern.test(content)) {
+    return content.replace(pattern, line);
+  }
+  return `${content.trimEnd()}${content.trimEnd() ? '\n' : ''}${line}\n`;
+}
+
+function upsertConfigImport(content, value) {
+  const pattern = /^spring\.config\.import=(.*)$/m;
+  const match = content.match(pattern);
+  if (!match) {
+    return upsertProperty(content, 'spring.config.import', value);
+  }
+  const imports = match[1].split(',').map((entry) => entry.trim()).filter(Boolean);
+  if (imports.includes(value)) {
+    return content;
+  }
+  return content.replace(pattern, `spring.config.import=${imports.join(',')},${value}`);
+}
+
+function configureApplicationProperties(projectDir, { database = false } = {}) {
+  const target = join(projectDir, 'src', 'main', 'resources', 'application.properties');
+  let content = existsSync(target) ? readFileSync(target, 'utf8') : '';
+
+  content = upsertConfigImport(content, 'optional:file:.env[.properties]');
+  content = upsertProperty(content, 'server.port', '${SPRING_BOOT_PORT:8080}');
+
+  if (database) {
+    content = upsertProperty(
+      content,
+      'spring.datasource.url',
+      '${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/mydb}'
+    );
+    content = upsertProperty(content, 'spring.datasource.username', '${SPRING_DATASOURCE_USERNAME:user}');
+    content = upsertProperty(content, 'spring.datasource.password', '${SPRING_DATASOURCE_PASSWORD:password}');
+  }
+
+  const destDir = dirname(target);
+  if (!existsSync(destDir)) mkdirSync(destDir, { recursive: true });
+  writeFileSync(target, content, 'utf8');
+}
+
 /**
  * Comment out the frontend COPY lines in a Dockerfile when no frontend is present.
  *
@@ -332,6 +380,7 @@ export function applyDotfiles(projectDir, options = {}) {
   console.log('  📄 Applying dotfiles and Docker assets…');
   mergeGitignore(projectDir);
   copyAssetIfMissing('env.sample', join(projectDir, '.env.sample'));
+  configureApplicationProperties(projectDir, { database: hasDatabase });
   copyAssetIfMissing('editorconfig', join(projectDir, '.editorconfig'));
   copyAssetIfMissing('gitattributes', join(projectDir, '.gitattributes'));
   copyAssetIfMissing('dockerignore', join(projectDir, '.dockerignore'));

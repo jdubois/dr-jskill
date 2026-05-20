@@ -2,13 +2,12 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:18-alpine
-    container_name: postgres-db-native
     environment:
       POSTGRES_DB: mydb
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data-native:/var/lib/postgresql/data
     healthcheck:
@@ -29,19 +28,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-native
-    container_name: spring-boot-app-native
     environment:
+      SPRING_BOOT_PORT: ${SPRING_BOOT_PORT:-8080}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mydb
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
     ports:
-      - "8080:8080"
+      - "${SPRING_BOOT_PORT:-8080}:${SPRING_BOOT_PORT:-8080}"
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:$${SPRING_BOOT_PORT:-8080}/actuator/health"]
       interval: 30s
       timeout: 3s
       start_period: 10s

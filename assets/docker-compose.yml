@@ -2,13 +2,12 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:18-alpine
-    container_name: postgres-db
     environment:
       POSTGRES_DB: mydb
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -29,15 +28,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: spring-boot-app
     environment:
+      SPRING_BOOT_PORT: ${SPRING_BOOT_PORT:-8080}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mydb
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "true"
     ports:
-      - "8080:8080"
+      - "${SPRING_BOOT_PORT:-8080}:${SPRING_BOOT_PORT:-8080}"
     depends_on:
       postgres:
         condition: service_healthy

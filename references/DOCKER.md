@@ -67,7 +67,7 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "user"]
       interval: 10s
@@ -154,7 +154,7 @@ Standard Docker deployment using Eclipse Temurin official Java images.
 docker build -t my-spring-app .
 
 # Run the container
-docker run -p 8080:8080 my-spring-app
+docker run -e SPRING_BOOT_PORT=8080 -p 8080:8080 my-spring-app
 ```
 
 ### 2. Dockerfile-native (GraalVM Native Image)
@@ -175,7 +175,7 @@ Native compilation using GraalVM 25 for faster startup and lower memory footprin
 docker build -f Dockerfile-native -t my-spring-app-native .
 
 # Run the native container
-docker run -p 8080:8080 my-spring-app-native
+docker run -e SPRING_BOOT_PORT=8080 -p 8080:8080 my-spring-app-native
 ```
 
 **Note**: Native compilation takes longer but results in a much faster runtime application.
@@ -211,8 +211,8 @@ docker compose down -v
 ```
 
 **Access**:
-- Application: http://localhost:8080
-- Database: localhost:5432
+- Application: `http://localhost:${SPRING_BOOT_PORT:-8080}`
+- Database: `localhost:${POSTGRES_PORT:-5432}`
 
 ### 4. docker-compose-native.yml (Native with Database)
 Complete stack using GraalVM 25 native image with PostgreSQL 18.
@@ -245,11 +245,11 @@ Configure your application using environment variables in docker-compose.yml:
 
 ```yaml
 environment:
+  SPRING_BOOT_PORT: ${SPRING_BOOT_PORT:-8080}
   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mydb
   SPRING_DATASOURCE_USERNAME: user
   SPRING_DATASOURCE_PASSWORD: password
   SPRING_JPA_HIBERNATE_DDL_AUTO: update
-  SERVER_PORT: 8080
 ```
 
 ### For Application-Only Deployment
@@ -261,13 +261,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: spring-boot-app
+    environment:
+      SPRING_BOOT_PORT: ${SPRING_BOOT_PORT:-8080}
     ports:
-      - "8080:8080"
+      - "${SPRING_BOOT_PORT:-8080}:${SPRING_BOOT_PORT:-8080}"
     restart: unless-stopped
 ```
 
 **Note**: Modern Docker Compose doesn't require a version field.
+Avoid hardcoded `container_name` values in local Compose files when using Git worktrees; let Compose derive names from `COMPOSE_PROJECT_NAME`.
 
 ## GraalVM Native Configuration
 

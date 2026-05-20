@@ -50,7 +50,7 @@ public class StartupInfoListener implements ApplicationListener<ApplicationReady
                 ? String.join(", ", env.getDefaultProfiles())
                 : String.join(", ", env.getActiveProfiles());
 
-        String viteHint = viteDevServerHint();
+        String viteHint = viteDevServerHint(env);
 
         String banner = AnsiOutput.toString(
                 "\n",
@@ -74,12 +74,14 @@ public class StartupInfoListener implements ApplicationListener<ApplicationReady
     }
 
     /** If a {@code frontend/} folder exists next to the process, hint at the Vite dev URL. */
-    private String viteDevServerHint() {
+    private String viteDevServerHint(Environment env) {
         Path frontend = Paths.get(System.getProperty("user.dir"), "frontend");
         if (!Files.isDirectory(frontend)) {
             return "";
         }
-        int vitePort = readVitePort(frontend).orElse(5173);
+        int vitePort = parsePort(env.getProperty("VITE_PORT"))
+                .or(() -> readVitePort(frontend))
+                .orElse(5173);
         return AnsiOutput.toString(
                 AnsiColor.GREEN, "  Front-end:   ", AnsiColor.DEFAULT,
                 "http://localhost:", String.valueOf(vitePort),
@@ -105,6 +107,17 @@ public class StartupInfoListener implements ApplicationListener<ApplicationReady
                     .filter(digits -> !digits.isEmpty())
                     .map(Integer::parseInt);
         } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Integer> parsePort(String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Integer.parseInt(value));
+        } catch (NumberFormatException e) {
             return Optional.empty();
         }
     }

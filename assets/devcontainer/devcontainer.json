@@ -43,7 +43,9 @@
     "postCreateCommand": "./mvnw dependency:go-offline -q || true",
     "postStartCommand": "echo '✅ Dev container ready — run ./mvnw spring-boot:run'",
 
-    // Forward app + front-end dev ports
+    // Forward default app + front-end dev ports. Worktree-specific ports from .env
+    // are picked up by Docker Compose and Spring Boot; editors can auto-forward
+    // those additional ports when they start listening.
     "forwardPorts": [8080, 5173, 5432],
     "portsAttributes": {
         "8080": { "label": "Spring Boot", "onAutoForward": "notify" },
