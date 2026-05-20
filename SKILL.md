@@ -1,12 +1,16 @@
 ---
 name: dr-jskill
 description: "Creates Java + Spring Boot projects: Web applications, full-stack apps with Vue.js or Angular or React or vanilla JS, PostgreSQL, REST APIs, and Docker. Use when creating Spring Boot projects, setting up Java microservices, or building enterprise applications with the Spring Framework."
+metadata:
+  recommended_model: gpt-5.5
 ---
 
 # Spring Boot skill that follows Julien Dubois' best practices.
 
 ## Overview
 This agent skill helps you create Spring Boot projects following [Julien Dubois](https://www.julien-dubois.com)' best practices. It provides tools and scripts to quickly bootstrap Spring Boot applications using [https://start.spring.io](https://start.spring.io).
+
+**Recommended model:** Dr JSkill works best with **GPT-5.5**.
 
 ## Version Management
 

@@ -60,6 +60,8 @@ Additional references:
 
 This is an [Agent Skill](https://agentskills.io) that can be used with AI coding assistants that support the Agent Skills specification.
 
+**Recommended model:** Dr JSkill works best with **GPT-5.5**.
+
 ### Fork or clone this repository
 
 In order to use this skill, and modify it to your needs, you can fork this repository on GitHub, or simply clone it to your local machine.
@@ -166,4 +168,3 @@ This skill follows the [Agent Skills specification](https://agentskills.io/speci
 This project is licensed under the Apache License 2.0.
 
 See [LICENSE](LICENSE) file for details.
-
