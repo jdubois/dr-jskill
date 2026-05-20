@@ -3,13 +3,14 @@
 
 import {
   getJavaVersion, resolveBootVersion,
-  downloadAndExtractProject, parseArgs, applyDotfiles,
+  downloadAndExtractProject, parseArgs, applyDotfiles, resolveOutputDir,
 } from './lib/versions.mjs';
 
 function usage() {
   console.log(`Usage: node create-fullstack-project.mjs [PROJECT_NAME] [GROUP_ID] [ARTIFACT_ID] [PACKAGE_NAME] [JAVA_VERSION]
 Options:
   --boot-version <version>   Override Spring Boot version
+  --output-dir <path>        Directory where the project folder is created (default: current directory)
   -h|--help                  Show this help`);
 }
 
@@ -26,13 +27,15 @@ const artifactId = positional[2] || projectName;
 const packageName = positional[3] || `${groupId}.fullstack`;
 const javaVersion = positional[4] || getJavaVersion();
 const bootVersion = flags.bootVersion || await resolveBootVersion();
+const outputDir = resolveOutputDir(flags);
+let projectDir;
 
 let dependencies = 'web,data-jpa,actuator,validation,devtools,postgresql,docker-compose,testcontainers,native';
 
 console.log(`Creating full-stack Spring Boot application with Boot=${bootVersion}, Java=${javaVersion}`);
 
 try {
-  await downloadAndExtractProject({
+  projectDir = await downloadAndExtractProject({
     type: 'maven-project',
     language: 'java',
     bootVersion,
@@ -45,14 +48,15 @@ try {
     packaging: 'jar',
     javaVersion,
     dependencies,
+    outputDir,
   });
-  applyDotfiles(projectName, { database: true, frontend: true, packageName });
+  applyDotfiles(projectDir, { database: true, frontend: true, packageName });
 } catch (err) {
   console.error(`✗ Failed to create project: ${err?.message || String(err)}`);
   process.exit(1);
 }
 
-console.log(`✓ Full-stack Spring Boot application created successfully in ./${projectName}`);
+console.log(`✓ Full-stack Spring Boot application created successfully in ${projectDir}`);
 console.log('Includes:');
 console.log('  - Spring Web (REST APIs)');
 console.log('  - Spring Data JPA (Database access)');
@@ -64,5 +68,5 @@ console.log('  - Docker Compose (Automatic database startup)');
 console.log('  - Testcontainers (Integration testing with PostgreSQL)');
 console.log('');
 console.log('Next steps:');
-console.log(`  cd ${projectName}`);
+console.log(`  cd ${projectDir}`);
 console.log('  ./mvnw spring-boot:run');

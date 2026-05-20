@@ -172,17 +172,17 @@ export async function downloadFile(url, dest) {
 }
 
 /**
- * Extract a zip file to the current directory.
+ * Extract a zip file to the requested directory.
  * Uses platform-appropriate tools (unzip on Unix, PowerShell on Windows).
  */
-export function extractZip(zipPath) {
+export function extractZip(zipPath, destDir = '.') {
   if (process.platform === 'win32') {
     execFileSync('powershell', [
       '-NoLogo', '-NoProfile', '-Command',
-      `Expand-Archive -Path '${zipPath}' -DestinationPath '.' -Force`,
+      `Expand-Archive -Path ${JSON.stringify(zipPath)} -DestinationPath ${JSON.stringify(destDir)} -Force`,
     ], { stdio: 'inherit' });
   } else {
-    execFileSync('unzip', ['-q', zipPath], { stdio: 'inherit' });
+    execFileSync('unzip', ['-q', zipPath, '-d', destDir], { stdio: 'inherit' });
   }
 }
 
@@ -194,23 +194,29 @@ export async function downloadAndExtractProject(params) {
   if (params.bootVersion) {
     params.bootVersion = stripLegacyQualifier(params.bootVersion);
   }
-  const query = Object.entries(params)
+  const { outputDir: requestedOutputDir, ...initializerParams } = params;
+  const query = Object.entries(initializerParams)
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&');
   const url = `https://start.spring.io/starter.zip?${query}`;
-  const zipFile = `${params.baseDir}.zip`;
+  const outputDir = resolve(requestedOutputDir || process.cwd());
+  mkdirSync(outputDir, { recursive: true });
+  const zipFile = join(outputDir, `${params.baseDir}.zip`);
 
   await downloadFile(url, zipFile);
   console.log('  📦 Extracting project…');
-  extractZip(zipFile);
+  extractZip(zipFile, outputDir);
   unlinkSync(zipFile);
+
+  const projectDir = join(outputDir, params.baseDir);
 
   // Ensure pom.xml has <start-class> for process-aot main class detection
   if (params.packageName && params.name) {
     const mainClassName = toCamelCase(params.name) + 'Application';
-    patchPomStartClass(params.baseDir, `${params.packageName}.${mainClassName}`);
+    patchPomStartClass(projectDir, `${params.packageName}.${mainClassName}`);
   }
   console.log('  ✅ Project extracted successfully.');
+  return projectDir;
 }
 
 /**
@@ -449,6 +455,9 @@ export function parseArgs(argv) {
     } else if (args[i] === '--frontend') {
       flags.frontend = args[i + 1];
       i += 2;
+    } else if (args[i] === '--output-dir') {
+      flags.outputDir = args[i + 1];
+      i += 2;
     } else if (args[i] === '-h' || args[i] === '--help') {
       flags.help = true;
       i += 1;
@@ -465,4 +474,8 @@ export function parseArgs(argv) {
     }
   }
   return { flags, positional };
+}
+
+export function resolveOutputDir(flags = {}) {
+  return resolve(flags.outputDir || process.env.DR_JSKILL_OUTPUT_DIR || process.cwd());
 }

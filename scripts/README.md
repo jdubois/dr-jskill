@@ -15,13 +15,20 @@ Creates a Spring Boot project using the **latest available Spring Boot version**
 
 **Usage:**
 ```bash
-node scripts/create-project-latest.mjs [project-name] [group-id] [artifact-id] [package-name] [java-version] [project-type] [--boot-version x.y.z]
+node scripts/create-project-latest.mjs [project-name] [group-id] [artifact-id] [package-name] [java-version] [project-type] [--boot-version x.y.z] [--output-dir /path/to/user/workspace]
 ```
 
 **Example:**
 ```bash
 node scripts/create-project-latest.mjs my-app com.mycompany my-app com.mycompany.myapp 21 web
 ```
+
+**Output directory:**
+```bash
+node scripts/create-project-latest.mjs todo-app com.example todo-app com.example.todo 25 fullstack --output-dir /path/to/user/workspace
+```
+
+By default, scripts create the project folder in the current working directory. Agent Skill runtimes run bundled scripts from the skill directory root, so user-facing skill calls should pass `--output-dir` with the user's current workspace directory. Dr JSkill's own tests can omit it to keep generating test apps under the skill checkout.
 
 **Default values:**
 - Project Name: my-spring-boot-app
@@ -178,7 +185,7 @@ These JavaScript scripts work natively on:
 
 - All scripts use **Maven** as the build tool (Gradle is not supported)
 - All scripts create projects with Java packaging (JAR)
-- The scripts will create a new directory with your project name in the current directory
+- The scripts will create a new directory with your project name in the current directory, or under `--output-dir` when provided
 - If a directory with the same name already exists, the unzip operation may fail
 - **Testing support**: All projects include `spring-boot-starter-test` (JUnit 5, Mockito, AssertJ). For `@WebMvcTest` support in Spring Boot 4, `spring-boot-starter-webmvc-test` is also required.
 - **TestContainers**: Full-stack projects include TestContainers for integration testing with PostgreSQL

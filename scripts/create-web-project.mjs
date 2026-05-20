@@ -3,13 +3,14 @@
 
 import {
   getJavaVersion, resolveBootVersion,
-  downloadAndExtractProject, parseArgs, applyDotfiles,
+  downloadAndExtractProject, parseArgs, applyDotfiles, resolveOutputDir,
 } from './lib/versions.mjs';
 
 function usage() {
   console.log(`Usage: node create-web-project.mjs [PROJECT_NAME] [GROUP_ID] [ARTIFACT_ID] [PACKAGE_NAME] [JAVA_VERSION]
 Options:
   --boot-version <version>   Override Spring Boot version
+  --output-dir <path>        Directory where the project folder is created (default: current directory)
   -h|--help                  Show this help`);
 }
 
@@ -26,13 +27,15 @@ const artifactId = positional[2] || projectName;
 const packageName = positional[3] || `${groupId}.webapp`;
 const javaVersion = positional[4] || getJavaVersion();
 const bootVersion = flags.bootVersion || await resolveBootVersion();
+const outputDir = resolveOutputDir(flags);
+let projectDir;
 
 let dependencies = 'web,actuator,validation,devtools,native';
 
 console.log(`Creating Spring Boot web application with Boot=${bootVersion}, Java=${javaVersion}`);
 
 try {
-  await downloadAndExtractProject({
+  projectDir = await downloadAndExtractProject({
     type: 'maven-project',
     language: 'java',
     bootVersion,
@@ -45,14 +48,15 @@ try {
     packaging: 'jar',
     javaVersion,
     dependencies,
+    outputDir,
   });
-  applyDotfiles(projectName, { database: false, frontend: false, packageName });
+  applyDotfiles(projectDir, { database: false, frontend: false, packageName });
 } catch (err) {
   console.error(`✗ Failed to create project: ${err?.message || String(err)}`);
   process.exit(1);
 }
 
-console.log(`✓ Spring Boot web application created successfully in ./${projectName}`);
-console.log(`  cd ${projectName}`);
+console.log(`✓ Spring Boot web application created successfully in ${projectDir}`);
+console.log(`  cd ${projectDir}`);
 console.log('  ./mvnw spring-boot:run');
 console.log('  http://localhost:8080 (or SPRING_BOOT_PORT if overridden)');

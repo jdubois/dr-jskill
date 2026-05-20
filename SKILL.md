@@ -37,17 +37,20 @@ This skill includes cross-platform JavaScript (Node.js) scripts in the `scripts/
 
 **Unified launcher (cross-platform):**
 ```bash
-node scripts/create-project my-app com.myco my-app com.myco.myapp 21 fullstack
+node scripts/create-project my-app com.myco my-app com.myco.myapp 21 fullstack --output-dir /absolute/path/to/user/workspace
 ```
 
 **Direct invocation:**
 ```bash
-node scripts/create-project-latest.mjs my-app com.myco my-app com.myco.myapp 21 fullstack
+node scripts/create-project-latest.mjs my-app com.myco my-app com.myco.myapp 21 fullstack --output-dir /absolute/path/to/user/workspace
 ```
 
 Flags supported:
 - `--boot-version <x.y.z>` / `-BootVersion`: override Spring Boot version
 - `--project-type basic|web|fullstack` / `-ProjectType`
+- `--output-dir <absolute-path>`: create the generated project folder under this directory
+
+**Output directory rule (important for Agent Skills):** bundled scripts are run from the skill directory root. When the user asks to create an app, pass `--output-dir` with the user's current working directory from the agent session so the generated project folder is created in the user's workspace, not inside the `dr-jskill` skill folder. Only omit `--output-dir` when running Dr JSkill's own tests, where generating inside the skill checkout is intentional.
 
 > Tip: The `create-project-latest` script auto-resolves preferred Boot 4.x and falls back to the configured `springBootFallback` if 4.x is not yet available. Override with `--boot-version` if needed.
 
