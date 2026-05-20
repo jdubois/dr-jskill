@@ -140,8 +140,18 @@ After downloading from start.spring.io, the scripts **patch in** dotfiles:
 - `.editorconfig`, `.gitattributes`, `.dockerignore`
 - optional `.vscode/` recommendations
 - optional `.nvmrc` / `.node-version` (uses Node version from `versions.json`)
+- `.githooks/post-checkout` and `scripts/git/update-worktree-env.mjs` for worktree-local ports
 
 Existing files are preserved; `.gitignore` is appended once using a marker.
+
+The Git hook is versioned but inactive until Git is configured to use it. After initializing or cloning a generated project, run:
+
+```bash
+git config core.hooksPath .githooks
+node scripts/git/update-worktree-env.mjs
+```
+
+This creates the first ignored `.env`; future `git worktree add` operations then get unique `SPRING_BOOT_PORT`, `VITE_PORT`, `POSTGRES_PORT`, and `COMPOSE_PROJECT_NAME` values automatically.
 
 ## Keeping docs in sync with `versions.json`
 

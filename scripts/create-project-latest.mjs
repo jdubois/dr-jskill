@@ -5,7 +5,7 @@
 import {
   getJavaVersion, getBootPreferredMajor, getBootFallback,
   resolveBootVersion, downloadAndExtractProject, parseArgs,
-  applyDotfiles, resolveOutputDir,
+  applyDotfiles, resolveOutputDir, printGitWorktreeHookInstructions,
 } from './lib/versions.mjs';
 
 const PREFERRED_BOOT_MAJOR = getBootPreferredMajor();
@@ -108,5 +108,6 @@ console.log('');
 console.log('To get started:');
 console.log(`  cd ${projectDir}`);
 console.log('  ./mvnw spring-boot:run');
+printGitWorktreeHookInstructions();
 console.log('');
 console.log('The application will be available at http://localhost:8080 (or SPRING_BOOT_PORT if overridden)');

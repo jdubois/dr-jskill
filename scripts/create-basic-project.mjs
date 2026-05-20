@@ -3,7 +3,7 @@
 
 import {
   getJavaVersion, resolveBootVersion,
-  downloadAndExtractProject, parseArgs, applyDotfiles, resolveOutputDir,
+  downloadAndExtractProject, parseArgs, applyDotfiles, resolveOutputDir, printGitWorktreeHookInstructions,
 } from './lib/versions.mjs';
 
 function usage() {
@@ -59,3 +59,4 @@ try {
 console.log(`✓ Basic Spring Boot project created successfully in ${projectDir}`);
 console.log(`  cd ${projectDir}`);
 console.log('  ./mvnw spring-boot:run');
+printGitWorktreeHookInstructions();

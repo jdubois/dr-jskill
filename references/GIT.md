@@ -291,7 +291,9 @@ chmod +x .githooks/post-checkout
 git config core.hooksPath .githooks
 ```
 
-The `post-checkout` hook runs after branch checkouts and when Git populates a new worktree. The script preserves existing values, so a developer can override a port manually by editing `.env`.
+`git config core.hooksPath .githooks` is a required one-time local setup after `git init` or after cloning. The `.githooks/post-checkout` file is versioned, but Git ignores versioned hook directories until `core.hooksPath` is configured; this setting is local Git config and is not committed or pushed.
+
+Run `node scripts/git/update-worktree-env.mjs` once in the initial checkout after enabling the hook to create the first local `.env`. The `post-checkout` hook then runs after branch checkouts and when Git populates a new worktree. The script preserves existing values, so a developer can override a port manually by editing `.env`.
 
 ### Spring Boot configuration
 

@@ -472,6 +472,14 @@ export function applyDotfiles(projectDir, options = {}) {
   }
 }
 
+export function printGitWorktreeHookInstructions() {
+  console.log('');
+  console.log('Git worktree port setup (after initializing Git):');
+  console.log('  git config core.hooksPath .githooks');
+  console.log('  node scripts/git/update-worktree-env.mjs');
+  console.log('This activates the versioned post-checkout hook and creates the first worktree-local .env.');
+}
+
 /**
  * Parse CLI arguments into an object with flags and positional args.
  */
