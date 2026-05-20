@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Shared version utilities for dr-jskill scripts
 
-import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync, copyFileSync, createWriteStream } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync, copyFileSync, createWriteStream, chmodSync } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { resolve, dirname, join } from 'node:path';
@@ -275,6 +275,13 @@ function copyAssetIfMissing(assetName, destPath) {
   copyFileSync(assetPath, destPath);
 }
 
+function copyExecutableAssetIfMissing(assetName, destPath) {
+  copyAssetIfMissing(assetName, destPath);
+  if (existsSync(destPath)) {
+    chmodSync(destPath, 0o755);
+  }
+}
+
 function writeTextFileIfMissing(destPath, content) {
   if (existsSync(destPath)) return;
   const destDir = dirname(destPath);
@@ -445,6 +452,12 @@ export function applyDotfiles(projectDir, options = {}) {
   copyAssetIfMissing(join('ci', 'github-actions.yml'), join(projectDir, '.github', 'workflows', 'ci.yml'));
   // Copilot CLI LSP config (wires JDTLS for Java)
   copyAssetIfMissing('lsp.json', join(projectDir, '.github', 'lsp.json'));
+  // Git worktree helpers: versioned hook + script for local per-worktree .env ports.
+  copyExecutableAssetIfMissing(join('githooks', 'post-checkout'), join(projectDir, '.githooks', 'post-checkout'));
+  copyExecutableAssetIfMissing(
+    join('scripts', 'git', 'update-worktree-env.mjs'),
+    join(projectDir, 'scripts', 'git', 'update-worktree-env.mjs')
+  );
   // StartupInfoListener (REQUIRED per SPRING-BOOT-4.md) — prints access URLs at boot.
   writeStartupInfoListener(projectDir, options.packageName);
   // Optional Node version pinning if front-end present
