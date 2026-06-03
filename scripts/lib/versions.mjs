@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Shared version utilities for dr-jskill scripts
 
-import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync, copyFileSync, createWriteStream, chmodSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync, copyFileSync, createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { resolve, dirname, join } from 'node:path';
@@ -13,7 +13,6 @@ const ROOT_DIR = process.env.ROOT_DIR || resolve(__dirname, '..', '..');
 const VERSIONS_FILE = process.env.VERSIONS_FILE || resolve(ROOT_DIR, 'versions.json');
 const ASSETS_DIR = resolve(ROOT_DIR, 'assets');
 const DOTFILES_MARKER = '# === dr-jskill additions ===';
-let gitWorktreeHookSetupStatus = 'unknown';
 
 /** Default timeout for HTTP requests (10 seconds) */
 const FETCH_TIMEOUT_MS = 10_000;
@@ -276,13 +275,6 @@ function copyAssetIfMissing(assetName, destPath) {
   copyFileSync(assetPath, destPath);
 }
 
-function copyExecutableAssetIfMissing(assetName, destPath) {
-  copyAssetIfMissing(assetName, destPath);
-  if (existsSync(destPath)) {
-    chmodSync(destPath, 0o755);
-  }
-}
-
 function writeTextFileIfMissing(destPath, content) {
   if (existsSync(destPath)) return;
   const destDir = dirname(destPath);
@@ -453,17 +445,6 @@ export function applyDotfiles(projectDir, options = {}) {
   copyAssetIfMissing(join('ci', 'github-actions.yml'), join(projectDir, '.github', 'workflows', 'ci.yml'));
   // Copilot CLI LSP config (wires JDTLS for Java)
   copyAssetIfMissing('lsp.json', join(projectDir, '.github', 'lsp.json'));
-  // Git worktree helpers: versioned hook + script for local per-worktree .env ports.
-  copyExecutableAssetIfMissing(join('githooks', 'post-checkout'), join(projectDir, '.githooks', 'post-checkout'));
-  copyExecutableAssetIfMissing(
-    join('scripts', 'git', 'update-worktree-env.mjs'),
-    join(projectDir, 'scripts', 'git', 'update-worktree-env.mjs')
-  );
-  copyExecutableAssetIfMissing(
-    join('scripts', 'git', 'setup-worktree-env.mjs'),
-    join(projectDir, 'scripts', 'git', 'setup-worktree-env.mjs')
-  );
-  configureGitWorktreeHooks(projectDir);
   // StartupInfoListener (REQUIRED per SPRING-BOOT-4.md) — prints access URLs at boot.
   writeStartupInfoListener(projectDir, options.packageName);
   // Optional Node version pinning if front-end present
@@ -476,33 +457,6 @@ export function applyDotfiles(projectDir, options = {}) {
   } catch (e) {
     // Non-fatal
   }
-}
-
-function configureGitWorktreeHooks(projectDir) {
-  try {
-    const gitRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: projectDir, encoding: 'utf8' }).trim();
-    if (resolve(gitRoot) !== resolve(projectDir)) {
-      gitWorktreeHookSetupStatus = 'manual';
-      return;
-    }
-    execFileSync('node', ['scripts/git/setup-worktree-env.mjs'], { cwd: projectDir, stdio: 'ignore' });
-    gitWorktreeHookSetupStatus = 'configured';
-  } catch {
-    gitWorktreeHookSetupStatus = 'manual';
-  }
-}
-
-export function printGitWorktreeHookInstructions() {
-  console.log('');
-  if (gitWorktreeHookSetupStatus === 'configured') {
-    console.log('Git worktree port setup:');
-    console.log('  ✅ Activated .githooks/post-checkout and created the first worktree-local .env.');
-    console.log('  Future git worktree add operations will create their own local .env ports automatically.');
-    return;
-  }
-  console.log('Git worktree port setup (after initializing Git):');
-  console.log('  node scripts/git/setup-worktree-env.mjs');
-  console.log('This activates the versioned post-checkout hook and creates the first worktree-local .env.');
 }
 
 /**
