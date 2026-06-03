@@ -288,12 +288,13 @@ package com.example.app.architecture;
 
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
+import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
 
 @AnalyzeClasses(packages = "com.example.app")
 public class NoLombokTest {
   @ArchTest
-  static final var noLombok = ArchRuleDefinition.noClasses()
+  static final ArchRule noLombok = ArchRuleDefinition.noClasses()
     .should().accessClassesThat().haveNameMatching(".*lombok.*")
     .because("Lombok is not allowed; use records or explicit code");
 }
@@ -403,6 +404,8 @@ spring.jackson.deserialization.fail-on-null-for-primitives=false
 ```
 
 > **Note:** Field-level `@JsonSetter(nulls = Nulls.SKIP)` does NOT work here because Jackson uses the Hibernate-generated constructor, not field-by-field deserialization. The global property is required.
+
+> ⚠️ **Test classpath shadowing:** generated full-stack projects ship a separate `src/test/resources/application.properties` that **shadows** the main `application.properties` on the test classpath (same filename → test-classes wins). Any setting tests rely on — including this `fail-on-null-for-primitives=false` fix — must be repeated in the test file, otherwise `@WebMvcTest`/`@SpringBootTest` deserialization of entities with primitive fields fails with HTTP 400.
 
 **Jackson 2 Compatibility:**
 - Spring Boot 4 provides deprecated `spring-boot-jackson2` module for gradual migration
