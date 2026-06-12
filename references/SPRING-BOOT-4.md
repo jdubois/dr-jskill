@@ -37,7 +37,7 @@ This guide covers the key changes in Spring Boot 4.0 and what to consider when c
 1. Spring Framework 7.0
 2. Spring Data 2025.1
 3. Spring Security 7.0
-4. Hibernate 7.2
+4. Hibernate 7.4
 5. TestContainers 2.0
 6. Jackson 3.0
 7. Tomcat 11.0
@@ -471,7 +471,7 @@ spring.data.mongodb.representation.big-decimal=DECIMAL128
 ```
 
 #### Hibernate
-- Hibernate 7.2 required
+- Hibernate 7.4 required
 - `hibernate-jpamodelgen` renamed to `hibernate-processor`
 - `hibernate-proxool` and `hibernate-vibur` no longer published
 

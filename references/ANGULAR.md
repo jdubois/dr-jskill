@@ -15,7 +15,7 @@
 - [Additional Resources](#additional-resources)
 
 ## Overview
-This guide covers creating front-end applications for Spring Boot using Angular 21 and Angular CLI, with hot reload during development and optimized production builds integrated into the Spring Boot package.
+This guide covers creating front-end applications for Spring Boot using Angular 22 and Angular CLI, with hot reload during development and optimized production builds integrated into the Spring Boot package.
 
 ## Versions (managed via `versions.json`)
 
@@ -25,9 +25,9 @@ This guide covers creating front-end applications for Spring Boot using Angular 
 | Tool | Version |
 |------|---------|
 | Node.js | 24.16.0 |
-| npm | 11.16.0 |
-| Angular | 21.x |
-| Angular Router | 21.x |
+| npm | 11.17.0 |
+| Angular | 22.x |
+| Angular Router | 22.x |
 <!-- versions:end -->
 
 > Use `npx @angular/cli@latest` to scaffold; keep alignment with `engines` constraints. No OpenAPI client generation provided.
@@ -83,11 +83,11 @@ From your Spring Boot project root:
 
 ```bash
 # Create Angular project.
-# Angular CLI 21 poses interactive prompts (analytics opt-in, zoneless choice)
+# Angular CLI 22 poses interactive prompts (analytics opt-in, zoneless choice)
 # that `-y`/`--yes` do NOT silence. In non-TTY shells (CI, agents) you must
 # close stdin with `echo |` AND pass `--defaults` so the CLI accepts defaults
 # immediately. `--skip-install` avoids a duplicate npm install from the CLI.
-echo | npx --yes @angular/cli@21 new frontend \
+echo | npx --yes @angular/cli@22 new frontend \
   --style=css --ssr=false --skip-git --defaults --skip-install
 
 cd frontend
@@ -97,11 +97,11 @@ npm install
 npm install bootstrap@5.3.8 bootstrap-icons@1.13.1
 ```
 
-> Interactive shells can use the shorter form `ng new frontend --style=css --ssr=false --skip-git` (after `npm install -g @angular/cli@21`).
+> Interactive shells can use the shorter form `ng new frontend --style=css --ssr=false --skip-git` (after `npm install -g @angular/cli@22`).
 
 ### 2. Configure Angular for Spring Boot Integration
 
-Update `frontend/angular.json` - modify the `build` section. Angular 21's default builder is `@angular/build:application` (migrated from the older `@angular-devkit/build-angular:application`). When `outputPath` is a plain string it writes to `<outputPath>/browser/`; use the object form with `"browser": ""` to flatten the output so `index.html` lands directly in `src/main/resources/static/`, and use the `browser` key for the entry point:
+Update `frontend/angular.json` - modify the `build` section. Angular 22's default builder is `@angular/build:application` (migrated from the older `@angular-devkit/build-angular:application`). When `outputPath` is a plain string it writes to `<outputPath>/browser/`; use the object form with `"browser": ""` to flatten the output so `index.html` lands directly in `src/main/resources/static/`, and use the `browser` key for the entry point:
 
 ```json
 {
@@ -212,7 +212,7 @@ Add to your `pom.xml`:
                     </goals>
                     <configuration>
                         <nodeVersion>v24.16.0</nodeVersion>
-                        <npmVersion>11.16.0</npmVersion>
+                        <npmVersion>11.17.0</npmVersion>
                     </configuration>
                 </execution>
                 
@@ -528,7 +528,7 @@ import { Component } from '@angular/core';
         <div class="col-lg-8 mx-auto">
           <h1 class="display-4">Welcome to Spring Boot</h1>
           <p class="lead">
-            A modern web application built with Spring Boot and Angular 21.
+            A modern web application built with Spring Boot and Angular 22.
           </p>
 
           <div class="card mt-4">

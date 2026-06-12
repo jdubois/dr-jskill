@@ -31,7 +31,7 @@ Centralized versions live in `versions.json`. All scripts read from it via `scri
 - Front-end development with multiple framework options:
   - **Vue.js 3** (default) - Progressive framework with Composition API
   - **React 19** - Popular library for building user interfaces
-  - **Angular 21** - Full-featured framework with TypeScript
+  - **Angular 22** - Full-featured framework with TypeScript
   - **Vanilla JavaScript** - No framework, pure ES6+ with Vite
 
 ## Usage
@@ -212,7 +212,7 @@ Choose a front-end framework:
 
 - **Vue.js 3** (default) ⭐ → [Vue.js Guide](references/VUE.md)
 - **React 19** → [React Guide](references/REACT.md)
-- **Angular 21** → [Angular Guide](references/ANGULAR.md)
+- **Angular 22** → [Angular Guide](references/ANGULAR.md)
 - **Vanilla JavaScript** (no framework) → [Vanilla JS Guide](references/VANILLA-JS.md)
 
 All options include: Vite/CLI dev server with hot reload, Bootstrap 5.3+, SPA routing, and automatic build into the Spring Boot JAR.
@@ -221,12 +221,12 @@ When wiring the `frontend-maven-plugin`, bind the Node install, `npm install`, a
 
 > **Non-interactive scaffolding (important for CI and AI agents).** Two separate prompts must be silenced:
 > 1. **npm's own "Ok to proceed?" install prompt** — silence by placing `-y` **before** the package name (flags after `--` go to the scaffolder, not to npm). Use `npm create -y vite@latest …` or `npx --yes create-vite@latest …`.
-> 2. **The scaffolder's own prompts** — create-vite 8.x and Angular CLI 21 still pose interactive questions (e.g. "Use rolldown-vite?", analytics opt-in) that `-y` / `--yes` do **not** silence. The reliable fix is to close stdin: pipe `echo |` into the command so the scaffolder immediately sees EOF and accepts defaults.
+> 2. **The scaffolder's own prompts** — create-vite 9.x and Angular CLI 22 still pose interactive questions (e.g. "Use rolldown-vite?", analytics opt-in) that `-y` / `--yes` do **not** silence. The reliable fix is to close stdin: pipe `echo |` into the command so the scaffolder immediately sees EOF and accepts defaults.
 >
 > Canonical recipes:
 > - React / Vanilla: `echo | npx --yes create-vite@latest frontend --template react` (or `--template vanilla`)
 > - Vue: `npm create -y vue@latest frontend -- --router --pinia --vitest --eslint --prettier` (create-vue does not pose extra prompts)
-> - Angular: `echo | npx --yes @angular/cli@21 new frontend --style=css --ssr=false --skip-git --defaults --skip-install`, then `npm install`
+> - Angular: `echo | npx --yes @angular/cli@22 new frontend --style=css --ssr=false --skip-git --defaults --skip-install`, then `npm install`
 >
 > **Vitest + callback Vite config.** If `vite.config.js` exports `defineConfig(({ mode }) => ...)`, do not let the generated `vitest.config.js` call `mergeConfig(viteConfig, ...)`. Resolve the callback first with `viteConfig({ mode: 'test', command: 'serve' })`; otherwise Vitest fails with `Cannot merge config in form of callback`. See [Vue.js Guide](references/VUE.md#2-configure-vite-for-spring-boot-integration).
 
@@ -277,7 +277,7 @@ Once the project is generated, go through the steps above to ensure that the gen
 **Front-End Development:**
 - [Vue.js Development Guide](references/VUE.md) - Vue.js 3 with Vite (default)
 - [React Development Guide](references/REACT.md) - React 19 with Vite
-- [Angular Development Guide](references/ANGULAR.md) - Angular 21 with Angular CLI
+- [Angular Development Guide](references/ANGULAR.md) - Angular 22 with Angular CLI
 - [Vanilla JS Development Guide](references/VANILLA-JS.md) - Pure ES6+ with Vite
 
 **Project Setup:**
