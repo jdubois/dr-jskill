@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "docs:dev": "vuepress dev docs --host 127.0.0.1 --port 8090",
+    "docs:dev": "vuepress dev docs --host 127.0.0.1 --port 8091",
     "docs:build": "vuepress build docs",
-    "docs:preview": "VUEPRESS_BASE=/ npm run docs:build && serve docs/.vuepress/dist --listen 8090"
+    "docs:preview": "VUEPRESS_BASE=/ npm run docs:build && serve docs/.vuepress/dist --listen 8091"
   },
   "devDependencies": {
     "@vuepress/bundler-vite": "2.0.0-rc.30",
