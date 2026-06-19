@@ -19,7 +19,7 @@ export default defineUserConfig({
   description: siteDescription,
   head: [
     ['link', {rel: 'icon', type: 'image/svg+xml', href: `${siteBase}favicon.svg`}],
-    ['meta', {name: 'theme-color', content: '#CA8A04'}],
+    ['meta', {name: 'theme-color', content: '#C2683E'}],
     ['meta', {property: 'og:type', content: 'website'}],
     ['meta', {property: 'og:title', content: 'Dr JSkill'}],
     ['meta', {property: 'og:description', content: siteDescription}]
