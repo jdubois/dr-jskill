@@ -32,6 +32,12 @@ replay_pid*
 .DS_Store
 Thumbs.db
 
+# Node.js / VuePress documentation site
+node_modules/
+**/.vuepress/.cache/
+**/.vuepress/.temp/
+docs/.vuepress/dist/
+
 # Generated sample projects (e.g. from running the create-* scripts)
 /todo-app/
 /my-spring-boot-app/
