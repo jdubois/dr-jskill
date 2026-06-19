@@ -46,9 +46,7 @@ export default defineUserConfig({
     contributors: false,
     logo: null,
     navbar: [
-      {text: 'Skill', link: toDocLink('SKILL.md')},
       {text: 'Workshop', link: toDocLink('workshop/README.md')},
-      {text: 'References', link: toDocLink('references/PROJECT-SETUP.md')},
       {text: 'Ecosystem', link: toDocLink('WORKS-WITH.md')}
     ],
     sidebar: createDocsSidebar()

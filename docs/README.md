@@ -5,7 +5,7 @@ heroText: Dr JSkill
 tagline: An Agent Skill that generates Spring Boot apps the way Julien Dubois builds them.
 actions:
   - text: Read the skill
-    link: /skill
+    link: https://github.com/jdubois/dr-jskill/blob/main/SKILL.md
     type: primary
   - text: Start the workshop
     link: /workshop
@@ -30,11 +30,11 @@ footer: Apache-2.0 Licensed | Dr JSkill
 
 | Goal | Documentation |
 | ---- | ------------- |
-| Understand the skill and how it works | [Read the skill](SKILL.md) |
+| Understand the skill and how it works | [Read the skill](https://github.com/jdubois/dr-jskill/blob/main/SKILL.md) |
 | Build a real app, step by step | [Start the workshop](workshop/README.md) |
-| Set up a project and its dotfiles | [Project setup](references/PROJECT-SETUP.md) |
-| Pick and wire a front-end | [Vue](references/VUE.md) · [React](references/REACT.md) · [Angular](references/ANGULAR.md) · [Vanilla JS](references/VANILLA-JS.md) |
-| Drive the skill from an AI agent | [AGENTS guide](AGENTS.md) |
+| Set up a project and its dotfiles | [Project setup](https://github.com/jdubois/dr-jskill/blob/main/references/PROJECT-SETUP.md) |
+| Pick and wire a front-end | [Vue](https://github.com/jdubois/dr-jskill/blob/main/references/VUE.md) · [React](https://github.com/jdubois/dr-jskill/blob/main/references/REACT.md) · [Angular](https://github.com/jdubois/dr-jskill/blob/main/references/ANGULAR.md) · [Vanilla JS](https://github.com/jdubois/dr-jskill/blob/main/references/VANILLA-JS.md) |
+| Drive the skill from an AI agent | [AGENTS guide](https://github.com/jdubois/dr-jskill/blob/main/AGENTS.md) |
 
 ## What Dr JSkill generates
 

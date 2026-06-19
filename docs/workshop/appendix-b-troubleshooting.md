@@ -75,7 +75,7 @@ Restart your Copilot CLI session after cloning.
 **Fix:**
 - Install with `brew install jdtls` (macOS / Linux) or from the [JDTLS releases](https://github.com/eclipse-jdtls/eclipse.jdt.ls/releases).
 - Confirm the install location is on `PATH` — `which jdtls` should print a path.
-- See [`references/JDTLS.md`](../references/JDTLS.md) for platform-specific notes.
+- See [`references/JDTLS.md`](https://github.com/jdubois/dr-jskill/blob/main/references/JDTLS.md) for platform-specific notes.
 
 ---
 

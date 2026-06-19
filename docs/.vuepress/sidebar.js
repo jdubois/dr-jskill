@@ -5,27 +5,6 @@ import {toDocLink} from './doc-links.js'
 
 const docsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
-const guideDocs = ['SKILL.md', 'AGENTS.md']
-
-const referenceOrder = [
-  'PROJECT-SETUP.md',
-  'CONFIGURATION.md',
-  'DATABASE.md',
-  'SECURITY.md',
-  'LOGGING.md',
-  'TEST.md',
-  'DOCKER.md',
-  'GRAALVM.md',
-  'SPRING-BOOT-4.md',
-  'AZURE.md',
-  'GIT.md',
-  'JDTLS.md',
-  'VUE.md',
-  'REACT.md',
-  'ANGULAR.md',
-  'VANILLA-JS.md'
-]
-
 const workshopOrder = [
   'README.md',
   '00-introduction.md',
@@ -43,15 +22,7 @@ const workshopOrder = [
 ]
 
 export function createDocsSidebar() {
-  return [
-    {
-      text: 'Guide',
-      collapsible: true,
-      children: guideDocs.filter(existsAtRoot).map(toSidebarItem)
-    },
-    folderGroup('References', 'references', referenceOrder),
-    folderGroup('Workshop', 'workshop', workshopOrder)
-  ]
+  return [folderGroup('Workshop', 'workshop', workshopOrder)]
 }
 
 function folderGroup(text, folder, order) {
@@ -75,10 +46,6 @@ function listMarkdownFiles(folder) {
   }
 
   return fs.readdirSync(dir).filter((file) => file.endsWith('.md'))
-}
-
-function existsAtRoot(file) {
-  return fs.existsSync(path.join(docsRoot, file))
 }
 
 function toSidebarItem(file) {

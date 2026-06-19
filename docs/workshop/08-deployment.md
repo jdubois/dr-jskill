@@ -118,7 +118,7 @@ docker images | grep todo-app
 docker inspect todo-app:latest --format '{{.Config.Healthcheck}}'
 ```
 
-See [`references/DOCKER.md`](../references/DOCKER.md) for a deeper dive into layer caching, `.dockerignore`, and multi-arch builds.
+See [`references/DOCKER.md`](https://github.com/jdubois/dr-jskill/blob/main/references/DOCKER.md) for a deeper dive into layer caching, `.dockerignore`, and multi-arch builds.
 
 ## 3. GraalVM native image
 
@@ -185,7 +185,7 @@ docker images | grep -E "todo-app|REPOSITORY"
 docker compose -f docker-compose-native.yml down
 ```
 
-See [`references/GRAALVM.md`](../references/GRAALVM.md) for build requirements, reflection hints, native Maven configuration, and troubleshooting the most common failure modes.
+See [`references/GRAALVM.md`](https://github.com/jdubois/dr-jskill/blob/main/references/GRAALVM.md) for build requirements, reflection hints, native Maven configuration, and troubleshooting the most common failure modes.
 
 ## 4. Production config — the one property you must change
 
@@ -216,7 +216,7 @@ You've been running with hardcoded `user` / `password` for Postgres. That's fine
 - Use environment variables in production (the generated properties already read from `${SPRING_DATASOURCE_PASSWORD:...}`).
 - Use your platform's secret store: Azure Key Vault, AWS Secrets Manager, HashiCorp Vault, Kubernetes Secrets (sealed), etc.
 
-See [`references/CONFIGURATION.md`](../references/CONFIGURATION.md) and [`references/SECURITY.md`](../references/SECURITY.md).
+See [`references/CONFIGURATION.md`](https://github.com/jdubois/dr-jskill/blob/main/references/CONFIGURATION.md) and [`references/SECURITY.md`](https://github.com/jdubois/dr-jskill/blob/main/references/SECURITY.md).
 
 ---
 
@@ -230,7 +230,7 @@ See [`references/CONFIGURATION.md`](../references/CONFIGURATION.md) and [`refere
 >
 > This section creates billable Azure resources. The cheapest configuration costs roughly **$0.02–0.05/hour** while running. Delete the resource group afterwards to stop all charges.
 
-You have a working Docker image. The skill's reference file [`references/AZURE.md`](../references/AZURE.md) contains a complete, production-grade deployment recipe for **Azure Container Apps** — HTTPS by default, scale-to-zero, rolling deployments, and optional VNET-injected PostgreSQL with the DB password stored as a Container Apps secret.
+You have a working Docker image. The skill's reference file [`references/AZURE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/AZURE.md) contains a complete, production-grade deployment recipe for **Azure Container Apps** — HTTPS by default, scale-to-zero, rolling deployments, and optional VNET-injected PostgreSQL with the DB password stored as a Container Apps secret.
 
 Rather than copy-pasting every command by hand, let the agent drive it. Start with the quick start (app only, no database) to get a public URL in a few minutes, then add PostgreSQL if you want persistence.
 
@@ -293,7 +293,7 @@ This removes the resource group and everything inside it. Takes a few minutes in
 
 - Run the native version next to the JVM version (different ports) and time `curl` against both. Compare first-response latency after a fresh start.
 - Push your image to Docker Hub (or GitHub Container Registry) and pull it on another machine.
-- Ask the agent: *"Set up CI/CD using GitHub Actions and OIDC so every push to main rebuilds and redeploys the Container App — no secrets stored in the repo."* (See [`references/AZURE.md`](../references/AZURE.md#cicd-with-github-actions-oidc-no-secrets).)
+- Ask the agent: *"Set up CI/CD using GitHub Actions and OIDC so every push to main rebuilds and redeploys the Container App — no secrets stored in the repo."* (See [`references/AZURE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/AZURE.md#cicd-with-github-actions-oidc-no-secrets).)
 
 ---
 

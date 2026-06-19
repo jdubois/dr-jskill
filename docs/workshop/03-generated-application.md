@@ -130,7 +130,7 @@ Two things worth noticing:
 - `update` (dev default): creates missing tables, adds new columns. Never drops.
 - `validate` (prod default): only checks that the schema matches — fails fast if it doesn't.
 
-See [`references/DATABASE.md`](../references/DATABASE.md) for the full story.
+See [`references/DATABASE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/DATABASE.md) for the full story.
 
 **`spring.datasource.*` uses environment variables** with fallback defaults. Production overrides them via real env vars; `.env.sample` documents what they are.
 
@@ -162,7 +162,7 @@ Here's the magic: Spring Boot has a built-in feature called [`spring-boot-docker
 
 That's why Chapter 2's `./mvnw spring-boot:run` "just works" without you running `docker compose up` yourself.
 
-See [`references/DOCKER.md`](../references/DOCKER.md) for production Docker deployment (a completely separate topic).
+See [`references/DOCKER.md`](https://github.com/jdubois/dr-jskill/blob/main/references/DOCKER.md) for production Docker deployment (a completely separate topic).
 
 ## 5. The front-end — `frontend/`
 
@@ -229,7 +229,7 @@ Result: a single executable JAR that contains both the Spring Boot backend and t
 - **Dev (`./mvnw spring-boot:run`):** Spring Boot serves a pre-built front-end from `src/main/resources/static/`. If you edit `.vue` files and want fast hot-reload, run `npm run dev` inside `frontend/` separately — it starts Vite on port 5173 with HMR.
 - **Prod (`./mvnw -Pprod package`):** produces a fat JAR with the optimized bundle baked in.
 
-See [`references/VUE.md`](../references/VUE.md) for the full front-end reference.
+See [`references/VUE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/VUE.md) for the full front-end reference.
 
 ## 6. The dotfiles — the "feels professional" layer
 

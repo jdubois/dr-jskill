@@ -30,7 +30,7 @@ Replace the hardcoded user dropdown with OAuth 2.0 login via GitHub.
 Follow Dr JSkill's security conventions. Walk me through creating the GitHub OAuth app.
 ```
 
-See [`references/SECURITY.md`](../references/SECURITY.md) for the full treatment.
+See [`references/SECURITY.md`](https://github.com/jdubois/dr-jskill/blob/main/references/SECURITY.md) for the full treatment.
 
 ## 2. Observability with Prometheus + Grafana
 
@@ -88,7 +88,7 @@ Bootstrap styling, toasts, loading spinners.
 
 Side-by-side, you'll feel the differences between the frameworks — and see that the Spring Boot backend is almost identical.
 
-See [`references/REACT.md`](../references/REACT.md), [`references/ANGULAR.md`](../references/ANGULAR.md), [`references/VANILLA-JS.md`](../references/VANILLA-JS.md).
+See [`references/REACT.md`](https://github.com/jdubois/dr-jskill/blob/main/references/REACT.md), [`references/ANGULAR.md`](https://github.com/jdubois/dr-jskill/blob/main/references/ANGULAR.md), [`references/VANILLA-JS.md`](https://github.com/jdubois/dr-jskill/blob/main/references/VANILLA-JS.md).
 
 ## 5. Replay on another domain
 
@@ -116,7 +116,7 @@ Running the whole workshop on a second domain in under an hour is the real proof
 
 If Dr JSkill's conventions don't match yours exactly — maybe you prefer Gradle, or H2 for dev, or a different package layout — **fork the skill and edit it**.
 
-The whole skill is Markdown files in [`../references/`](../references/PROJECT-SETUP.md) and [`../SKILL.md`](../SKILL.md). Change a few sentences, bump a version in [`../versions.json`](https://github.com/jdubois/dr-jskill/blob/main/versions.json), and the next project the agent generates will follow your conventions instead. No plugin system, no build step.
+The whole skill is Markdown files in [`../references/`](https://github.com/jdubois/dr-jskill/blob/main/references/PROJECT-SETUP.md) and [`../SKILL.md`](https://github.com/jdubois/dr-jskill/blob/main/SKILL.md). Change a few sentences, bump a version in [`../versions.json`](https://github.com/jdubois/dr-jskill/blob/main/versions.json), and the next project the agent generates will follow your conventions instead. No plugin system, no build step.
 
 Prompt (from inside `~/.copilot/skills/dr-jskill`):
 
@@ -140,18 +140,18 @@ You'll find the rough edges faster than on your own, and you'll discover which p
 
 | Topic | File |
 |---|---|
-| Database tuning, pagination, caching | [`references/DATABASE.md`](../references/DATABASE.md) |
-| Authentication, CSRF, security headers | [`references/SECURITY.md`](../references/SECURITY.md) |
-| Structured logging, correlation IDs | [`references/LOGGING.md`](../references/LOGGING.md) |
-| Spring Boot 4 migration, virtual threads, performance | [`references/SPRING-BOOT-4.md`](../references/SPRING-BOOT-4.md) |
-| Configuration, profiles, secrets | [`references/CONFIGURATION.md`](../references/CONFIGURATION.md) |
-| Docker production image, compose, native | [`references/DOCKER.md`](../references/DOCKER.md) |
-| GraalVM native image | [`references/GRAALVM.md`](../references/GRAALVM.md) |
-| Azure deployment (Container Apps + Postgres Flexible Server) | [`references/AZURE.md`](../references/AZURE.md) |
-| Testing (unit, integration, Testcontainers) | [`references/TEST.md`](../references/TEST.md) |
-| Vue / React / Angular / Vanilla front-end guides | [`references/VUE.md`](../references/VUE.md), [`references/REACT.md`](../references/REACT.md), [`references/ANGULAR.md`](../references/ANGULAR.md), [`references/VANILLA-JS.md`](../references/VANILLA-JS.md) |
-| Java code intelligence with JDTLS | [`references/JDTLS.md`](../references/JDTLS.md) |
-| Project setup, dotfiles | [`references/PROJECT-SETUP.md`](../references/PROJECT-SETUP.md) |
+| Database tuning, pagination, caching | [`references/DATABASE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/DATABASE.md) |
+| Authentication, CSRF, security headers | [`references/SECURITY.md`](https://github.com/jdubois/dr-jskill/blob/main/references/SECURITY.md) |
+| Structured logging, correlation IDs | [`references/LOGGING.md`](https://github.com/jdubois/dr-jskill/blob/main/references/LOGGING.md) |
+| Spring Boot 4 migration, virtual threads, performance | [`references/SPRING-BOOT-4.md`](https://github.com/jdubois/dr-jskill/blob/main/references/SPRING-BOOT-4.md) |
+| Configuration, profiles, secrets | [`references/CONFIGURATION.md`](https://github.com/jdubois/dr-jskill/blob/main/references/CONFIGURATION.md) |
+| Docker production image, compose, native | [`references/DOCKER.md`](https://github.com/jdubois/dr-jskill/blob/main/references/DOCKER.md) |
+| GraalVM native image | [`references/GRAALVM.md`](https://github.com/jdubois/dr-jskill/blob/main/references/GRAALVM.md) |
+| Azure deployment (Container Apps + Postgres Flexible Server) | [`references/AZURE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/AZURE.md) |
+| Testing (unit, integration, Testcontainers) | [`references/TEST.md`](https://github.com/jdubois/dr-jskill/blob/main/references/TEST.md) |
+| Vue / React / Angular / Vanilla front-end guides | [`references/VUE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/VUE.md), [`references/REACT.md`](https://github.com/jdubois/dr-jskill/blob/main/references/REACT.md), [`references/ANGULAR.md`](https://github.com/jdubois/dr-jskill/blob/main/references/ANGULAR.md), [`references/VANILLA-JS.md`](https://github.com/jdubois/dr-jskill/blob/main/references/VANILLA-JS.md) |
+| Java code intelligence with JDTLS | [`references/JDTLS.md`](https://github.com/jdubois/dr-jskill/blob/main/references/JDTLS.md) |
+| Project setup, dotfiles | [`references/PROJECT-SETUP.md`](https://github.com/jdubois/dr-jskill/blob/main/references/PROJECT-SETUP.md) |
 
 ---
 

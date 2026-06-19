@@ -151,7 +151,7 @@ Dr JSkill generates a `.github/lsp.json` in every project it creates, so Copilot
 jdtls --help
 ```
 
-For deeper background (workspace tuning, verifying the server is live in a session, gotchas), see [`references/JDTLS.md`](../references/JDTLS.md).
+For deeper background (workspace tuning, verifying the server is live in a session, gotchas), see [`references/JDTLS.md`](https://github.com/jdubois/dr-jskill/blob/main/references/JDTLS.md).
 
 ## 5. Install a Git client
 

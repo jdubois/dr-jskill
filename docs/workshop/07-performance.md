@@ -62,7 +62,7 @@ spring.threads.virtual.enabled=true to application.properties.
 
 One line of config, potentially many requests per second more. Rerun the load script, compare latency.
 
-See [`references/SPRING-BOOT-4.md`](../references/SPRING-BOOT-4.md#performance) → *Virtual threads* for caveats (don't also raise `server.tomcat.threads.max`, avoid `synchronized` on blocking paths).
+See [`references/SPRING-BOOT-4.md`](https://github.com/jdubois/dr-jskill/blob/main/references/SPRING-BOOT-4.md#performance) → *Virtual threads* for caveats (don't also raise `server.tomcat.threads.max`, avoid `synchronized` on blocking paths).
 
 ## 4. HTTP compression
 
@@ -91,7 +91,7 @@ In TodoService, mark the read methods (findAll, findByUserId, findById) with
 the default @Transactional. Do the same for AppUserService if it exists.
 ```
 
-See [`references/DATABASE.md`](../references/DATABASE.md#read-only-transactions) for the rationale.
+See [`references/DATABASE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/DATABASE.md#read-only-transactions) for the rationale.
 
 ## 6. Lazy-loaded routes (front-end)
 
@@ -106,7 +106,7 @@ import: component: () => import('../views/SomeView.vue')
 
 After rebuilding, open your browser's DevTools → Network tab → hard-refresh the page. You should see one small initial chunk and separate chunks per route.
 
-See [`references/VUE.md`](../references/VUE.md#6-performance) for the full checklist (Vite prod build, long-term caching).
+See [`references/VUE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/VUE.md#6-performance) for the full checklist (Vite prod build, long-term caching).
 
 ## 7. Static asset caching
 
@@ -138,7 +138,7 @@ Add a p6spy dependency (test scope) and configure it to log SQL statements
 with their execution time during tests. No change to production code.
 ```
 
-Run `./mvnw verify` and watch the test output. If a single "list todos" endpoint produces dozens of SQL statements for N todos, you have an N+1. Ask the agent to fix it with `@EntityGraph` or `JOIN FETCH` — the pattern is in [`references/DATABASE.md`](../references/DATABASE.md#avoiding-n1-queries).
+Run `./mvnw verify` and watch the test output. If a single "list todos" endpoint produces dozens of SQL statements for N todos, you have an N+1. Ask the agent to fix it with `@EntityGraph` or `JOIN FETCH` — the pattern is in [`references/DATABASE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/DATABASE.md#avoiding-n1-queries).
 
 ## 9. Stop optimizing
 
@@ -150,12 +150,12 @@ A real application needs maybe five to ten of these tweaks applied **thoughtfull
 
 | Recipe | Cost to apply | Typical upside | Reference |
 |---|---|---|---|
-| Virtual threads | 1 property | ↑ RPS on IO-bound endpoints | [`references/SPRING-BOOT-4.md`](../references/SPRING-BOOT-4.md) |
-| HTTP compression | 2 properties | ↓ bytes on the wire | [`references/SPRING-BOOT-4.md`](../references/SPRING-BOOT-4.md) |
-| Read-only transactions | 1 annotation per method | ↓ DB work on queries | [`references/DATABASE.md`](../references/DATABASE.md) |
-| Lazy routes | 1 import per route | ↓ initial bundle | [`references/VUE.md`](../references/VUE.md) |
-| Static asset caching | 2 properties | ↓ repeat requests | [`references/SPRING-BOOT-4.md`](../references/SPRING-BOOT-4.md) |
-| N+1 detection in tests | 1 dep + config | ↓ surprises in prod | [`references/DATABASE.md`](../references/DATABASE.md) |
+| Virtual threads | 1 property | ↑ RPS on IO-bound endpoints | [`references/SPRING-BOOT-4.md`](https://github.com/jdubois/dr-jskill/blob/main/references/SPRING-BOOT-4.md) |
+| HTTP compression | 2 properties | ↓ bytes on the wire | [`references/SPRING-BOOT-4.md`](https://github.com/jdubois/dr-jskill/blob/main/references/SPRING-BOOT-4.md) |
+| Read-only transactions | 1 annotation per method | ↓ DB work on queries | [`references/DATABASE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/DATABASE.md) |
+| Lazy routes | 1 import per route | ↓ initial bundle | [`references/VUE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/VUE.md) |
+| Static asset caching | 2 properties | ↓ repeat requests | [`references/SPRING-BOOT-4.md`](https://github.com/jdubois/dr-jskill/blob/main/references/SPRING-BOOT-4.md) |
+| N+1 detection in tests | 1 dep + config | ↓ surprises in prod | [`references/DATABASE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/DATABASE.md) |
 
 ---
 

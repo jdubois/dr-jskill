@@ -57,7 +57,7 @@ Everything else (Node.js, Java, Docker, Copilot CLI, Dr JSkill) is installed in 
 
 ## Reference material
 
-Each chapter links to the deeper reference guide in [`../references/`](../references/PROJECT-SETUP.md) when relevant. If you want to go further on a specific topic (databases, Docker, testing, Azure deployment, etc.), those guides are the source of truth.
+Each chapter links to the deeper reference guide in [`../references/`](https://github.com/jdubois/dr-jskill/blob/main/references/PROJECT-SETUP.md) when relevant. If you want to go further on a specific topic (databases, Docker, testing, Azure deployment, etc.), those guides are the source of truth.
 
 ---
 

@@ -29,7 +29,7 @@ class ApplicationTest {
 }
 ```
 
-This proves the app starts. Useful, but tiny. Dr JSkill's convention (see [`references/TEST.md`](../references/TEST.md)) uses two styles:
+This proves the app starts. Useful, but tiny. Dr JSkill's convention (see [`references/TEST.md`](https://github.com/jdubois/dr-jskill/blob/main/references/TEST.md)) uses two styles:
 
 | Style | Scope | Runs via | Speed |
 |---|---|---|---|
@@ -108,7 +108,7 @@ First run downloads the Testcontainers Postgres image — slow. Subsequent runs 
 
 ## 6. Speed up the feedback loop
 
-Testcontainers can **reuse** a container across runs rather than recreating it each time. Per [`references/TEST.md`](../references/TEST.md#7-test-suite-performance), create this file on your machine (not in the project):
+Testcontainers can **reuse** a container across runs rather than recreating it each time. Per [`references/TEST.md`](https://github.com/jdubois/dr-jskill/blob/main/references/TEST.md#7-test-suite-performance), create this file on your machine (not in the project):
 
 ```properties
 # ~/.testcontainers.properties
