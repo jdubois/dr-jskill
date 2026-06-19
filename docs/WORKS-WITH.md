@@ -6,7 +6,7 @@ design language. Each tool owns a color, and together they cover the full lifecy
 
 | Tool | Color | What it does |
 | ---- | ----- | ------------ |
-| **Dr JSkill** | 🟡 Gold | An Agent Skill that **generates** Spring Boot applications from a prompt. |
+| **Dr JSkill** | 🟤 Terracotta | An Agent Skill that **generates** Spring Boot applications from a prompt. |
 | **[BootUI](https://www.julien-dubois.com/boot-ui/)** | 🟢 Green | A starter that adds a local-only, in-app **developer console** to a running app. |
 | **[Coffilot](https://www.julien-dubois.com/coffilot/)** | 🔵 Blue | A Copilot side-panel that **builds, runs, tests, and debugs** the app. |
 
@@ -29,8 +29,8 @@ The three tools chain together from an empty folder to a running, observable app
 
 ## The circle of color
 
-Each project owns a color in a shared gradient — **gold** for Dr JSkill, **green** for BootUI, and **blue** for
-Coffilot. Dr JSkill's own theme runs from gold (its primary brand color) into BootUI green (its accent), a small
+Each project owns a color in a shared gradient — **terracotta** for Dr JSkill, **green** for BootUI, and **blue** for
+Coffilot. Dr JSkill's own theme runs from terracotta (its primary brand color) into BootUI green (its accent), a small
 nod to the way the tools hand off to one another.
 
 ## Links

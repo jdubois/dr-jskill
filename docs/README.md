@@ -54,10 +54,10 @@ Versions for every tool and library are centralised in `versions.json`, so the w
 
 ## Works with BootUI and Coffilot
 
-Dr JSkill is part of a family of tools that share a **circle of color** design — gold for Dr JSkill, green for BootUI,
+Dr JSkill is part of a family of tools that share a **circle of color** design — terracotta for Dr JSkill, green for BootUI,
 and blue for Coffilot — and that fit together end to end:
 
-1. **Dr JSkill** (gold) generates a Spring Boot application the way Julien Dubois builds them.
+1. **Dr JSkill** (terracotta) generates a Spring Boot application the way Julien Dubois builds them.
 2. Add the **[BootUI](https://www.julien-dubois.com/boot-ui/)** (green) starter for a local-only, in-app developer console.
 3. Drive build, run, test, and debug from the Copilot side panel with **[Coffilot](https://www.julien-dubois.com/coffilot/)** (blue).
 
