@@ -221,6 +221,19 @@ Ask the agent: *"The test passes locally but fails on CI with `<paste stack trac
 - Increase Docker Desktop memory allocation (*Settings → Resources*) to at least 8 GB.
 - Or skip the native build — it's optional. The JVM Dockerfile is plenty for a workshop.
 
+### `docker exec ... sh` fails with "exec: \"sh\": executable file not found"
+
+**Cause:** the generated JVM, AOT and native images run on a **distroless** base — there's no shell, `curl` or package manager inside. That's deliberate: it keeps the image small and the attack surface tiny.
+
+**Fix:** don't try to shell into those containers. Use `docker logs <container>` for output and `docker inspect <container>` for the effective config. To debug interactively, attach a temporary sidecar that shares the container's process namespace:
+
+```bash
+docker run -it --rm --pid=container:<container> --network=container:<container> \
+  busybox sh
+```
+
+(The CRaC image keeps a shell, so `docker exec -it <container> sh` still works there.) See "Debugging a distroless image" in [`references/DOCKER.md`](../references/DOCKER.md).
+
 ### Spring Boot Actuator endpoints return 404
 
 **Cause:** the endpoints aren't exposed.

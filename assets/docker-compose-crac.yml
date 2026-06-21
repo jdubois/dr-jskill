@@ -1,0 +1,36 @@
+# Runs the Spring Boot app with CRaC (Coordinated Restore at Checkpoint), built
+# from Dockerfile-crac:
+#
+#   docker compose -f docker-compose-crac.yml up --build
+#
+# On the very first start the app boots once to write a CRaC checkpoint; every
+# start after that restores the warmed-up JVM in a few tens of milliseconds. The
+# checkpoint is kept in the `crac-checkpoint` named volume so it survives down/up
+# cycles (delete the volume to force a fresh checkpoint).
+#
+# CRaC only works on a Linux host: CRIU snapshots and restores the live process,
+# which is why the service runs privileged. A clean checkpoint also requires that
+# nothing holds an open network socket — an open JDBC/Redis connection at
+# checkpoint time aborts CRaC. This file therefore runs the app with no database
+# attached; take the checkpoint with an in-memory profile (or register CRaC
+# resource handlers that close pooled connections). See references/DOCKER.md.
+services:
+  spring-app-crac:
+    build:
+      context: .
+      dockerfile: Dockerfile-crac
+    # CRIU needs broad privileges to checkpoint and restore the JVM process. A
+    # narrower set (cap_add: CHECKPOINT_RESTORE, SYS_PTRACE, SYS_ADMIN and
+    # security_opt: seccomp:unconfined) works on most hosts; `privileged` is the
+    # most portable choice for a local demo.
+    privileged: true
+    environment:
+      SPRING_BOOT_PORT: ${SPRING_BOOT_PORT:-8080}
+    ports:
+      - "${SPRING_BOOT_PORT:-8080}:${SPRING_BOOT_PORT:-8080}"
+    volumes:
+      - crac-checkpoint:/opt/crac/checkpoint
+    restart: unless-stopped
+
+volumes:
+  crac-checkpoint:

@@ -177,11 +177,16 @@ my-spring-boot-app/
 │               ├── service/         # Only included if needed
 │               ├── repository/
 │               └── domain/
-├── Dockerfile                   # Standard JVM Docker build
-├── Dockerfile-native            # GraalVM native image build
+├── Dockerfile                   # JVM image (jlink runtime + distroless)
+├── Dockerfile-aot               # JVM + Spring AOT image
+├── Dockerfile-native            # GraalVM native image
+├── Dockerfile-crac              # CRaC (fast-restore) image
+├── checkpoint-and-run.sh        # CRaC entrypoint helper
 ├── compose.yaml                 # Dev database (spring-boot-docker-compose)
-├── docker-compose.yml           # Full stack with PostgreSQL
-├── docker-compose-native.yml    # Native image with PostgreSQL
+├── docker-compose.yml           # Full stack with PostgreSQL (JVM)
+├── docker-compose-aot.yml       # Full stack with PostgreSQL (AOT)
+├── docker-compose-native.yml    # Full stack with PostgreSQL (native)
+├── docker-compose-crac.yml      # CRaC app (database-free)
 ├── pom.xml
 └── README.md
 ```
@@ -232,7 +237,7 @@ When wiring the `frontend-maven-plugin`, bind the Node install, `npm install`, a
 
 ## Docker Deployment
 
-Spring Boot automatically manages Docker containers during development via `spring-boot-docker-compose`. For production, use the provided `Dockerfile` (JVM) or `Dockerfile-native` (GraalVM). See the [Docker Guide](references/DOCKER.md) for full setup, health checks, and deployment patterns.
+Spring Boot automatically manages Docker containers during development via `spring-boot-docker-compose`. For production, pick one of the four provided images: `Dockerfile` (JVM, jlink + distroless), `Dockerfile-aot` (JVM + Spring AOT), `Dockerfile-native` (GraalVM native), or `Dockerfile-crac` (CRaC fast-restore). See the [Docker Guide](references/DOCKER.md) for full setup, the matching Maven profiles, and deployment patterns.
 
 ## GraalVM Native Images
 

@@ -211,19 +211,31 @@ The database container will start automatically when you run the application and
 
 ## Docker Deployment
 
-After creating your project, you can add Docker support by copying the Docker templates from the `assets/` directory:
+The `create-*-project` scripts already copy **all four** Docker images into your
+project (JVM, JVM + AOT, GraalVM native, and CRaC), along with their Compose files
+and the `aot`/`crac` Maven profiles. If you started from a bare project and want to
+add them by hand, copy the templates from the `assets/` directory:
 
 ```bash
 # Copy Docker files to your project
 cp assets/Dockerfile my-project/
+cp assets/Dockerfile-aot my-project/
 cp assets/Dockerfile-native my-project/
+cp assets/Dockerfile-crac my-project/
+cp assets/checkpoint-and-run.sh my-project/
 cp assets/docker-compose.yml my-project/
+cp assets/docker-compose-aot.yml my-project/
 cp assets/docker-compose-native.yml my-project/
+cp assets/docker-compose-crac.yml my-project/
 
 # Run with Docker Compose
 cd my-project
 docker compose up -d
 ```
+
+> The AOT, native and CRaC images require matching Maven profiles in `pom.xml`
+> (`aot`, `native`, `crac`). See [Docker Guide](../references/DOCKER.md) for the
+> profile snippets and per-image details.
 
 See [Docker Guide](../references/DOCKER.md) for detailed instructions.
 
@@ -258,9 +270,15 @@ cd my-project
 
 ### Docker Build
 ```bash
-# Standard JVM image
+# JVM image (jlink runtime + distroless)
 docker build -t my-project .
+
+# JVM + Spring AOT image
+docker build -f Dockerfile-aot -t my-project-aot .
 
 # GraalVM native image
 docker build -f Dockerfile-native -t my-project-native .
+
+# CRaC (Coordinated Restore at Checkpoint) image — Linux only
+docker build -f Dockerfile-crac -t my-project-crac .
 ```

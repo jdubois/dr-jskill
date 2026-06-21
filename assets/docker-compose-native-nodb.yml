@@ -8,12 +8,9 @@ services:
       SPRING_BOOT_PORT: ${SPRING_BOOT_PORT:-8080}
     ports:
       - "${SPRING_BOOT_PORT:-8080}:${SPRING_BOOT_PORT:-8080}"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:$${SPRING_BOOT_PORT:-8080}/actuator/health | grep -q UP || exit 1"]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 5s
+    # No app healthcheck: the native image runs on a distroless base with no shell,
+    # curl or wget to run an in-container probe. Probe /actuator/health from outside
+    # (or from your orchestrator's liveness/readiness checks) instead.
     deploy:
       resources:
         limits:
