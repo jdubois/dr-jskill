@@ -24,7 +24,7 @@ This guide covers creating front-end applications for Spring Boot using **Vue.js
 <!-- versions:start -->
 | Tool | Version |
 |------|---------|
-| Node.js | 24.16.0 |
+| Node.js | 24.17.0 |
 | npm | 11.17.0 |
 | Vue.js | 3.x |
 | Vite | 8.x |
@@ -197,7 +197,7 @@ Add to your `pom.xml`:
         <plugin>
             <groupId>com.github.eirslett</groupId>
             <artifactId>frontend-maven-plugin</artifactId>
-            <version>2.0.0</version>
+            <version>2.0.1</version>
             <configuration>
                 <workingDirectory>frontend</workingDirectory>
                 <installDirectory>target</installDirectory>
@@ -211,7 +211,7 @@ Add to your `pom.xml`:
                         <goal>install-node-and-npm</goal>
                     </goals>
                     <configuration>
-                        <nodeVersion>v24.16.0</nodeVersion>
+                        <nodeVersion>v24.17.0</nodeVersion>
                         <npmVersion>11.17.0</npmVersion>
                     </configuration>
                 </execution>
@@ -259,6 +259,7 @@ Edit `frontend/package.json`:
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "test:unit": "vitest",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
     "format": "prettier --write src/"
