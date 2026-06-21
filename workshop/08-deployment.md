@@ -58,7 +58,7 @@ docker compose -f docker-compose.yml build
 docker compose -f docker-compose.yml up -d
 
 # Check logs
-docker compose -f docker-compose.yml logs -f app
+docker compose -f docker-compose.yml logs -f spring-app
 ```
 
 Once "Started Application" appears, open http://localhost:8080. This time there's **no Java or Maven on your host** — everything runs in containers.
@@ -76,7 +76,7 @@ Open `Dockerfile`. It uses a **multi-stage build** with two distinct stages.
 **Stage 1 — Build**
 
 ```dockerfile
-FROM eclipse-temurin:25-jdk-jammy AS build
+FROM eclipse-temurin:25-jdk-noble AS build
 ```
 
 > **Version note:** the `25` tag matches the Java version in `versions.json`. Dr JSkill writes this value into the generated Dockerfile automatically — you don't need to update it by hand.
@@ -92,33 +92,49 @@ RUN ./mvnw dependency:go-offline
 
 Docker caches this layer as long as `pom.xml` doesn't change. On subsequent builds only the `COPY src` → `RUN ./mvnw package` step reruns, keeping iterative builds fast.
 
+After packaging, the build stage does two more things that keep the final image small and fast:
+
+- **Explodes the Spring Boot jar into layers** (`java -Djarmode=tools -jar app.jar extract --layers`) so dependencies, the loader, and your own classes land in separate image layers — the dependency layer (which rarely changes) stays cached across rebuilds.
+- **Builds a custom Java runtime with `jlink`**, containing only the JDK modules the app actually needs instead of a full JRE. That trimmed runtime is what gets copied into the final image.
+
 **Stage 2 — Runtime**
 
 ```dockerfile
-FROM eclipse-temurin:25-jre-alpine
+FROM gcr.io/distroless/base-debian12:nonroot
 ```
 
-Only the compiled JAR is copied from stage 1. The Alpine-based JRE image has no compiler, no Maven, no Node — it strips the image down to ~150 MB. The `HEALTHCHECK` line pings `/actuator/health` so Docker and container orchestrators can detect a broken instance and restart it.
+The runtime base is a Google **distroless** image — glibc and little else: no shell, no package manager, no `curl`. Combined with the jlink runtime and the exploded layers, the final image lands around **~120 MB** with a very small attack surface. The `:nonroot` tag runs the app as an unprivileged user (uid 65532).
 
-The `ENTRYPOINT` passes two JVM flags explicitly:
+Because there's no shell or `curl` in the image, there is **no Docker `HEALTHCHECK`**. You probe `/actuator/health` from your orchestrator's liveness/readiness checks instead (Kubernetes, Azure Container Apps, etc. do this for you).
+
+JVM tuning is passed through `JAVA_TOOL_OPTIONS` rather than the `ENTRYPOINT`, so the flags apply however the JVM is launched:
 
 ```dockerfile
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC ..."
+ENTRYPOINT ["/opt/java/bin/java", "org.springframework.boot.loader.launch.JarLauncher"]
 ```
 
-- `-XX:+UseContainerSupport` — makes the JVM read CPU and memory limits from the container's cgroup rather than the host machine's physical resources. Without this, a 500 MB container on a 32 GB host would allocate heap based on 32 GB.
-- `-XX:MaxRAMPercentage=75.0` — caps heap at 75% of the container's memory limit, leaving 25% for non-heap (metaspace, threads, code cache, native memory).
+- `-XX:+UseContainerSupport` — makes the JVM read CPU and memory limits from the container's cgroup rather than the host machine's physical resources. Without this, a small container on a 32 GB host would size its heap from 32 GB.
+- `-XX:MaxRAMPercentage=75.0` — caps heap at 75% of the container's memory limit, leaving room for non-heap memory (metaspace, threads, code cache, native memory).
+
+The `JarLauncher` entrypoint boots the app straight from the exploded layers — there's no fat `app.jar` to unpack at startup.
+
+> Dr JSkill also generates **`Dockerfile-aot`** (JVM + Spring AOT) and **`Dockerfile-crac`** (Coordinated Restore at Checkpoint) for even faster startup, alongside `Dockerfile-native` below. See [`references/DOCKER.md`](../references/DOCKER.md) for when to use each.
 
 ### Inspect the image
 
 ```bash
 docker images | grep todo-app
-# todo-app   latest   ...   ~150MB
+# todo-app   latest   ...   ~120MB
 
-docker inspect todo-app:latest --format '{{.Config.Healthcheck}}'
+# The image is distroless, so inspect its config instead of `docker exec`-ing a shell:
+docker inspect todo-app:latest --format '{{.Config.Entrypoint}}'
+docker inspect todo-app:latest --format '{{.Config.Env}}'
 ```
 
-See [`references/DOCKER.md`](../references/DOCKER.md) for a deeper dive into layer caching, `.dockerignore`, and multi-arch builds.
+> **No shell in the image?** That's deliberate. To debug a running distroless container, attach a temporary sidecar that shares its process namespace — see "Debugging a distroless image" in [`references/DOCKER.md`](../references/DOCKER.md).
+
+See [`references/DOCKER.md`](../references/DOCKER.md) for a deeper dive into all four image variants, layer caching, and multi-arch builds.
 
 ## 3. GraalVM native image
 
@@ -128,7 +144,7 @@ A **GraalVM native image** ahead-of-time compiles your app to a standalone binar
 |---|---|---|
 | Startup | 2–10 s | 50–200 ms |
 | Idle memory | 300 MB–1 GB | 50–150 MB |
-| Image size | ~150 MB | ~30–60 MB |
+| Image size | ~120 MB | ~30–60 MB |
 | Peak throughput | ✅ JIT-optimized | ⚠️ No JIT |
 | Build time | ~1 min | 5–15 min |
 
@@ -152,12 +168,12 @@ With both stacks available, restart each one and time the startup log message:
 
 ```bash
 # JVM version — time from start to "Started Application"
-docker compose -f docker-compose.yml restart app
-docker compose -f docker-compose.yml logs --since 1m app | grep "Started"
+docker compose -f docker-compose.yml restart spring-app
+docker compose -f docker-compose.yml logs --since 1m spring-app | grep "Started"
 
 # Native version — same measurement
-docker compose -f docker-compose-native.yml restart app
-docker compose -f docker-compose-native.yml logs --since 1m app | grep "Started"
+docker compose -f docker-compose-native.yml restart spring-app-native
+docker compose -f docker-compose-native.yml logs --since 1m spring-app-native | grep "Started"
 ```
 
 Typical output on a laptop:

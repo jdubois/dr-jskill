@@ -1,39 +1,56 @@
-# Multi-stage Dockerfile for GraalVM Native Image
-# Builds and runs a native Spring Boot application
-# Requires GraalVM 25+ for Spring Boot 4 (GraalVM 25 = JDK 25)
+# syntax=docker/dockerfile:1
+#
+# Multi-stage GraalVM native-image Dockerfile for a Spring Boot application.
+#
+# Requires GraalVM 25+ for Spring Boot 4 (GraalVM 25 = JDK 25).
+#
+# The native executable is built "mostly static" (everything statically linked
+# except glibc), so the runtime image only needs a glibc base and no extra shared
+# libraries. The final stage is Google's "distroless" glibc base
+# (`gcr.io/distroless/base-debian12:nonroot`): it ships glibc but no shell, package
+# manager, curl or tar, which removes the bulk of the OS-package CVEs a full Debian
+# base otherwise carries. It runs as an unprivileged user (uid 65532).
+#
+# This image requires a `native` profile in your pom.xml — see references/DOCKER.md
+# ("Maven profiles for AOT, native and CRaC").
+#
+# For a JVM image see Dockerfile, for a JVM + AOT image see Dockerfile-aot, and for
+# a JVM image using CRaC see Dockerfile-crac.
+#
+# Build and run:
+#   docker build -f Dockerfile-native -t my-spring-app-native .
+#   docker run --rm -e SPRING_BOOT_PORT=8080 -p 8080:8080 my-spring-app-native
 
-# Build stage with GraalVM 25 (includes native-image toolchain, JDK 25)
+# Build stage with GraalVM 25 (includes native-image toolchain, JDK 25).
 FROM ghcr.io/graalvm/graalvm-community:25 AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml (dependency caching layer)
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
-RUN chmod +x mvnw
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
-# Download dependencies
-RUN ./mvnw dependency:go-offline
-
-# Copy source code
 COPY src ./src
 
-# Copy frontend directory if present (for fullstack projects with frontend-maven-plugin)
-# If no frontend/ exists, comment out or remove this line
+# Copy frontend directory (full-stack projects with frontend-maven-plugin).
+# Remove this line for a backend-only project that has no frontend/ directory.
 COPY frontend ./frontend
 
-# Build native image (compile → process-aot → native compile).
-# Must invoke `package` so Spring Boot's `process-aot` goal (bound to
-# prepare-package by the `native` profile) actually runs and generates AOT
-# sources + native-image hints. Running `native:compile` on its own skips the
-# prior phases and produces a native-image call with an empty AOT classpath,
-# which fails with misleading errors (e.g. SLF4J falling back to the NOP
-# provider when HikariConfig is initialized at build time).
-RUN ./mvnw -Pnative -DskipTests package native:compile
+# Build a "mostly static" native image: statically link everything (including zlib)
+# except glibc, so the distroless glibc runtime base needs no extra shared
+# libraries. native-image honors this via NATIVE_IMAGE_OPTIONS, so it needs no pom
+# changes and does not affect a local host `-Pnative` build. The GraalVM build image
+# ships the static zlib (libz.a) this requires.
+ENV NATIVE_IMAGE_OPTIONS="-H:+StaticExecutableWithDynamicLibC"
 
-# Move native executable to a known path (artifact name varies per project)
+# Build the native image (compile -> process-aot -> native compile). Invoke
+# `package` so Spring Boot's `process-aot` goal (bound by the `native` profile)
+# runs and generates AOT sources + native-image hints before native:compile.
+RUN ./mvnw -Pnative -DskipTests -B package native:compile
+
+# Move the native executable to a known path (the native-maven-plugin names it
+# after the project artifactId, which varies per project).
 RUN if [ -f target/$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout 2>/dev/null) ]; then \
       cp target/$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout 2>/dev/null) native-app; \
     else \
@@ -42,32 +59,23 @@ RUN if [ -f target/$(./mvnw help:evaluate -Dexpression=project.artifactId -q -Df
       else echo "ERROR: Native executable not found in target/"; ls -laR target/ | head -40; exit 1; fi; \
     fi
 
-# Runtime stage with Debian slim (~80 MB, includes glibc + zlib)
-FROM debian:12-slim
+# ---------------------------------------------------------------------------
+# Runtime stage: Google "distroless" glibc base (no shell, package manager or
+# curl). The :nonroot tag runs as an unprivileged user (uid 65532).
+# ---------------------------------------------------------------------------
+FROM gcr.io/distroless/base-debian12:nonroot
 
-# Install curl for healthchecks
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
-    rm -rf /var/lib/apt/lists/*
-
-# Create non-root user
-RUN useradd -m -u 1001 springboot
-
-# Set working directory
 WORKDIR /app
 
-# Copy the native executable from build stage
-COPY --from=build --chown=springboot:springboot /app/native-app native-app
+# Copy the native executable from the build stage.
+COPY --from=build --chown=nonroot:nonroot /app/native-app native-app
 
-# Switch to non-root user
-USER springboot
+USER nonroot
 
-# Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:${SPRING_BOOT_PORT:-8080}/actuator/health || exit 1
+# No Docker HEALTHCHECK: the distroless base has no shell or curl to run a probe.
+# Probe /actuator/health from your orchestrator's liveness/readiness checks instead.
 
-# Run the native application
+# Run the native application.
 ENTRYPOINT ["./native-app"]

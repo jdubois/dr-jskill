@@ -1,0 +1,97 @@
+# syntax=docker/dockerfile:1
+#
+# Multi-stage JVM + AOT Dockerfile for a Spring Boot application.
+#
+# This image adds Spring AOT on top of the standard JVM image (Dockerfile) for the
+# fastest JVM-based startup without GraalVM or CRaC:
+#
+#   Spring AOT (spring-boot:process-aot, -Paot Maven profile)
+#     Spring Boot's AOT processing runs at build time and pre-generates the
+#     application-context wiring — replacing dynamic reflection / CGLIB proxy
+#     creation with static factory code. At runtime, -Dspring.aot.enabled=true
+#     (set in JAVA_TOOL_OPTIONS below) activates the generated code.
+#     Result: roughly 30-50 % less Spring context-refresh time, with no change to
+#     the runtime API surface, no frozen profile (unlike GraalVM) and no CRIU
+#     privileges (unlike CRaC).
+#
+# Unlike a GraalVM native image, process-aot only evaluates bean definitions at
+# build time — it does not open a JDBC connection — so this image builds without a
+# running database, exactly like the native image's AOT step.
+#
+# For an additional ~20-30 % class-loading saving you can layer the JDK 25 AOT
+# class-loading cache (JEP 483/514) on top of Spring AOT. That requires booting the
+# app once at build time to "train" the cache, which needs a reachable database for
+# a DB-backed app — see the "JVM + AOT" section of references/DOCKER.md for the
+# (optional) training recipe.
+#
+# This image requires an `aot` profile in your pom.xml that binds the process-aot
+# goal — see references/DOCKER.md ("Maven profiles for AOT, native and CRaC").
+#
+# For the plain JVM image (no AOT), see Dockerfile.
+# For a GraalVM native image, see Dockerfile-native.
+# For a JVM image using CRaC, see Dockerfile-crac.
+#
+# Build and run:
+#   docker build -f Dockerfile-aot -t my-spring-app-aot .
+#   docker run --rm -e SPRING_BOOT_PORT=8080 -p 8080:8080 my-spring-app-aot
+
+# ---------------------------------------------------------------------------
+# Build stage: same glibc JDK as Dockerfile, but builds with the `aot` profile so
+# spring-boot:process-aot generates and compiles the AOT factory/hints code before
+# the jar is repackaged.
+# ---------------------------------------------------------------------------
+FROM eclipse-temurin:25-jdk-noble AS build
+
+WORKDIR /app
+
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+
+COPY src ./src
+
+# Copy frontend directory (full-stack projects with frontend-maven-plugin).
+# Remove this line for a backend-only project that has no frontend/ directory.
+COPY frontend ./frontend
+
+# Build with the `aot` profile (runs spring-boot:process-aot, then repackage).
+RUN ./mvnw -Paot clean package -DskipTests -B
+
+# Explode the repackaged Spring Boot jar into its layers (see Dockerfile).
+RUN cp target/*.jar app.jar && \
+    java -Djarmode=tools -jar app.jar extract --layers --launcher --destination extracted
+
+# Assemble a minimal custom Java runtime with jlink (identical module set to
+# Dockerfile, so both images behave the same at runtime).
+RUN "$JAVA_HOME/bin/jlink" \
+      --add-modules java.base,java.logging,java.naming,java.management,java.management.rmi,java.instrument,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto,java.desktop,java.security.jgss,java.security.sasl,java.scripting,java.compiler,java.net.http,java.rmi,java.prefs,jdk.unsupported,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.jfr,jdk.management,jdk.management.agent,jdk.attach,jdk.zipfs,jdk.charsets,jdk.net,jdk.security.auth \
+      --strip-debug --no-man-pages --no-header-files --compress=zip-6 \
+      --output /javaruntime
+
+# ---------------------------------------------------------------------------
+# Runtime stage: Google "distroless" glibc base — same base as Dockerfile.
+# ---------------------------------------------------------------------------
+FROM gcr.io/distroless/base-debian12:nonroot
+
+ENV JAVA_HOME=/opt/java
+ENV PATH="$JAVA_HOME/bin:$PATH"
+COPY --from=build /javaruntime $JAVA_HOME
+
+WORKDIR /app
+
+COPY --from=build --chown=65532:65532 /app/extracted/dependencies/ ./
+COPY --from=build --chown=65532:65532 /app/extracted/spring-boot-loader/ ./
+COPY --from=build --chown=65532:65532 /app/extracted/snapshot-dependencies/ ./
+COPY --from=build --chown=65532:65532 /app/extracted/application/ ./
+
+USER nonroot
+
+# Same container-aware tuning as Dockerfile, plus -Dspring.aot.enabled=true to
+# activate the Spring AOT-generated factories. Unlike the native image, the Spring
+# profile is NOT frozen: override SPRING_PROFILES_ACTIVE at runtime as usual.
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseStringDeduplication -XX:+UseCompactObjectHeaders -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Dspring.aot.enabled=true"
+
+EXPOSE 8080
+
+ENTRYPOINT ["/opt/java/bin/java", "org.springframework.boot.loader.launch.JarLauncher"]

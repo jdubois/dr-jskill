@@ -270,6 +270,74 @@ export function patchPomFailsafe(projectDir) {
   writeFileSync(pomPath, pom, 'utf8');
 }
 
+/**
+ * Inject the `aot` and `crac` Maven profiles into pom.xml so the shipped
+ * Dockerfile-aot (`./mvnw -Paot …`) and Dockerfile-crac (`./mvnw -Pcrac …`) build
+ * out of the box. The `native` profile is already added by start.spring.io's
+ * GraalVM Native Support, so it is not injected here. Idempotent: each profile is
+ * only added if its <id> is absent. See references/DOCKER.md ("Maven Profiles for
+ * AOT, Native and CRaC").
+ */
+export function patchPomProfiles(projectDir) {
+  const pomPath = join(projectDir, 'pom.xml');
+  if (!existsSync(pomPath)) return;
+  let pom = readFileSync(pomPath, 'utf8');
+
+  const t = (n) => '\t'.repeat(n);
+  const aotProfile = [
+    `${t(2)}<!-- JVM AOT: pre-generate the application-context wiring at build time`,
+    `${t(2)}     (used by Dockerfile-aot). Activate with -Paot. -->`,
+    `${t(2)}<profile>`,
+    `${t(3)}<id>aot</id>`,
+    `${t(3)}<build>`,
+    `${t(4)}<plugins>`,
+    `${t(5)}<plugin>`,
+    `${t(6)}<groupId>org.springframework.boot</groupId>`,
+    `${t(6)}<artifactId>spring-boot-maven-plugin</artifactId>`,
+    `${t(6)}<executions>`,
+    `${t(7)}<execution>`,
+    `${t(8)}<id>process-aot</id>`,
+    `${t(8)}<goals>`,
+    `${t(9)}<goal>process-aot</goal>`,
+    `${t(8)}</goals>`,
+    `${t(7)}</execution>`,
+    `${t(6)}</executions>`,
+    `${t(5)}</plugin>`,
+    `${t(4)}</plugins>`,
+    `${t(3)}</build>`,
+    `${t(2)}</profile>`,
+    '',
+  ].join('\n');
+  const cracProfile = [
+    `${t(2)}<!-- CRaC: add the org.crac adapter so spring.context.checkpoint=onRefresh`,
+    `${t(2)}     works (used by Dockerfile-crac). Activate with -Pcrac. -->`,
+    `${t(2)}<profile>`,
+    `${t(3)}<id>crac</id>`,
+    `${t(3)}<dependencies>`,
+    `${t(4)}<dependency>`,
+    `${t(5)}<groupId>org.crac</groupId>`,
+    `${t(5)}<artifactId>crac</artifactId>`,
+    `${t(4)}</dependency>`,
+    `${t(3)}</dependencies>`,
+    `${t(2)}</profile>`,
+    '',
+  ].join('\n');
+
+  let toInsert = '';
+  if (!pom.includes('<id>aot</id>')) toInsert += aotProfile;
+  if (!pom.includes('<id>crac</id>')) toInsert += cracProfile;
+  if (!toInsert) return; // Both profiles already present.
+
+  if (/<\/profiles>/.test(pom)) {
+    pom = pom.replace(/([ \t]*)<\/profiles>/, (_m, indent) => `${toInsert}${indent}</profiles>`);
+  } else {
+    const closeProject = pom.lastIndexOf('</project>');
+    if (closeProject === -1) return;
+    const block = `${t(1)}<profiles>\n${toInsert}${t(1)}</profiles>\n`;
+    pom = pom.slice(0, closeProject) + block + pom.slice(closeProject);
+  }
+  writeFileSync(pomPath, pom, 'utf8');
+}
 
 export function mergeGitignore(projectDir) {
   const target = join(projectDir, '.gitignore');
@@ -445,25 +513,39 @@ export function applyDotfiles(projectDir, options = {}) {
   copyAssetIfMissing('editorconfig', join(projectDir, '.editorconfig'));
   copyAssetIfMissing('gitattributes', join(projectDir, '.gitattributes'));
   copyAssetIfMissing('dockerignore', join(projectDir, '.dockerignore'));
-  // Docker deployment files (Dockerfiles always, compose files only with database)
+  // Docker deployment files. All four image variants ship into every project
+  // (Dockerfiles always; compose files vary by whether a database is present).
+  // See references/DOCKER.md for what each variant is and when to use it.
   copyAssetIfMissing('Dockerfile', join(projectDir, 'Dockerfile'));
+  copyAssetIfMissing('Dockerfile-aot', join(projectDir, 'Dockerfile-aot'));
   copyAssetIfMissing('Dockerfile-native', join(projectDir, 'Dockerfile-native'));
+  copyAssetIfMissing('Dockerfile-crac', join(projectDir, 'Dockerfile-crac'));
+  // CRaC entrypoint used by Dockerfile-crac (copied to the project root; the
+  // Dockerfile chmod +x's it at build time, so the host file mode is irrelevant).
+  copyAssetIfMissing('checkpoint-and-run.sh', join(projectDir, 'checkpoint-and-run.sh'));
   if (!hasFrontend) {
     stripFrontendCopyLines(join(projectDir, 'Dockerfile'));
+    stripFrontendCopyLines(join(projectDir, 'Dockerfile-aot'));
     stripFrontendCopyLines(join(projectDir, 'Dockerfile-native'));
+    stripFrontendCopyLines(join(projectDir, 'Dockerfile-crac'));
   }
   if (hasDatabase) {
     // start.spring.io generates its own compose.yaml pinned to `postgres:latest`;
     // overwrite it with the curated, version-pinned asset (healthcheck + volume).
     copyAssetOverwrite('compose.yaml', join(projectDir, 'compose.yaml'));
     copyAssetIfMissing('docker-compose.yml', join(projectDir, 'docker-compose.yml'));
+    copyAssetIfMissing('docker-compose-aot.yml', join(projectDir, 'docker-compose-aot.yml'));
     copyAssetIfMissing('docker-compose-native.yml', join(projectDir, 'docker-compose-native.yml'));
   } else {
     // No-DB projects still benefit from a single-service compose wrapper so
-    // `docker compose up --build` works out of the box for both JVM and native.
+    // `docker compose up --build` works out of the box for JVM, AOT and native.
     copyAssetIfMissing('docker-compose-nodb.yml', join(projectDir, 'docker-compose.yml'));
+    copyAssetIfMissing('docker-compose-aot-nodb.yml', join(projectDir, 'docker-compose-aot.yml'));
     copyAssetIfMissing('docker-compose-native-nodb.yml', join(projectDir, 'docker-compose-native.yml'));
   }
+  // The CRaC compose is database-free by design (a clean checkpoint requires no
+  // open network sockets), so the same file works for DB and no-DB projects.
+  copyAssetIfMissing('docker-compose-crac.yml', join(projectDir, 'docker-compose-crac.yml'));
   // Optional .vscode recommendations
   copyAssetIfMissing(join('vscode', 'extensions.json'), join(projectDir, '.vscode', 'extensions.json'));
   copyAssetIfMissing(join('vscode', 'settings.json'), join(projectDir, '.vscode', 'settings.json'));
@@ -485,6 +567,9 @@ export function applyDotfiles(projectDir, options = {}) {
   // Activate Maven Failsafe so `./mvnw verify` actually runs *IT integration tests
   // (the Boot parent only manages it under <pluginManagement>) — see references/TEST.md.
   patchPomFailsafe(projectDir);
+  // Add the `aot` and `crac` profiles so Dockerfile-aot and Dockerfile-crac build
+  // out of the box (the `native` profile comes from start.spring.io). See DOCKER.md.
+  patchPomProfiles(projectDir);
   // Optional Node version pinning if front-end present
   try {
     const nodeVersion = getNodeVersion();

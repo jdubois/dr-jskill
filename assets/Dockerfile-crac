@@ -1,0 +1,84 @@
+# syntax=docker/dockerfile:1
+#
+# Multi-stage CRaC (Coordinated Restore at Checkpoint) Dockerfile for a Spring Boot
+# application.
+#
+# CRaC snapshots a fully warmed-up JVM process to disk and restores it in tens of
+# milliseconds. It only works on Linux and needs a CRaC-enabled JDK plus elevated
+# container privileges (CRIU) — see docker-compose-crac.yml and the "Run it with
+# CRaC" section of references/DOCKER.md.
+#
+# BellSoft ships CRaC-enabled Liberica only for the LTS releases (17 and 21), so
+# this image stays on JDK 21. The build below forces `-Djava.version=21` so the app
+# is compiled for Java 21 even if pom.xml otherwise targets a newer release; Spring
+# Boot 4 runs on Java 17+, so 21 is fully supported. (Remove the override if your
+# project already targets 21.)
+#
+# This image requires a `crac` profile in your pom.xml that adds the org.crac:crac
+# dependency, and the checkpoint-and-run.sh entrypoint script — see
+# references/DOCKER.md ("Maven profiles for AOT, native and CRaC").
+#
+# A clean checkpoint requires no open network sockets: an open JDBC/Redis
+# connection at checkpoint time aborts CRaC. Take the checkpoint with an in-memory
+# profile, or register CRaC resource handlers that close pooled connections — see
+# references/DOCKER.md.
+#
+# For a JVM image see Dockerfile, for a JVM + AOT image see Dockerfile-aot, and for
+# a GraalVM native image see Dockerfile-native.
+#
+# Build and run (CRIU needs extra privileges; the named volume keeps the checkpoint
+# between restarts):
+#   docker build -f Dockerfile-crac -t my-spring-app-crac .
+#   docker run --rm -p 8080:8080 \
+#     --cap-add=CHECKPOINT_RESTORE --cap-add=SYS_PTRACE --cap-add=SYS_ADMIN \
+#     -v my-spring-app-crac:/opt/crac/checkpoint my-spring-app-crac
+
+# Build stage (a plain JDK is enough; CRaC only matters at runtime). JDK 21 to match
+# the CRaC-enabled runtime below.
+FROM eclipse-temurin:21-jdk-noble AS build
+
+WORKDIR /app
+
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -B -Djava.version=21
+
+COPY src ./src
+
+# Copy frontend directory (full-stack projects with frontend-maven-plugin).
+# Remove this line for a backend-only project that has no frontend/ directory.
+COPY frontend ./frontend
+
+# Build with the `crac` profile (adds org.crac:crac), compiled for Java 21.
+RUN ./mvnw -Pcrac clean package -DskipTests -B -Djava.version=21
+
+# Runtime stage with a CRaC-enabled JDK (BellSoft Liberica with CRaC support).
+FROM bellsoft/liberica-runtime-container:jdk-21-crac-slim-glibc
+
+WORKDIR /app
+
+# Where the checkpoint image is written/read. Mounted as a volume in
+# docker-compose-crac.yml so the checkpoint survives container restarts.
+ENV CRAC_CHECKPOINT_DIR=/opt/crac/checkpoint
+ENV APP_JAR=/app/app.jar
+
+# JVM tuning flags, applied by checkpoint-and-run.sh when the checkpoint is created
+# (the first start) and frozen into the CRaC image — a restore replays that JVM, so
+# heap/GC flags cannot be changed on a restore-only start. Mirrors the JVM image
+# (Dockerfile) minus -XX:+UseCompactObjectHeaders, which needs JDK 24+ and is
+# unavailable on this JDK 21 runtime. Override (and regenerate the checkpoint) with
+# -e JAVA_OPTS="...".
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseStringDeduplication -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp"
+
+# Copy the repackaged, runnable Spring Boot jar (the glob skips the thin
+# *.jar.original) and the checkpoint/restore entrypoint.
+COPY --from=build /app/target/*.jar ${APP_JAR}
+COPY checkpoint-and-run.sh /app/checkpoint-and-run.sh
+
+RUN chmod +x /app/checkpoint-and-run.sh && mkdir -p ${CRAC_CHECKPOINT_DIR}
+
+EXPOSE 8080
+
+# Take a checkpoint on the first start, then restore on every start.
+ENTRYPOINT ["/app/checkpoint-and-run.sh"]

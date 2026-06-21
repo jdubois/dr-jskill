@@ -244,8 +244,11 @@ Have a look at these files — each one does a small job:
 | `.env.sample` | Documents the env vars the app expects — copy to `.env` for local secrets |
 | `.github/lsp.json` | Tells Copilot CLI to wire JDTLS for this project |
 | `.vscode/extensions.json` | Recommends the Java and Vue VS Code extensions |
-| `Dockerfile` | Multi-stage build: compile with JDK, run on JRE |
-| `Dockerfile-native` | Alternate: GraalVM native image (much smaller, faster startup) |
+| `Dockerfile` | JVM image — multi-stage build, jlink runtime on a distroless base |
+| `Dockerfile-aot` | JVM + Spring AOT — faster startup, distroless base |
+| `Dockerfile-native` | GraalVM native image — smallest image, fastest startup |
+| `Dockerfile-crac` | CRaC (Coordinated Restore at Checkpoint) — near-instant restore |
+| `checkpoint-and-run.sh` | Entrypoint helper used by `Dockerfile-crac` |
 | `compose.yaml` | Postgres for development |
 
 None of these are flashy — they're the difference between "a prototype" and "a project a team can pick up tomorrow". Dr JSkill ships them by default.

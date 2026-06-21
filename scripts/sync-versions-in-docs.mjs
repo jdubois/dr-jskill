@@ -23,9 +23,13 @@ const END = '<!-- versions:end -->';
  */
 const assetRewrites = [
   ['assets/Dockerfile', [
-    [/eclipse-temurin:[^-\s]+-jdk-jammy/g, `eclipse-temurin:${versions.temurinVersion}-jdk-jammy`],
-    [/eclipse-temurin:[^-\s]+-jre-alpine/g, `eclipse-temurin:${versions.temurinVersion}-jre-alpine`],
+    [/eclipse-temurin:[^-\s]+-jdk-noble/g, `eclipse-temurin:${versions.temurinVersion}-jdk-noble`],
   ]],
+  ['assets/Dockerfile-aot', [
+    [/eclipse-temurin:[^-\s]+-jdk-noble/g, `eclipse-temurin:${versions.temurinVersion}-jdk-noble`],
+  ]],
+  // Dockerfile-crac is intentionally NOT listed: CRaC-enabled Liberica ships only
+  // for LTS releases, so it is pinned to JDK 21 and must not track javaVersion.
   ['assets/Dockerfile-native', [
     [/ghcr\.io\/graalvm\/graalvm-community:\S+/g, `ghcr.io/graalvm/graalvm-community:${versions.graalvmVersion}`],
     [/Requires GraalVM \d+\+/g, `Requires GraalVM ${versions.graalvmVersion}+`],
@@ -36,6 +40,9 @@ const assetRewrites = [
     [/postgres:\d+-alpine/g, `postgres:${versions.postgresVersion}-alpine`],
   ]],
   ['assets/docker-compose.yml', [
+    [/postgres:\d+-alpine/g, `postgres:${versions.postgresVersion}-alpine`],
+  ]],
+  ['assets/docker-compose-aot.yml', [
     [/postgres:\d+-alpine/g, `postgres:${versions.postgresVersion}-alpine`],
   ]],
   ['assets/docker-compose-native.yml', [

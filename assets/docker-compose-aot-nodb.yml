@@ -1,0 +1,29 @@
+# Single-service wrapper for the Spring Boot JVM + AOT image (no database), built
+# from Dockerfile-aot:
+#
+#   docker compose -f docker-compose-aot.yml up --build
+#
+# The AOT image adds Spring AOT to the plain JVM image for faster startup, with no
+# extra runtime infrastructure and no frozen profile (unlike GraalVM native). See
+# references/DOCKER.md ("JVM + AOT").
+services:
+  # Spring Boot Application (JVM + Spring AOT)
+  spring-app-aot:
+    build:
+      context: .
+      dockerfile: Dockerfile-aot
+    environment:
+      SPRING_BOOT_PORT: ${SPRING_BOOT_PORT:-8080}
+      # Spring AOT is already baked into JAVA_TOOL_OPTIONS in the image; set it
+      # explicitly too so `docker inspect` shows the full effective config.
+      SPRING_AOT_ENABLED: "true"
+    ports:
+      - "${SPRING_BOOT_PORT:-8080}:${SPRING_BOOT_PORT:-8080}"
+    # No app healthcheck: the image runs on a distroless base with no shell, curl or
+    # wget to run an in-container probe. Probe /actuator/health from outside instead.
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 768m
+    restart: unless-stopped
