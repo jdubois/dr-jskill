@@ -107,6 +107,25 @@ npm install
 npm install bootstrap@5.3.8 bootstrap-icons@1.13.1
 ```
 
+> **Heads-up — create-vue's oxlint dual-linter can break `npm install`.** Recent
+> `create-vue` scaffolds add both `oxlint` and `eslint-plugin-oxlint` as dev
+> dependencies, and the two are sometimes pinned to mismatched minors (e.g.
+> `oxlint@~1.74.0` with `eslint-plugin-oxlint@~1.73.0`, whose peer requires
+> `oxlint@~1.73.0`). This makes `npm install` fail with an `ERESOLVE` peer
+> conflict — which also breaks the `frontend-maven-plugin` `npm install` step.
+> The recommended, drift-proof fix is to drop the oxlint dual-linter and keep a
+> single ESLint pipeline (this project standardizes on the eslint-only scripts in
+> [step 4](#4-update-frontend-packagejson-scripts)):
+> 1. Remove `oxlint`, `eslint-plugin-oxlint`, and `npm-run-all2` from
+>    `devDependencies` in `frontend/package.json`.
+> 2. Delete `frontend/.oxlintrc.json` if present.
+> 3. In `frontend/eslint.config.js`, remove the `import pluginOxlint from
+>    'eslint-plugin-oxlint'` line and the
+>    `...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json')` entry.
+>
+> Then `npm install` resolves cleanly. (Alternatively, align both packages to the
+> same minor, but removal avoids future version drift.)
+
 ### 2. Configure Vite for Spring Boot Integration
 
 Update `frontend/vite.config.js`:
