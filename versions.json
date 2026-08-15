@@ -9,7 +9,7 @@
   "nodeVersion": "24.19.0",
   "npmVersion": "11.17.0",
   "viteVersion": "8",
-  "mavenFrontendPluginVersion": "2.0.1",
+  "mavenFrontendPluginVersion": "2.0.2",
   "bootstrapVersion": "5.3.8",
   "bootstrapIconsVersion": "1.13.1",
   "vueVersion": "3",

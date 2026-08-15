@@ -197,7 +197,7 @@ Add to your `pom.xml`:
         <plugin>
             <groupId>com.github.eirslett</groupId>
             <artifactId>frontend-maven-plugin</artifactId>
-            <version>2.0.1</version>
+            <version>2.0.2</version>
             <configuration>
                 <workingDirectory>frontend</workingDirectory>
                 <installDirectory>target</installDirectory>

@@ -42,7 +42,7 @@ export function getGraalvmVersion() { return getVersionValue('graalvmVersion', '
 export function getNodeVersion() { return getVersionValue('nodeVersion', '24.19.0'); }
 export function getNpmVersion() { return getVersionValue('npmVersion', '11.17.0'); }
 export function getViteVersion() { return getVersionValue('viteVersion', '8'); }
-export function getMavenFrontendPluginVersion() { return getVersionValue('mavenFrontendPluginVersion', '2.0.1'); }
+export function getMavenFrontendPluginVersion() { return getVersionValue('mavenFrontendPluginVersion', '2.0.2'); }
 export function getVueVersion() { return getVersionValue('vueVersion', '3'); }
 export function getPiniaVersion() { return getVersionValue('piniaVersion', '3'); }
 export function getVueRouterVersion() { return getVersionValue('vueRouterVersion', '5'); }
