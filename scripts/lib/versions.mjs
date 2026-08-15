@@ -44,7 +44,7 @@ export function getNpmVersion() { return getVersionValue('npmVersion', '11.17.0'
 export function getViteVersion() { return getVersionValue('viteVersion', '8'); }
 export function getMavenFrontendPluginVersion() { return getVersionValue('mavenFrontendPluginVersion', '2.0.2'); }
 export function getVueVersion() { return getVersionValue('vueVersion', '3'); }
-export function getPiniaVersion() { return getVersionValue('piniaVersion', '3'); }
+export function getPiniaVersion() { return getVersionValue('piniaVersion', '4'); }
 export function getVueRouterVersion() { return getVersionValue('vueRouterVersion', '5'); }
 export function getReactVersion() { return getVersionValue('reactVersion', '19'); }
 export function getReactRouterVersion() { return getVersionValue('reactRouterVersion', '7'); }
