@@ -28,7 +28,7 @@ This guide covers creating front-end applications for Spring Boot using **Vue.js
 | npm | 11.17.0 |
 | Vue.js | 3.x |
 | Vite | 8.x |
-| Pinia | 3.x |
+| Pinia | 4.x |
 | Vue Router | 5.x |
 <!-- versions:end -->
 
