@@ -24,7 +24,7 @@ This guide covers creating front-end applications for Spring Boot using **Vue.js
 <!-- versions:start -->
 | Tool | Version |
 |------|---------|
-| Node.js | 24.17.0 |
+| Node.js | 24.19.0 |
 | npm | 11.17.0 |
 | Vue.js | 3.x |
 | Vite | 8.x |
@@ -211,7 +211,7 @@ Add to your `pom.xml`:
                         <goal>install-node-and-npm</goal>
                     </goals>
                     <configuration>
-                        <nodeVersion>v24.17.0</nodeVersion>
+                        <nodeVersion>v24.19.0</nodeVersion>
                         <npmVersion>11.17.0</npmVersion>
                     </configuration>
                 </execution>

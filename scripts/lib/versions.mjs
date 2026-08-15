@@ -39,7 +39,7 @@ export function getPostgresVersion() { return getVersionValue('postgresVersion',
 export function getTemurinVersion() { return getVersionValue('temurinVersion', '25'); }
 export function getMavenMinVersion() { return getVersionValue('mavenMinVersion', '3.8.0'); }
 export function getGraalvmVersion() { return getVersionValue('graalvmVersion', '25'); }
-export function getNodeVersion() { return getVersionValue('nodeVersion', '24.17.0'); }
+export function getNodeVersion() { return getVersionValue('nodeVersion', '24.19.0'); }
 export function getNpmVersion() { return getVersionValue('npmVersion', '11.17.0'); }
 export function getViteVersion() { return getVersionValue('viteVersion', '8'); }
 export function getMavenFrontendPluginVersion() { return getVersionValue('mavenFrontendPluginVersion', '2.0.1'); }
