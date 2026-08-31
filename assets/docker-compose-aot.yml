@@ -40,7 +40,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mydb
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-user}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-password}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
       # Spring AOT is already baked into JAVA_TOOL_OPTIONS in the image; set it
       # explicitly too so `docker inspect` shows the full effective config.
       SPRING_AOT_ENABLED: "true"

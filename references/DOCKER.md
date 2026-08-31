@@ -448,11 +448,20 @@ environment:
   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mydb
   SPRING_DATASOURCE_USERNAME: user
   SPRING_DATASOURCE_PASSWORD: password
-  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+  SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
 ```
 
-> Schema management uses Hibernate's `spring.jpa.hibernate.ddl-auto`. Set it to
-> `validate` (or `none`) in production once your schema is stable.
+> Schema management uses Hibernate's `spring.jpa.hibernate.ddl-auto`. The compose files
+> default to `update` so the very first deploy can create the schema, and read the value
+> from the environment so you can tighten it without editing them:
+> `SPRING_JPA_HIBERNATE_DDL_AUTO=validate docker compose up -d`. Set it to `validate`
+> (or `none`) in production once your schema is stable.
+>
+> Note that anything set here as an environment variable **overrides**
+> `application-prod.properties`, because environment variables sit higher in Spring's
+> property precedence order. Keep this block minimal for that reason — for example the
+> compose files deliberately do *not* set `SPRING_JPA_SHOW_SQL`, so your profile's
+> `spring.jpa.show-sql=false` is respected.
 
 ### For Application-Only Deployment
 
