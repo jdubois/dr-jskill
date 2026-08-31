@@ -244,7 +244,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d mydb"]
       interval: 10s
@@ -371,10 +371,11 @@ curl http://localhost:8080/actuator/health
 
 ```java
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureRestTestClient
 class NativeApplicationTests {
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestTestClient restTestClient;
 
     @Test
     void contextLoads() {
@@ -383,9 +384,9 @@ class NativeApplicationTests {
 
     @Test
     void healthEndpointWorks() {
-        ResponseEntity<String> response = restTemplate.getForEntity(
-            "/actuator/health", String.class);
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        restTestClient.get().uri("/actuator/health")
+                .exchange()
+                .expectStatus().isOk();
     }
 }
 ```
@@ -447,7 +448,7 @@ with a trace pointing at `com.zaxxer.hikari.HikariConfig.<clinit>`.
 
 **Root cause.** The GraalVM reachability-metadata repository bundled with
 `native-maven-plugin` has no config for the newer library versions Spring
-Boot 4.1.0 ships (HikariCP 7.x, logback-classic 1.5.34, Jackson 3.1.x) and
+Boot 4.1.1 ships (HikariCP 7.x, logback-classic 1.5.38, Jackson 3.1.x) and
 silently falls back to stale configs for HikariCP 6.0.0 / logback 1.5.7.
 Those stale configs force `HikariConfig` to be initialized at build time,
 which calls `LoggerFactory.getLogger(...)` and pulls SLF4J's internal
@@ -516,10 +517,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       
       - name: Build Native Image
         run: docker build -f Dockerfile-native -t myapp-native:${{ github.sha }} .

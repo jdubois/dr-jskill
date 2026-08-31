@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Shared version utilities for dr-jskill scripts
 
-import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync, copyFileSync, createWriteStream } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync, copyFileSync, createWriteStream, readdirSync } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
-import { resolve, dirname, join } from 'node:path';
+import { resolve, dirname, basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
@@ -34,20 +34,20 @@ function getVersionValue(key, defaultValue = '') {
 
 export function getJavaVersion() { return getVersionValue('javaVersion', '25'); }
 export function getBootPreferredMajor() { return getVersionValue('springBootPreferredMajor', '4'); }
-export function getBootFallback() { return getVersionValue('springBootFallback', '4.1.0'); }
+export function getBootFallback() { return getVersionValue('springBootFallback', '4.1.1'); }
 export function getPostgresVersion() { return getVersionValue('postgresVersion', '18'); }
 export function getTemurinVersion() { return getVersionValue('temurinVersion', '25'); }
 export function getMavenMinVersion() { return getVersionValue('mavenMinVersion', '3.8.0'); }
 export function getGraalvmVersion() { return getVersionValue('graalvmVersion', '25'); }
-export function getNodeVersion() { return getVersionValue('nodeVersion', '24.19.0'); }
-export function getNpmVersion() { return getVersionValue('npmVersion', '11.17.0'); }
+export function getNodeVersion() { return getVersionValue('nodeVersion', '24.20.0'); }
+export function getNpmVersion() { return getVersionValue('npmVersion', '11.19.0'); }
 export function getViteVersion() { return getVersionValue('viteVersion', '8'); }
 export function getMavenFrontendPluginVersion() { return getVersionValue('mavenFrontendPluginVersion', '2.0.2'); }
 export function getVueVersion() { return getVersionValue('vueVersion', '3'); }
 export function getPiniaVersion() { return getVersionValue('piniaVersion', '4'); }
 export function getVueRouterVersion() { return getVersionValue('vueRouterVersion', '5'); }
 export function getReactVersion() { return getVersionValue('reactVersion', '19'); }
-export function getReactRouterVersion() { return getVersionValue('reactRouterVersion', '7'); }
+export function getReactRouterVersion() { return getVersionValue('reactRouterVersion', '8'); }
 export function getAngularVersion() { return getVersionValue('angularVersion', '22'); }
 export function getBootstrapVersion() { return getVersionValue('bootstrapVersion', '5.3.8'); }
 export function getBootstrapIconsVersion() { return getVersionValue('bootstrapIconsVersion', '1.13.1'); }
@@ -193,6 +193,13 @@ export function extractZip(zipPath, destDir = '.') {
 export async function downloadAndExtractProject(params) {
   if (params.bootVersion) {
     params.bootVersion = stripLegacyQualifier(params.bootVersion);
+  }
+  if (/[\\/]/.test(params.baseDir)) {
+    throw new Error(
+      `PROJECT_NAME must be a plain folder name, not a path (got "${params.baseDir}").\n` +
+      `Use --output-dir to choose where the project folder is created, e.g.\n` +
+      `  --output-dir ${dirname(params.baseDir)} ${basename(params.baseDir)}`,
+    );
   }
   const { outputDir: requestedOutputDir, ...initializerParams } = params;
   const query = Object.entries(initializerParams)
@@ -415,6 +422,11 @@ function configureApplicationProperties(projectDir, { database = false } = {}) {
 
   content = upsertConfigImport(content, 'optional:file:.env[.properties]');
   content = upsertProperty(content, 'server.port', '${SPRING_BOOT_PORT:8080}');
+  // Jackson 3 (Spring Boot 4) enables FAIL_ON_NULL_FOR_PRIMITIVES by default, so a
+  // request body that omits a primitive field (e.g. {"title":"Buy milk"} with no
+  // "completed") is rejected with HTTP 400 instead of falling back to the Java
+  // default. See references/SPRING-BOOT-4.md.
+  content = upsertProperty(content, 'spring.jackson.deserialization.fail-on-null-for-primitives', 'false');
 
   if (database) {
     content = upsertProperty(
@@ -438,18 +450,67 @@ function configureApplicationProperties(projectDir, { database = false } = {}) {
 }
 
 function configureTestApplicationProperties(projectDir, { database = false } = {}) {
-  if (!database) return;
-
   const target = join(projectDir, 'src', 'test', 'resources', 'application.properties');
+
+  // The test-classpath file shadows the main one (same name, test-classes wins), so
+  // any setting the tests rely on has to be repeated here. Skip creating the file
+  // entirely when there is nothing to override and none already exists.
+  if (!database && !existsSync(target)) return;
+
   let content = existsSync(target) ? readFileSync(target, 'utf8') : '';
 
-  content = upsertProperty(content, 'spring.docker.compose.enabled', 'false');
-  content = upsertProperty(content, 'spring.jpa.hibernate.ddl-auto', 'create-drop');
-  content = upsertProperty(content, 'spring.jpa.open-in-view', 'false');
+  content = upsertProperty(content, 'spring.jackson.deserialization.fail-on-null-for-primitives', 'false');
+
+  if (database) {
+    content = upsertProperty(content, 'spring.docker.compose.enabled', 'false');
+    content = upsertProperty(content, 'spring.jpa.hibernate.ddl-auto', 'create-drop');
+    content = upsertProperty(content, 'spring.jpa.open-in-view', 'false');
+  }
 
   const destDir = dirname(target);
   if (!existsSync(destDir)) mkdirSync(destDir, { recursive: true });
   writeFileSync(target, content, 'utf8');
+}
+
+/**
+ * Normalize the `TestcontainersConfiguration` generated by start.spring.io:
+ *
+ *  1. Pin the PostgreSQL image — the generated code uses `postgres:latest`,
+ *     which makes integration tests non-reproducible and silently drifts to new
+ *     major PostgreSQL releases. Pin it to `versions.json` (same tag as
+ *     `compose.yaml`).
+ *  2. Make the class and its `@Bean` method `public` — start.spring.io emits a
+ *     package-private class, which cannot be `@Import`ed from tests that live in
+ *     sub-packages (`controller/`, `repository/`, …) as recommended by this
+ *     skill's project structure. `@ServiceConnection` works fine on a public
+ *     `@TestConfiguration`.
+ */
+function normalizeTestcontainersConfiguration(projectDir, { database = false } = {}) {
+  if (!database) return;
+
+  const testJavaDir = join(projectDir, 'src', 'test', 'java');
+  if (!existsSync(testJavaDir)) return;
+
+  const image = `postgres:${getPostgresVersion()}-alpine`;
+  for (const file of listFilesRecursively(testJavaDir)) {
+    if (!file.endsWith('TestcontainersConfiguration.java')) continue;
+    const content = readFileSync(file, 'utf8');
+    const next = content
+      .replace(/postgres:latest/g, image)
+      .replace(/^(\s*)class (\w+)/m, '$1public class $2')
+      .replace(/^(\s*)(\w+Container(?:<[^>]*>)? \w+\(\))/m, '$1public $2');
+    if (next !== content) writeFileSync(file, next, 'utf8');
+  }
+}
+
+function listFilesRecursively(dir) {
+  const out = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...listFilesRecursively(full));
+    else out.push(full);
+  }
+  return out;
 }
 
 /**
@@ -510,6 +571,7 @@ export function applyDotfiles(projectDir, options = {}) {
   copyAssetIfMissing('env.sample', join(projectDir, '.env.sample'));
   configureApplicationProperties(projectDir, { database: hasDatabase });
   configureTestApplicationProperties(projectDir, { database: hasDatabase });
+  normalizeTestcontainersConfiguration(projectDir, { database: hasDatabase });
   copyAssetIfMissing('editorconfig', join(projectDir, '.editorconfig'));
   copyAssetIfMissing('gitattributes', join(projectDir, '.gitattributes'));
   copyAssetIfMissing('dockerignore', join(projectDir, '.dockerignore'));

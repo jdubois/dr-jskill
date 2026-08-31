@@ -24,11 +24,11 @@ This guide covers creating front-end applications for Spring Boot using React 19
 <!-- versions:start -->
 | Tool | Version |
 |------|---------|
-| Node.js | 24.19.0 |
-| npm | 11.17.0 |
+| Node.js | 24.20.0 |
+| npm | 11.19.0 |
 | React | 19.x |
 | Vite | 8.x |
-| React Router | 7.x |
+| React Router | 8.x |
 <!-- versions:end -->
 
 > Tip: `corepack enable` for pnpm/yarn if desired. Default instructions assume `npm`. No OpenAPI client generation is provided; use `fetch`/`axios` as needed.
@@ -94,7 +94,8 @@ cd frontend
 npm install
 
 # Install React Router, Bootstrap and Bootstrap Icons
-npm install react-router-dom bootstrap@5.3.8 bootstrap-icons@1.13.1
+# React Router 8 removed the `react-router-dom` package: install `react-router` instead
+npm install react-router bootstrap@5.3.8 bootstrap-icons@1.13.1
 ```
 
 ### 2. Configure Vite for Spring Boot Integration
@@ -183,8 +184,8 @@ Add to your `pom.xml`:
                         <goal>install-node-and-npm</goal>
                     </goals>
                     <configuration>
-                        <nodeVersion>v24.19.0</nodeVersion>
-                        <npmVersion>11.17.0</npmVersion>
+                        <nodeVersion>v24.20.0</nodeVersion>
+                        <npmVersion>11.19.0</npmVersion>
                     </configuration>
                 </execution>
                 
@@ -218,6 +219,34 @@ Add to your `pom.xml`:
 ```
 
 Bind all three executions to `generate-resources`. The Spring Boot `run` goal invokes Maven lifecycle phases before starting the application, so `./mvnw spring-boot:run` installs frontend dependencies and runs `npm run build` before Spring Boot serves `src/main/resources/static`.
+
+To make `./mvnw verify` a single source of truth for the whole application, add two more
+executions between `npm install` and `npm run build` so the front-end lint and unit tests fail
+the Maven build too:
+
+```xml
+<execution>
+    <id>npm run lint</id>
+    <phase>generate-resources</phase>
+    <goals>
+        <goal>npm</goal>
+    </goals>
+    <configuration>
+        <arguments>run lint:check</arguments>
+    </configuration>
+</execution>
+
+<execution>
+    <id>npm run test</id>
+    <phase>generate-resources</phase>
+    <goals>
+        <goal>npm</goal>
+    </goals>
+    <configuration>
+        <arguments>run test -- --run</arguments>
+    </configuration>
+</execution>
+```
 
 ### 4. Update Frontend package.json Scripts
 
@@ -295,7 +324,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 ### Root Component (frontend/src/App.jsx)
 
 ```jsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
@@ -329,7 +358,7 @@ export default App
 ### Navigation Component (frontend/src/components/Navbar.jsx)
 
 ```jsx
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 
 export default function Navbar() {
   return (
@@ -620,7 +649,7 @@ export default function HomePage() {
 
 ```jsx
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { useItems } from '../hooks/useItems'
 
 export default function ItemsPage() {
@@ -715,7 +744,7 @@ export default function ItemsPage() {
 
 ```jsx
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router'
 import { itemService } from '../services/itemService'
 
 export default function ItemDetailPage() {
@@ -820,6 +849,7 @@ package com.example.demo.controller;
 
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.webmvc.error.ErrorController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -835,7 +865,8 @@ public class SpaController implements ErrorController {
      * actuator 404s propagate normally with their default error response.
      */
     @RequestMapping("/error")
-    public Object handleError(HttpServletRequest request) {
+    public Object handleError(HttpServletRequest request,
+            HttpServletResponse response) {
         Integer status = (Integer) request.getAttribute(
                 RequestDispatcher.ERROR_STATUS_CODE);
         String path = (String) request.getAttribute(
@@ -846,6 +877,9 @@ public class SpaController implements ErrorController {
                 && path != null
                 && !path.startsWith("/api/")
                 && !path.startsWith("/actuator/")) {
+            // The ERROR dispatch already set 404 on the response: reset it
+            // so the browser receives a normal 200 with the SPA shell.
+            response.setStatus(HttpStatus.OK.value());
             return "forward:/index.html";
         }
         return ResponseEntity
@@ -856,6 +890,28 @@ public class SpaController implements ErrorController {
 ```
 
 This approach ensures that refreshing the browser on any React route (e.g., `/items/123`) serves `index.html` so React Router can render the page, while typos under `/api/**` or `/actuator/**` still return a real 404.
+
+> **Testing the SPA forward:** `MockMvc` does **not** perform the servlet `ERROR` dispatch, so a `@WebMvcTest` against an unmapped path returns a raw 404 and never reaches `SpaController`. Test this behaviour in an integration test with a real embedded server instead:
+>
+> ```java
+> @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+> @AutoConfigureRestTestClient
+> @Import(TestcontainersConfiguration.class)
+> class SpaControllerIT {
+>
+>     @Autowired
+>     private RestTestClient restTestClient;
+>
+>     @Test
+>     void shouldForwardDeepLinksToTheSinglePageApp() {
+>         restTestClient.get().uri("/items/123")
+>                 .exchange()
+>                 .expectStatus().isOk()
+>                 .expectBody(String.class).value(body -> assertThat(body).contains("<html"));
+>     }
+> }
+> ```
+
 
 ## Best Practices
 
@@ -902,7 +958,7 @@ This approach ensures that refreshing the browser on any React route (e.g., `/it
   // wrap <Routes> in <Suspense fallback={<Spinner />}>
   ```
 - **Memoization** — `React.memo`, `useMemo`, `useCallback` for components and values that are expensive to compute *and* rendered often. Don't wrap everything; unnecessary memoization costs more than it saves.
-- **Production build** — ship the bundle produced by `./mvnw -Pprod package` (or `npm run build`). Vite applies minification, tree shaking, and content-hashed filenames.
+- **Production build** — ship the bundle produced by `./mvnw package` (or `npm run build`). Vite applies minification, tree shaking, and content-hashed filenames.
 - **Long-term asset caching** — hashed `/assets/**` files are safe to cache for a year. Configure `Cache-Control` on the Spring side (see `references/SPRING-BOOT-4.md` → Performance → Static resource caching). Keep `index.html` uncached.
 
 ### 7. Development Workflow

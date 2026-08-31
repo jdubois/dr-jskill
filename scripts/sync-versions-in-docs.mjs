@@ -62,6 +62,17 @@ const assetRewrites = [
   ]],
 ];
 
+/**
+ * Reference docs whose prose/snippets carry versions the table renderer
+ * doesn't cover. Same shape as assetRewrites.
+ */
+const docRewrites = [
+  ['references/PROJECT-SETUP.md', [
+    [/(`\.nvmrc` \/ `\.node-version`\*\*: set `)[^`]+(`)/g, `$1${versions.nodeVersion}$2`],
+    [/(pin Node )\d+(\.x for front-end builds)/g, `$1${String(versions.nodeVersion).split('.')[0]}$2`],
+  ]],
+];
+
 // Per-file version-table manifests. All rows must come from versions.json so
 // the manifest stays the single source of truth — no hardcoded versions here.
 const docs = {
@@ -123,7 +134,14 @@ function rewritePluginVersions(content) {
     .replace(
       /(<artifactId>frontend-maven-plugin<\/artifactId>\s*)<version>[^<]+<\/version>/g,
       `$1<version>${versions.mavenFrontendPluginVersion}</version>`
-    );
+    )
+    // `npm install bootstrap@X bootstrap-icons@Y` lines
+    .replace(/bootstrap@[0-9][^\s`"']*/g, `bootstrap@${versions.bootstrapVersion}`)
+    .replace(/bootstrap-icons@[0-9][^\s`"']*/g, `bootstrap-icons@${versions.bootstrapIconsVersion}`)
+    // package.json snippets
+    .replace(/("bootstrap"\s*:\s*")[^"]+(")/g, `$1${versions.bootstrapVersion}$2`)
+    .replace(/("bootstrap-icons"\s*:\s*")[^"]+(")/g, `$1${versions.bootstrapIconsVersion}$2`)
+    .replace(/("vite"\s*:\s*"\^)\d+(\.0\.0")/g, `$1${versions.viteVersion}$2`);
 }
 
 const checkMode = process.argv.includes('--check');
@@ -165,8 +183,8 @@ if (checkMode && drift > 0) {
   console.error(`✗ ${drift} reference doc(s) out of sync.`);
 }
 
-// ---- Asset files (Dockerfiles, compose, CI workflow) ----
-for (const [rel, rules] of assetRewrites) {
+// ---- Asset files (Dockerfiles, compose, CI workflow) and doc prose rewrites ----
+for (const [rel, rules] of [...assetRewrites, ...docRewrites]) {
   const file = resolve(ROOT, rel);
   let content;
   try {

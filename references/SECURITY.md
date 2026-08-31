@@ -92,18 +92,18 @@ Add Spring Security starter to your `pom.xml`:
 <dependency>
     <groupId>io.jsonwebtoken</groupId>
     <artifactId>jjwt-api</artifactId>
-    <version>0.12.5</version>
+    <version>0.13.0</version>
 </dependency>
 <dependency>
     <groupId>io.jsonwebtoken</groupId>
     <artifactId>jjwt-impl</artifactId>
-    <version>0.12.5</version>
+    <version>0.13.0</version>
     <scope>runtime</scope>
 </dependency>
 <dependency>
     <groupId>io.jsonwebtoken</groupId>
     <artifactId>jjwt-jackson</artifactId>
-    <version>0.12.5</version>
+    <version>0.13.0</version>
     <scope>runtime</scope>
 </dependency>
 
@@ -747,9 +747,9 @@ Implement rate limiting for sensitive endpoints (login, registration):
 
 ```xml
 <dependency>
-    <groupId>com.github.vladimir-bukhtoyarov</groupId>
+    <groupId>com.bucket4j</groupId>
     <artifactId>bucket4j-core</artifactId>
-    <version>8.7.0</version>
+    <version>8.10.1</version>
 </dependency>
 ```
 

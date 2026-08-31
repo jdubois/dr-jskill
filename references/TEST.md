@@ -29,7 +29,10 @@ This guide covers testing best practices for Spring Boot 4.x applications, inclu
 
 Add these dependencies to your `pom.xml`:
 
-> ⚠️ `TestcontainersConfiguration` classes must be **package-private** (no `public`) in Spring Boot 4 when used with `@ServiceConnection`.
+> ℹ️ start.spring.io generates `TestcontainersConfiguration` as a **package-private** class. The
+> generator makes it **public** so integration tests living in sub-packages (`controller/`,
+> `repository/`, …) can `@Import` it. `@ServiceConnection` works on a public `@TestConfiguration` —
+> keep it package-private only if all your tests sit in the same package.
 
 ```xml
 <dependencies>
@@ -90,14 +93,14 @@ If you only see `surefire:test` and no `failsafe` section, the plugin declaratio
 ## Testcontainers 2 + @ServiceConnection quickstart
 
 ```java
-// src/test/java/.../TestcontainersConfiguration.java (package-private!)
+// src/test/java/.../TestcontainersConfiguration.java
 import org.testcontainers.postgresql.PostgreSQLContainer; // ✅ TC 2.x package
 
 @TestConfiguration(proxyBeanMethods = false)
-class TestcontainersConfiguration {
+public class TestcontainersConfiguration {
   @Bean
   @ServiceConnection
-  PostgreSQLContainer postgresContainer() {
+  public PostgreSQLContainer postgresContainer() {
     return new PostgreSQLContainer("postgres:18-alpine");
   }
 }
@@ -325,7 +328,13 @@ Integration tests verify the complete application stack, including database inte
 
 Create a test configuration class for TestContainers. **This is the recommended pattern used by Spring Initializr.**
 
-**IMPORTANT: This class must be package-private (no `public` modifier)**
+**IMPORTANT: make this class `public`**
+
+Spring Initializr generates it package-private. That works only while every integration
+test lives in the very same package. As soon as a test sits in a sub-package such as
+`com.example.app.controller`, `@Import(TestcontainersConfiguration.class)` fails to compile with
+`TestcontainersConfiguration is not public ... cannot be accessed from outside package`.
+The project generator therefore promotes the class and its `@Bean` method to `public`.
 
 **Example: TestcontainersConfiguration.java**
 
@@ -338,56 +347,75 @@ import org.springframework.context.annotation.Bean;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 @TestConfiguration(proxyBeanMethods = false)
-class TestcontainersConfiguration {  // ✅ Note: package-private (no public modifier)
+public class TestcontainersConfiguration {
 
     @Bean
     @ServiceConnection
-    PostgreSQLContainer postgresContainer() {
+    public PostgreSQLContainer postgresContainer() {
         return new PostgreSQLContainer("postgres:18-alpine");
     }
 }
 ```
 
-**Common mistake:**
-```java
-// ❌ WRONG - Don't make this public
-public class TestcontainersConfiguration {
-    // ...
-}
-
-// ✅ CORRECT - Package-private
-class TestcontainersConfiguration {
-    // ...
-}
-```
-
-**Why package-private?**
-- Test configuration should not be exported outside the test package
-- Follows Spring Boot's convention for test-only configuration
-- Prevents accidental use in production code
-- **Integration tests using `@Import(TestcontainersConfiguration.class)` must be in the same package** (e.g., `com.example.app`), not in sub-packages like `controller` or `repository`
+**Pin the image tag.** Spring Initializr emits `postgres:latest`, which makes builds
+non-reproducible. The generator rewrites it to the PostgreSQL version this skill targets.
 
 **Using TestcontainersConfiguration in tests:**
 
 ```java
-package com.example.app;
+package com.example.app.controller;
 
+import com.example.app.TestcontainersConfiguration;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
 @SpringBootTest
-@Import(TestcontainersConfiguration.class)  // Import the configuration
-class ApplicationIT {
-    
+@Import(TestcontainersConfiguration.class)
+class UserIT {
+
     @Test
-    void testDatabaseConnection() {
+    void shouldConnectToTheDatabase() {
         // Test with real PostgreSQL from TestContainers
     }
 }
 ```
+
+**Note:** With Spring Boot 4, `@ServiceConnection` automatically configures datasource properties. No need for manual `@DynamicPropertySource` configuration. TestContainers 2.0+ is required.
+
+### HTTP clients in integration tests
+
+Spring Boot 4 reorganised the test HTTP clients:
+
+| Boot 3 | Boot 4 |
+|--------|--------|
+| `org.springframework.boot.test.web.client.TestRestTemplate` | `org.springframework.boot.resttestclient.TestRestTemplate` (needs `spring-boot-restclient` on the classpath) |
+| auto-registered by `@SpringBootTest(webEnvironment = RANDOM_PORT)` | must be opted into with `@AutoConfigureTestRestTemplate` |
+
+**Prefer `RestTestClient`** (`org.springframework.test.web.servlet.client.RestTestClient`), the fluent
+Spring Framework 7 client. It works out of the box with the `spring-boot-starter-test` classpath:
+
+```java
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureRestTestClient
+@Import(TestcontainersConfiguration.class)
+class UserIT {
+
+    @Autowired
+    private RestTestClient restTestClient;
+
+    @Test
+    void shouldReturnAllUsers() {
+        restTestClient.get().uri("/api/users")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).value(body -> assertThat(body).contains("alice"));
+    }
+}
 ```
 
-**Note:** With Spring Boot 4.0, `@ServiceConnection` automatically configures datasource properties. No need for manual `@DynamicPropertySource` configuration. TestContainers 2.0+ is required.
+Use it whenever the behaviour under test depends on the real servlet container — most notably the
+SPA `ErrorController` forward, which MockMvc cannot exercise because it skips `ERROR` dispatch.
 
 ### REST API Integration Test
 
@@ -683,7 +711,7 @@ Keep the feedback loop fast:
 ```
 src/test/java/
 └── com/example/app/
-    ├── TestcontainersConfiguration.java     # TestContainers config (package-private!)
+    ├── TestcontainersConfiguration.java     # TestContainers config (public)
     ├── UserIntegrationIT.java               # Integration test (same package as TC config)
     ├── UserRepositoryIT.java                # Integration test (same package as TC config)
     ├── controller/
@@ -692,7 +720,7 @@ src/test/java/
         └── UserServiceTest.java             # Unit test with mocks
 ```
 
-**Note:** Integration tests (`*IT.java`) must live in the **same package** as `TestcontainersConfiguration` (e.g., `com.example.app`) because it is package-private. Unit tests with `@WebMvcTest` can live in sub-packages (e.g., `controller/`).
+**Note:** `TestcontainersConfiguration` is generated as `public`, so integration tests (`*IT.java`) can live in sub-packages (e.g., `controller/`, `repository/`) next to the unit tests they complement — just import it explicitly.
 
 ## Running Tests
 
@@ -726,7 +754,7 @@ Add to `pom.xml` (plugins section):
 <plugin>
   <groupId>org.cyclonedx</groupId>
   <artifactId>cyclonedx-maven-plugin</artifactId>
-  <version>2.8.0</version>
+  <version>2.9.3</version>
   <executions>
     <execution>
       <phase>verify</phase>
@@ -737,7 +765,7 @@ Add to `pom.xml` (plugins section):
 <plugin>
   <groupId>org.owasp</groupId>
   <artifactId>dependency-check-maven</artifactId>
-  <version>9.2.0</version>
+  <version>13.0.0</version>
   <configuration>
     <failBuildOnCVSS>7</failBuildOnCVSS>
   </configuration>

@@ -24,8 +24,8 @@ This guide covers creating front-end applications for Spring Boot using **Vue.js
 <!-- versions:start -->
 | Tool | Version |
 |------|---------|
-| Node.js | 24.19.0 |
-| npm | 11.17.0 |
+| Node.js | 24.20.0 |
+| npm | 11.19.0 |
 | Vue.js | 3.x |
 | Vite | 8.x |
 | Pinia | 4.x |
@@ -178,12 +178,13 @@ export default defineConfig(({ mode }) => {
 > of the box, so this template omits both to keep the dependency list minimal.
 
 Because this Vite config exports a callback, update `frontend/vitest.config.js` so Vitest
-merges the resolved config object, not the callback itself:
+merges the resolved config object, not the callback itself. Also add the `.js` extension to the
+import — Vite 8 warns about extensionless config imports under the upcoming native config loader:
 
 ```javascript
 import { fileURLToPath } from 'node:url'
 import { mergeConfig, defineConfig, configDefaults } from 'vitest/config'
-import viteConfig from './vite.config'
+import viteConfig from './vite.config.js'
 
 export default mergeConfig(
   viteConfig({ mode: 'test', command: 'serve' }),
@@ -230,8 +231,8 @@ Add to your `pom.xml`:
                         <goal>install-node-and-npm</goal>
                     </goals>
                     <configuration>
-                        <nodeVersion>v24.19.0</nodeVersion>
-                        <npmVersion>11.17.0</npmVersion>
+                        <nodeVersion>v24.20.0</nodeVersion>
+                        <npmVersion>11.19.0</npmVersion>
                     </configuration>
                 </execution>
                 
@@ -265,6 +266,34 @@ Add to your `pom.xml`:
 ```
 
 Bind all three executions to `generate-resources`. The Spring Boot `run` goal invokes Maven lifecycle phases before starting the application, so `./mvnw spring-boot:run` installs frontend dependencies and runs `npm run build` before Spring Boot serves `src/main/resources/static`.
+
+To make `./mvnw verify` a single source of truth for the whole application, add two more
+executions between `npm install` and `npm run build` so the front-end lint and unit tests fail
+the Maven build too:
+
+```xml
+<execution>
+    <id>npm run lint</id>
+    <phase>generate-resources</phase>
+    <goals>
+        <goal>npm</goal>
+    </goals>
+    <configuration>
+        <arguments>run lint:check</arguments>
+    </configuration>
+</execution>
+
+<execution>
+    <id>npm run test</id>
+    <phase>generate-resources</phase>
+    <goals>
+        <goal>npm</goal>
+    </goals>
+    <configuration>
+        <arguments>run test:unit -- --run</arguments>
+    </configuration>
+</execution>
+```
 
 ### 4. Update Frontend package.json Scripts
 
@@ -921,6 +950,7 @@ package com.example.demo.controller;
 
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.webmvc.error.ErrorController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -936,7 +966,8 @@ public class SpaController implements ErrorController {
      * actuator 404s propagate normally with their default error response.
      */
     @RequestMapping("/error")
-    public Object handleError(HttpServletRequest request) {
+    public Object handleError(HttpServletRequest request,
+            HttpServletResponse response) {
         Integer status = (Integer) request.getAttribute(
                 RequestDispatcher.ERROR_STATUS_CODE);
         String path = (String) request.getAttribute(
@@ -947,6 +978,9 @@ public class SpaController implements ErrorController {
                 && path != null
                 && !path.startsWith("/api/")
                 && !path.startsWith("/actuator/")) {
+            // The ERROR dispatch already set 404 on the response: reset it
+            // so the browser receives a normal 200 with the SPA shell.
+            response.setStatus(HttpStatus.OK.value());
             return "forward:/index.html";
         }
         return ResponseEntity
@@ -957,6 +991,28 @@ public class SpaController implements ErrorController {
 ```
 
 This approach ensures that refreshing the browser on any Vue.js route (e.g., `/items/123`) serves `index.html` so Vue Router can render the page, while typos under `/api/**` or `/actuator/**` still return a real 404.
+
+> **Testing the SPA forward:** `MockMvc` does **not** perform the servlet `ERROR` dispatch, so a `@WebMvcTest` against an unmapped path returns a raw 404 and never reaches `SpaController`. Test this behaviour in an integration test with a real embedded server instead:
+>
+> ```java
+> @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+> @AutoConfigureRestTestClient
+> @Import(TestcontainersConfiguration.class)
+> class SpaControllerIT {
+>
+>     @Autowired
+>     private RestTestClient restTestClient;
+>
+>     @Test
+>     void shouldForwardDeepLinksToTheSinglePageApp() {
+>         restTestClient.get().uri("/items/123")
+>                 .exchange()
+>                 .expectStatus().isOk()
+>                 .expectBody(String.class).value(body -> assertThat(body).contains("<html"));
+>     }
+> }
+> ```
+
 
 ## Best Practices
 
@@ -1003,7 +1059,7 @@ This approach ensures that refreshing the browser on any Vue.js route (e.g., `/i
   import { defineAsyncComponent } from 'vue'
   const Chart = defineAsyncComponent(() => import('./Chart.vue'))
   ```
-- **Production build** — always ship the bundle produced by `./mvnw -Pprod package` (or `npm run build` during dev). Vite applies minification, tree shaking, and content-hashed filenames.
+- **Production build** — always ship the bundle produced by `./mvnw package` (or `npm run build` during dev). Vite applies minification, tree shaking, and content-hashed filenames.
 - **Long-term asset caching** — content-hashed filenames mean `/assets/**` can be served with a 1-year `Cache-Control`. Configure this on the Spring side (see `references/SPRING-BOOT-4.md` → Performance → Static resource caching).
 - **Keep `index.html` uncached** — it references the hashed asset filenames; caching it would pin clients to stale bundles.
 

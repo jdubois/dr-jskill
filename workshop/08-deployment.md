@@ -16,10 +16,10 @@ This is a tour, not a full DevOps module. By the end, you'll have run your app t
 So far you've been running in development mode (`./mvnw spring-boot:run`). Production mode produces a single executable JAR with an optimized front-end bundled inside.
 
 ```bash
-./mvnw -Pprod clean package
+./mvnw clean package
 ```
 
-The `-Pprod` profile tells the Maven Frontend Plugin to run `npm run build` (minified Vite output with hashed filenames). The result:
+The Maven Frontend Plugin runs `npm run build` as part of the normal `generate-resources` phase, so a plain `package` already produces minified Vite output with hashed filenames — there is no `-Pprod` profile to remember. The result:
 
 ```bash
 ls target/*.jar
@@ -315,7 +315,7 @@ This removes the resource group and everything inside it. Takes a few minutes in
 
 **Checkpoint**
 
-- `./mvnw -Pprod clean package` produces a runnable JAR
+- `./mvnw clean package` produces a runnable JAR
 - `docker compose -f docker-compose.yml up` runs the full stack in containers
 - You understand the two-stage Dockerfile and why each JVM flag is there
 - You've at least *attempted* the native build and observed the startup time difference

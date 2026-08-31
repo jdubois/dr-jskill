@@ -334,7 +334,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
 volumes:
   postgres_data:
@@ -381,7 +381,7 @@ spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:password}
   }
   ```
 - **`.vscode/settings.json`**: enable format-on-save, set Java code style, Prettier, ESLint, files.eol = "\n".
-- **`.nvmrc` / `.node-version`**: set `24.19.0` (kept in `versions.json`).
+- **`.nvmrc` / `.node-version`**: set `24.20.0` (kept in `versions.json`).
 - **`.mvn/wrapper`**: already provided by start.spring.io; keep `mvnw` executable.
 - **`.prettierignore` / `.eslintignore`** (if front-end added): ignore generated assets and `target/`.
 - **`.testcontainers.properties`** (optional): tune reuse, Docker host, etc. Keep it **ignored** if it contains sensitive overrides.
