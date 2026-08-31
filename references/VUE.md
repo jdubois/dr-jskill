@@ -125,11 +125,14 @@ npm install bootstrap@5.3.8 bootstrap-icons@1.13.1
 > ```
 >
 > It is idempotent, and `--check` reports without writing (useful in CI). If you
-> ever need to do it by hand: remove `oxlint`, `eslint-plugin-oxlint` and
-> `npm-run-all2` from `devDependencies`, delete `frontend/.oxlintrc.json`, and
+> ever need to do it by hand: remove `oxlint` and `eslint-plugin-oxlint` from
+> `devDependencies`, delete `frontend/.oxlintrc.json`, and
 > drop the `eslint-plugin-oxlint` import plus the
 > `...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json')` entry from
-> `frontend/eslint.config.js`.
+> `frontend/eslint.config.js` (the TypeScript flavour of `create-vue` emits
+> `eslint.config.ts` instead — a leftover import there fails `vue-tsc`).
+> Leave `npm-run-all2` alone — the TypeScript flavour uses its `run-p` binary
+> in the `build` script.
 
 ### 2. Configure Vite for Spring Boot Integration
 

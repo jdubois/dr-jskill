@@ -20,7 +20,15 @@
 import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
-const OXLINT_PACKAGES = ['oxlint', 'eslint-plugin-oxlint', 'npm-run-all2'];
+// Only the two packages that actually conflict. `npm-run-all2` must NOT be
+// listed here: it is a general-purpose task runner, not part of the oxlint
+// conflict, and the TypeScript flavour of create-vue uses it in `build`
+// ("run-p type-check ..."). Removing it left that script calling a missing
+// binary -> `sh: run-p: command not found` -> the whole Maven build failed.
+const OXLINT_PACKAGES = ['oxlint', 'eslint-plugin-oxlint'];
+
+// Scripts that shell out to npm-run-all2.
+const RUN_ALL_BIN = /\brun-[sp]\b/;
 
 // The canonical single-pipeline scripts (references/VUE.md step 4).
 const CANONICAL_SCRIPTS = {
@@ -28,7 +36,7 @@ const CANONICAL_SCRIPTS = {
   'lint:check': 'eslint .',
 };
 
-function normalizePackageJson(frontendDir, changes, check) {
+function normalizePackageJson(frontendDir, changes, warnings, check) {
   const path = join(frontendDir, 'package.json');
   if (!existsSync(path)) return;
 
@@ -64,6 +72,19 @@ function normalizePackageJson(frontendDir, changes, check) {
     }
   }
 
+  // Earlier versions of this script wrongly deleted `npm-run-all2`, which left
+  // any `run-p` / `run-s` script calling a binary that is no longer installed.
+  // Detect that here so the failure is explained instead of surfacing later as
+  // an opaque `sh: run-p: command not found` during the Maven build.
+  const needsRunAll = Object.values(pkg.scripts ?? {}).some((cmd) => RUN_ALL_BIN.test(cmd));
+  const hasRunAll = pkg.devDependencies?.['npm-run-all2'] ?? pkg.dependencies?.['npm-run-all2'];
+  if (needsRunAll && !hasRunAll) {
+    warnings.push(
+      'package.json uses "run-p"/"run-s" but npm-run-all2 is not installed. ' +
+        'Run: npm install -D npm-run-all2',
+    );
+  }
+
   const next = `${JSON.stringify(pkg, null, 2)}\n`;
   if (next !== raw && !check) writeFileSync(path, next, 'utf8');
 }
@@ -76,7 +97,15 @@ function removeOxlintConfig(frontendDir, changes, check) {
 }
 
 function normalizeEslintConfig(frontendDir, changes, check) {
-  const path = join(frontendDir, 'eslint.config.js');
+  // create-vue emits `eslint.config.ts` for the TypeScript flavour and
+  // `eslint.config.js` otherwise; handle every flavour, or a dangling
+  // `eslint-plugin-oxlint` import survives and breaks `vue-tsc` type-check.
+  for (const name of ['eslint.config.js', 'eslint.config.ts', 'eslint.config.mjs']) {
+    normalizeEslintConfigFile(join(frontendDir, name), name, changes, check);
+  }
+}
+
+function normalizeEslintConfigFile(path, name, changes, check) {
   if (!existsSync(path)) return;
 
   const raw = readFileSync(path, 'utf8');
@@ -89,17 +118,18 @@ function normalizeEslintConfig(frontendDir, changes, check) {
     .replace(/^\s*\.\.\.\w*[Oo]xlint\w*,\s*$\n?/gm, '');
 
   if (next === raw) return;
-  changes.push('eslint.config.js: removed oxlint import and config entry');
+  changes.push(`${name}: removed oxlint import and config entry`);
   if (!check) writeFileSync(path, next, 'utf8');
 }
 
 export function normalizeVueFrontend(frontendDir, { check = false } = {}) {
-  if (!existsSync(frontendDir)) return [];
+  if (!existsSync(frontendDir)) return { changes: [], warnings: [] };
   const changes = [];
-  normalizePackageJson(frontendDir, changes, check);
+  const warnings = [];
+  normalizePackageJson(frontendDir, changes, warnings, check);
   removeOxlintConfig(frontendDir, changes, check);
   normalizeEslintConfig(frontendDir, changes, check);
-  return changes;
+  return { changes, warnings };
 }
 
 function main() {
@@ -112,22 +142,30 @@ function main() {
     process.exit(1);
   }
 
-  const changes = normalizeVueFrontend(frontendDir, { check });
+  const { changes, warnings } = normalizeVueFrontend(frontendDir, { check });
+
+  const printWarnings = () => {
+    for (const warning of warnings) console.error(`  warning: ${warning}`);
+  };
 
   if (changes.length === 0) {
     console.log(`${frontendDir}: already normalized (no oxlint dual-linter present).`);
+    printWarnings();
+    if (warnings.length > 0 && check) process.exit(1);
     return;
   }
 
   if (check) {
     console.error(`${frontendDir}: oxlint dual-linter still present:\n`);
     for (const change of changes) console.error(`  would fix: ${change}`);
+    printWarnings();
     console.error('\nRun: node scripts/normalize-vue-frontend.mjs');
     process.exit(1);
   }
 
   console.log(`${frontendDir}: normalized for a single ESLint pipeline.`);
   for (const change of changes) console.log(`  ${change}`);
+  printWarnings();
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main();
