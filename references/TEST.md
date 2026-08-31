@@ -389,13 +389,24 @@ Spring Boot 4 reorganised the test HTTP clients:
 
 | Boot 3 | Boot 4 |
 |--------|--------|
-| `org.springframework.boot.test.web.client.TestRestTemplate` | `org.springframework.boot.resttestclient.TestRestTemplate` (needs `spring-boot-restclient` on the classpath) |
+| `org.springframework.boot.test.web.client.TestRestTemplate` | `org.springframework.boot.resttestclient.TestRestTemplate` (needs `spring-boot-resttestclient` on the classpath) |
 | auto-registered by `@SpringBootTest(webEnvironment = RANDOM_PORT)` | must be opted into with `@AutoConfigureTestRestTemplate` |
 
 **Prefer `RestTestClient`** (`org.springframework.test.web.servlet.client.RestTestClient`), the fluent
-Spring Framework 7 client. It works out of the box with the `spring-boot-starter-test` classpath:
+Spring Framework 7 client. It needs no extra dependency in a generated project: the
+`@AutoConfigureRestTestClient` annotation ships in `spring-boot-resttestclient`, which
+`spring-boot-starter-webmvc-test` pulls in transitively at test scope.
 
 ```java
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.web.servlet.client.RestTestClient;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureRestTestClient
 @Import(TestcontainersConfiguration.class)

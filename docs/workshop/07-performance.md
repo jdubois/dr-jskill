@@ -212,6 +212,16 @@ spring.jpa.properties.hibernate.generate_statistics=true
 Then assert the count directly, so an N+1 fails the build instead of hiding in a log:
 
 ```java
+import static org.assertj.core.api.Assertions.assertThat;
+
+import jakarta.persistence.EntityManager;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.context.annotation.Import;
+
 @DataJpaTest
 @Import(TestcontainersConfiguration.class)
 class NPlusOneDetectionTest {
@@ -221,8 +231,8 @@ class NPlusOneDetectionTest {
 
     @Test
     void listingTodosIssuesASingleQuery() {
-        todoRepository.save(new Todo("a", "d", false));
-        todoRepository.save(new Todo("b", "d", false));
+        todoRepository.save(new Todo("a", false));
+        todoRepository.save(new Todo("b", false));
         entityManager.flush();
         entityManager.clear();
 
@@ -231,7 +241,7 @@ class NPlusOneDetectionTest {
                 .getStatistics();
         statistics.clear();
 
-        var todos = todoRepository.findAllByOrderByCreatedAtDescIdDesc();
+        var todos = todoRepository.findAll();
 
         assertThat(todos).hasSize(2);
         assertThat(statistics.getPrepareStatementCount())
@@ -240,6 +250,15 @@ class NPlusOneDetectionTest {
     }
 }
 ```
+
+> **Two things to get right.** `@DataJpaTest` moved in Spring Boot 4 — it is
+> `org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest`, not the Boot 3
+> `org.springframework.boot.test.autoconfigure.orm.jpa` package. The
+> `spring-boot-starter-data-jpa-test` dependency it needs is already in your generated
+> `pom.xml`. And `new Todo("a", false)` matches the entity from
+> [Chapter 3](03-generated-application.md) (`title`, `completed`) —
+> if your agent generated a different shape, adjust the constructor call. The assertion is
+> the part that matters.
 
 Run `./mvnw verify`. If listing N todos issues N+1 statements instead of 1, the assertion
 fails and names the problem. Fix it with `@EntityGraph` or `JOIN FETCH` — the pattern is in

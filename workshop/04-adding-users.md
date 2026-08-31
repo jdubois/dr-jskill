@@ -171,6 +171,7 @@ If anything goes wrong in a later chapter, `git reset --hard HEAD~1` sends you b
 | Creating a todo returns 400 | Front-end doesn't send `userId` | *"The POST /api/todos request body should include userId."* |
 | Filter shows no todos even for the right user | Front-end sends user name, backend expects id (or vice versa) | *"Align the filter: use user id in the query parameter, not name."* |
 | Users get created twice on restart | Seed runs unconditionally | *"Only insert users on startup if the table is empty."* |
+| Chapter 6's `@WebMvcTest` later fails with "No qualifying bean of type ...Repository" | The seeding `@Bean`/`CommandLineRunner` was put in the main `@SpringBootApplication` class, so slice tests try to create it without any repositories | *"Move the seeding bean out of the main application class into its own `@Configuration` class."* |
 
 ---
 
