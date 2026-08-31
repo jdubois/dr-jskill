@@ -220,6 +220,34 @@ Add to your `pom.xml`:
 
 Bind all three executions to `generate-resources`. The Spring Boot `run` goal invokes Maven lifecycle phases before starting the application, so `./mvnw spring-boot:run` installs frontend dependencies and runs `npm run build` before Spring Boot serves `src/main/resources/static`.
 
+To make `./mvnw verify` a single source of truth for the whole application, add two more
+executions between `npm install` and `npm run build` so the front-end lint and unit tests fail
+the Maven build too:
+
+```xml
+<execution>
+    <id>npm run lint</id>
+    <phase>generate-resources</phase>
+    <goals>
+        <goal>npm</goal>
+    </goals>
+    <configuration>
+        <arguments>run lint:check</arguments>
+    </configuration>
+</execution>
+
+<execution>
+    <id>npm run test</id>
+    <phase>generate-resources</phase>
+    <goals>
+        <goal>npm</goal>
+    </goals>
+    <configuration>
+        <arguments>run test -- --run</arguments>
+    </configuration>
+</execution>
+```
+
 ### 4. Update Frontend package.json Scripts
 
 Edit `frontend/package.json`:
@@ -821,6 +849,7 @@ package com.example.demo.controller;
 
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.webmvc.error.ErrorController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -836,7 +865,8 @@ public class SpaController implements ErrorController {
      * actuator 404s propagate normally with their default error response.
      */
     @RequestMapping("/error")
-    public Object handleError(HttpServletRequest request) {
+    public Object handleError(HttpServletRequest request,
+            HttpServletResponse response) {
         Integer status = (Integer) request.getAttribute(
                 RequestDispatcher.ERROR_STATUS_CODE);
         String path = (String) request.getAttribute(
@@ -847,6 +877,9 @@ public class SpaController implements ErrorController {
                 && path != null
                 && !path.startsWith("/api/")
                 && !path.startsWith("/actuator/")) {
+            // The ERROR dispatch already set 404 on the response: reset it
+            // so the browser receives a normal 200 with the SPA shell.
+            response.setStatus(HttpStatus.OK.value());
             return "forward:/index.html";
         }
         return ResponseEntity
@@ -857,6 +890,28 @@ public class SpaController implements ErrorController {
 ```
 
 This approach ensures that refreshing the browser on any React route (e.g., `/items/123`) serves `index.html` so React Router can render the page, while typos under `/api/**` or `/actuator/**` still return a real 404.
+
+> **Testing the SPA forward:** `MockMvc` does **not** perform the servlet `ERROR` dispatch, so a `@WebMvcTest` against an unmapped path returns a raw 404 and never reaches `SpaController`. Test this behaviour in an integration test with a real embedded server instead:
+>
+> ```java
+> @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+> @AutoConfigureRestTestClient
+> @Import(TestcontainersConfiguration.class)
+> class SpaControllerIT {
+>
+>     @Autowired
+>     private RestTestClient restTestClient;
+>
+>     @Test
+>     void shouldForwardDeepLinksToTheSinglePageApp() {
+>         restTestClient.get().uri("/items/123")
+>                 .exchange()
+>                 .expectStatus().isOk()
+>                 .expectBody(String.class).value(body -> assertThat(body).contains("<html"));
+>     }
+> }
+> ```
+
 
 ## Best Practices
 

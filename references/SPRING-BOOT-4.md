@@ -231,9 +231,10 @@ class ApplicationTests {
 #### Test Starter Changes
 
 1. `@SpringBootTest` no longer provides MockMVC automatically - add `@AutoConfigureMockMvc`
-2. `@SpringBootTest` no longer provides `TestRestTemplate` - add `@AutoConfigureTestRestTemplate`
+2. `@SpringBootTest` no longer provides `TestRestTemplate` - add `@AutoConfigureTestRestTemplate`, and note that it moved from `org.springframework.boot.test.web.client` to `org.springframework.boot.resttestclient` and now needs `spring-boot-restclient` on the classpath
 3. `@WebMvcTest` and `@AutoConfigureMockMvc` moved to `org.springframework.boot.webmvc.test.autoconfigure` package — requires `spring-boot-starter-webmvc-test` dependency
-4. Consider using new `RestTestClient` instead of `TestRestTemplate`
+4. **Prefer the new `RestTestClient`** (`org.springframework.test.web.servlet.client.RestTestClient` + `@AutoConfigureRestTestClient`) over `TestRestTemplate`: it needs no extra dependency on the default `spring-boot-starter-test` classpath
+5. MockMvc does not perform the servlet `ERROR` dispatch, so anything relying on it (such as an SPA `ErrorController` forward) must be tested with `webEnvironment = RANDOM_PORT`
 
 #### TestContainers 2.0
 

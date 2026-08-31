@@ -86,16 +86,16 @@ public class AppUser {
 ## Testcontainers Integration
 ```java
 @TestConfiguration(proxyBeanMethods = false)
-class TestcontainersConfiguration {
+public class TestcontainersConfiguration {
   @Bean
   @ServiceConnection
-  PostgreSQLContainer postgresContainer() {
+  public PostgreSQLContainer postgresContainer() {
     return new PostgreSQLContainer("postgres:18-alpine")
       .withReuse(true);
   }
 }
 ```
-Use `@Import(TestcontainersConfiguration.class)` in integration tests. Keep class **package-private** (Boot 4 requirement).
+Use `@Import(TestcontainersConfiguration.class)` in integration tests. Keep the class **public** so tests in sub-packages can import it, and pin the image tag (never `postgres:latest`).
 
 ## Docker Compose (Dev)
 `compose.yaml` (used by `spring-boot-docker-compose`):

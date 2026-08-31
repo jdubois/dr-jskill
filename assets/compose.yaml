@@ -22,7 +22,10 @@ services:
           cpus: "1.0"
           memory: 512m
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # PostgreSQL 18+ images require the mount at /var/lib/postgresql (not
+      # /var/lib/postgresql/data), which is where they now place version-specific
+      # data directories. Mounting the old path makes the container refuse to start.
+      - postgres_data:/var/lib/postgresql
 
 volumes:
   postgres_data:

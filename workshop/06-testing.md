@@ -80,9 +80,9 @@ Add an integration test TodoIntegrationIT that:
 - Uses Testcontainers with postgres:18-alpine via @ServiceConnection
 - Creates a todo via POST, reads it back via GET, deletes it via DELETE
 - Asserts the todo is gone afterwards
-- Uses RestAssured or TestRestTemplate, whichever is already in the project
+- Uses RestTestClient (Spring Framework 7) for HTTP-level assertions
 
-Put the test in the same package as TestcontainersConfiguration (package-private).
+Import TestcontainersConfiguration explicitly; it is generated public, so the test can live in a sub-package.
 Follow Dr JSkill's testing conventions.
 ```
 
