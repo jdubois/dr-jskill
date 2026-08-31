@@ -258,20 +258,49 @@ docker run --rm alpine:3 sh -c "apk add -q --no-cache curl && curl -sS -o /dev/n
 
 **Fixes**, in order of preference:
 
-1. Point the build at the same registry your host uses, as a build argument:
+1. Point the build at the same registry your host uses. The generated `Dockerfile` already
+   declares `ARG NPM_CONFIG_REGISTRY` (defaulting to the public registry), so you only need to
+   pass it — no need to edit the file:
    ```bash
    docker build --build-arg NPM_CONFIG_REGISTRY="$(npm config get registry)" -t todo-app:latest .
    ```
-   and in the build stage of the `Dockerfile`:
-   ```dockerfile
-   ARG NPM_CONFIG_REGISTRY
-   ENV NPM_CONFIG_REGISTRY=${NPM_CONFIG_REGISTRY}
-   ```
 2. Add your proxy's CA certificate to the build stage, and/or pass `HTTP_PROXY` / `HTTPS_PROXY`
    as build args.
-3. If you only need to *run* the app, build the jar on the host (`./mvnw package`) and use a
-   Dockerfile that copies `target/*.jar` instead of building inside the container. This skips
-   the container's network entirely.
+3. If you only need to *run* the app, build the jar on the host and copy it in — this skips the
+   container's network entirely. One catch: the generated `.dockerignore` excludes `/target`, so
+   a plain `COPY target/*.jar` fails with
+   `CopyIgnoredFile: Attempting to Copy file "target/app.jar" that is excluded by .dockerignore`.
+   BuildKit reads `<dockerfile-name>.dockerignore` *instead of* `.dockerignore`, so ship one
+   alongside your Dockerfile.
+
+   `Dockerfile.hostjar`:
+
+   ```dockerfile
+   FROM eclipse-temurin:25-jre-noble
+   WORKDIR /app
+   COPY target/*.jar app.jar
+   EXPOSE 8080
+   ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+   ```
+
+   `Dockerfile.hostjar.dockerignore` — deliberately does **not** exclude `/target`:
+
+   ```text
+   .git
+   node_modules
+   frontend/node_modules
+   frontend/dist
+   ```
+
+   Then:
+
+   ```bash
+   ./mvnw -DskipTests package
+   docker build -f Dockerfile.hostjar -t todo-app:hostjar .
+   ```
+
+   Treat this as a debugging convenience, not a production image: a full JRE base lands around
+   560 MB, versus roughly 260 MB for the generated jlink + distroless `Dockerfile`.
 
 > The rest of Chapter 8 (image layers, distroless, `docker inspect`) still applies — this is
 > purely about reaching the npm registry from inside the build.

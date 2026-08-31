@@ -35,6 +35,13 @@
 # ---------------------------------------------------------------------------
 FROM eclipse-temurin:25-jdk-noble AS build
 
+# npm registry used by the frontend-maven-plugin during the Maven build. Behind a
+# corporate proxy the default registry is often unreachable from inside the build
+# container; point this at your own mirror without editing this file:
+#   docker build --build-arg NPM_CONFIG_REGISTRY="$(npm config get registry)" -t my-app .
+ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org
+ENV NPM_CONFIG_REGISTRY=${NPM_CONFIG_REGISTRY}
+
 WORKDIR /app
 
 # Dependency-caching layer: copy only the build descriptors first so `go-offline`
