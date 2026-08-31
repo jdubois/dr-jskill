@@ -258,12 +258,27 @@ docker run --rm alpine:3 sh -c "apk add -q --no-cache curl && curl -sS -o /dev/n
 
 **Fixes**, in order of preference:
 
-1. Point the build at the same registry your host uses. The generated `Dockerfile` already
-   declares `ARG NPM_CONFIG_REGISTRY` (defaulting to the public registry), so you only need to
-   pass it — no need to edit the file:
+1. Point the build at the same mirrors your host uses. **Three separate things** get downloaded,
+   and they need different flags — this is the step most people get wrong:
+
+   | What | Flag | Default |
+   |------|------|---------|
+   | Node binary | `NODE_DOWNLOAD_ROOT` | `https://nodejs.org/dist/` |
+   | npm binary | `NPM_DOWNLOAD_ROOT` | `https://registry.npmjs.org/npm/-/` |
+   | npm packages | `NPM_CONFIG_REGISTRY` | `https://registry.npmjs.org` |
+
+   The error above (`Could not download npm`) happens during the **binary** download, which runs
+   *before* npm exists — so `NPM_CONFIG_REGISTRY` alone will not fix it. All four generated
+   Dockerfiles (`Dockerfile`, `Dockerfile-aot`, `Dockerfile-native`) declare all three as build
+   args, so you only need to pass them — no need to edit any file:
    ```bash
-   docker build --build-arg NPM_CONFIG_REGISTRY="$(npm config get registry)" -t todo-app:latest .
+   docker build \
+     --build-arg NPM_DOWNLOAD_ROOT="$(npm config get registry)/npm/-/" \
+     --build-arg NPM_CONFIG_REGISTRY="$(npm config get registry)" \
+     -t todo-app:latest .
    ```
+   Add `--build-arg NODE_DOWNLOAD_ROOT=...` too if your mirror also proxies the Node
+   distribution (many corporate mirrors do, under a `nodejs/dist` path).
 2. Add your proxy's CA certificate to the build stage, and/or pass `HTTP_PROXY` / `HTTPS_PROXY`
    as build args.
 3. If you only need to *run* the app, build the jar on the host and copy it in — this skips the

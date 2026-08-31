@@ -35,10 +35,23 @@
 # ---------------------------------------------------------------------------
 FROM eclipse-temurin:25-jdk-noble AS build
 
-# npm registry used by the frontend-maven-plugin during the Maven build. Behind a
-# corporate proxy the default registry is often unreachable from inside the build
-# container; point this at your own mirror without editing this file:
-#   docker build --build-arg NPM_CONFIG_REGISTRY="$(npm config get registry)" -t my-app .
+# Mirrors used while building the bundled front-end. Behind a corporate proxy the
+# public defaults are often unreachable from inside the build container; point these
+# at your own mirrors without editing this file:
+#   docker build \
+#     --build-arg NODE_DOWNLOAD_ROOT=https://my-mirror/nodejs/dist/ \
+#     --build-arg NPM_DOWNLOAD_ROOT=https://my-mirror/npm/-/ \
+#     --build-arg NPM_CONFIG_REGISTRY="$(npm config get registry)" -t my-app .
+#
+# These are three separate knobs, and the registry one alone is NOT enough:
+#   NODE_DOWNLOAD_ROOT / NPM_DOWNLOAD_ROOT -> where frontend-maven-plugin downloads
+#     the Node and npm *binaries* (plugin properties nodeDownloadRoot/npmDownloadRoot,
+#     passed on the Maven command line below).
+#   NPM_CONFIG_REGISTRY -> where npm then resolves package dependencies.
+# The binary download happens before npm ever runs, so NPM_CONFIG_REGISTRY has no
+# effect on it.
+ARG NODE_DOWNLOAD_ROOT=https://nodejs.org/dist/
+ARG NPM_DOWNLOAD_ROOT=https://registry.npmjs.org/npm/-/
 ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org
 ENV NPM_CONFIG_REGISTRY=${NPM_CONFIG_REGISTRY}
 
@@ -59,7 +72,9 @@ COPY src ./src
 COPY frontend ./frontend
 
 # Build the application.
-RUN ./mvnw clean package -DskipTests -B
+RUN ./mvnw clean package -DskipTests -B \
+      -DnodeDownloadRoot=${NODE_DOWNLOAD_ROOT} \
+      -DnpmDownloadRoot=${NPM_DOWNLOAD_ROOT}
 
 # Explode the repackaged Spring Boot jar into its layers (dependencies,
 # spring-boot-loader, snapshot-dependencies, application). They are copied

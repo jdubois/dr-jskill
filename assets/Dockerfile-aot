@@ -42,6 +42,13 @@
 # ---------------------------------------------------------------------------
 FROM eclipse-temurin:25-jdk-noble AS build
 
+# Front-end build mirrors — see the comment in `Dockerfile` for the full explanation.
+# NPM_CONFIG_REGISTRY alone does not redirect the Node/npm binary downloads.
+ARG NODE_DOWNLOAD_ROOT=https://nodejs.org/dist/
+ARG NPM_DOWNLOAD_ROOT=https://registry.npmjs.org/npm/-/
+ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org
+ENV NPM_CONFIG_REGISTRY=${NPM_CONFIG_REGISTRY}
+
 WORKDIR /app
 
 COPY mvnw .
@@ -56,7 +63,9 @@ COPY src ./src
 COPY frontend ./frontend
 
 # Build with the `aot` profile (runs spring-boot:process-aot, then repackage).
-RUN ./mvnw -Paot clean package -DskipTests -B
+RUN ./mvnw -Paot clean package -DskipTests -B \
+      -DnodeDownloadRoot=${NODE_DOWNLOAD_ROOT} \
+      -DnpmDownloadRoot=${NPM_DOWNLOAD_ROOT}
 
 # Explode the repackaged Spring Boot jar into its layers (see Dockerfile).
 RUN cp target/*.jar app.jar && \
