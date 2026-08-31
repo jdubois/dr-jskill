@@ -269,12 +269,14 @@ docker run --rm alpine:3 sh -c "apk add -q --no-cache curl && curl -sS -o /dev/n
 
    The error above (`Could not download npm`) happens during the **binary** download, which runs
    *before* npm exists — so `NPM_CONFIG_REGISTRY` alone will not fix it. All four generated
-   Dockerfiles (`Dockerfile`, `Dockerfile-aot`, `Dockerfile-native`) declare all three as build
-   args, so you only need to pass them — no need to edit any file:
+   Dockerfiles (`Dockerfile`, `Dockerfile-aot`, `Dockerfile-native`, `Dockerfile-crac`) declare
+   all three as build args, so you only need to pass them — no need to edit any file:
    ```bash
+   # strip any trailing slash so the URL does not end up with a double slash
+   REGISTRY="$(npm config get registry)"; REGISTRY="${REGISTRY%/}"
    docker build \
-     --build-arg NPM_DOWNLOAD_ROOT="$(npm config get registry)/npm/-/" \
-     --build-arg NPM_CONFIG_REGISTRY="$(npm config get registry)" \
+     --build-arg NPM_DOWNLOAD_ROOT="${REGISTRY}/npm/-/" \
+     --build-arg NPM_CONFIG_REGISTRY="${REGISTRY}" \
      -t todo-app:latest .
    ```
    Add `--build-arg NODE_DOWNLOAD_ROOT=...` too if your mirror also proxies the Node

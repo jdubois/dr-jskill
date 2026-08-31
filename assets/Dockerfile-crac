@@ -37,6 +37,13 @@
 # the CRaC-enabled runtime below.
 FROM eclipse-temurin:21-jdk-noble AS build
 
+# Front-end build mirrors — see the comment in `Dockerfile` for the full explanation.
+# NPM_CONFIG_REGISTRY alone does not redirect the Node/npm binary downloads.
+ARG NODE_DOWNLOAD_ROOT=https://nodejs.org/dist/
+ARG NPM_DOWNLOAD_ROOT=https://registry.npmjs.org/npm/-/
+ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org
+ENV NPM_CONFIG_REGISTRY=${NPM_CONFIG_REGISTRY}
+
 WORKDIR /app
 
 COPY mvnw .
@@ -51,7 +58,9 @@ COPY src ./src
 COPY frontend ./frontend
 
 # Build with the `crac` profile (adds org.crac:crac), compiled for Java 21.
-RUN ./mvnw -Pcrac clean package -DskipTests -B -Djava.version=21
+RUN ./mvnw -Pcrac clean package -DskipTests -B -Djava.version=21 \
+      -DnodeDownloadRoot=${NODE_DOWNLOAD_ROOT} \
+      -DnpmDownloadRoot=${NPM_DOWNLOAD_ROOT}
 
 # Runtime stage with a CRaC-enabled JDK (BellSoft Liberica with CRaC support).
 FROM bellsoft/liberica-runtime-container:jdk-21-crac-slim-glibc
