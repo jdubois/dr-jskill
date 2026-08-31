@@ -110,6 +110,28 @@ chmod +x mvnw
 
 Make sure your `.gitattributes` enforces LF for `mvnw` (Dr JSkill's generated `.gitattributes` handles this).
 
+### Frontend build fails with `ERESOLVE` mentioning `oxlint`
+
+**Cause:** `create-vue` scaffolds both `oxlint` and `eslint-plugin-oxlint`, pinned to
+mismatched minors. npm refuses to resolve the peer dependency, so `npm install` fails —
+and because the `frontend-maven-plugin` runs `npm install`, the whole Maven build fails
+with it.
+
+```
+npm error Could not resolve dependency:
+npm error peer oxlint@"~1.73.0" from eslint-plugin-oxlint@1.73.0
+```
+
+**Fix:** drop the oxlint dual-linter (Dr JSkill uses a single ESLint pipeline):
+
+```bash
+node scripts/normalize-vue-frontend.mjs frontend
+cd frontend && npm install
+```
+
+The script is idempotent, so it is safe to run at any time. Run it immediately after
+scaffolding a Vue front-end, before the first `npm install`.
+
 ### Frontend build fails with `EACCES` or permission errors
 
 **Cause:** an earlier `npm` run left root-owned files in `frontend/node_modules`.
@@ -117,7 +139,7 @@ Make sure your `.gitattributes` enforces LF for `mvnw` (Dr JSkill's generated `.
 **Fix:**
 ```bash
 sudo rm -rf frontend/node_modules frontend/node
-./mvnw -Pprod clean package
+./mvnw clean package
 ```
 
 ### Port 8080 already in use
@@ -213,7 +235,46 @@ Ask the agent: *"The test passes locally but fails on CI with `<paste stack trac
 
 **Fix:** check your `Dockerfile` — `pom.xml` should be copied and `./mvnw dependency:go-offline` run **before** copying the source. The generated Dockerfile already does this; if you edited it, restore the order.
 
-### Native image build runs out of memory
+### Docker build fails downloading Node/npm: "SSL peer shut down incorrectly"
+
+**Symptom:** `docker build` (or `docker compose up --build`) fails in the Maven stage with:
+
+```
+Failed to execute goal ...frontend-maven-plugin...(install node and npm):
+Could not download npm: Could not download https://registry.npmjs.org/npm/-/npm-X.Y.Z.tgz:
+Remote host terminated the handshake: SSL peer shut down incorrectly
+```
+
+**Cause:** your host can reach the npm registry (so `npm install` works in `frontend/`), but the
+**container** cannot. This is almost always a corporate proxy, VPN, or TLS-inspecting firewall:
+your host npm is pointed at an internal registry mirror, while the Docker build uses the
+default `https://registry.npmjs.org`. Nothing is wrong with the generated `Dockerfile`.
+
+**Check it in one command** — if this fails, it is your network, not the project:
+
+```bash
+docker run --rm alpine:3 sh -c "apk add -q --no-cache curl && curl -sS -o /dev/null -w '%{http_code}\n' https://registry.npmjs.org/npm"
+```
+
+**Fixes**, in order of preference:
+
+1. Point the build at the same registry your host uses, as a build argument:
+   ```bash
+   docker build --build-arg NPM_CONFIG_REGISTRY="$(npm config get registry)" -t todo-app:latest .
+   ```
+   and in the build stage of the `Dockerfile`:
+   ```dockerfile
+   ARG NPM_CONFIG_REGISTRY
+   ENV NPM_CONFIG_REGISTRY=${NPM_CONFIG_REGISTRY}
+   ```
+2. Add your proxy's CA certificate to the build stage, and/or pass `HTTP_PROXY` / `HTTPS_PROXY`
+   as build args.
+3. If you only need to *run* the app, build the jar on the host (`./mvnw package`) and use a
+   Dockerfile that copies `target/*.jar` instead of building inside the container. This skips
+   the container's network entirely.
+
+> The rest of Chapter 8 (image layers, distroless, `docker inspect`) still applies — this is
+> purely about reaching the npm registry from inside the build.
 
 **Cause:** GraalVM needs ~8 GB of heap for a typical Spring Boot app.
 
@@ -221,13 +282,48 @@ Ask the agent: *"The test passes locally but fails on CI with `<paste stack trac
 - Increase Docker Desktop memory allocation (*Settings → Resources*) to at least 8 GB.
 - Or skip the native build — it's optional. The JVM Dockerfile is plenty for a workshop.
 
+### `docker exec ... sh` fails with "exec: \"sh\": executable file not found"
+
+**Cause:** the generated JVM, AOT and native images run on a **distroless** base — there's no shell, `curl` or package manager inside. That's deliberate: it keeps the image small and the attack surface tiny.
+
+**Fix:** don't try to shell into those containers. Use `docker logs <container>` for output and `docker inspect <container>` for the effective config. To debug interactively, attach a temporary sidecar that shares the container's process namespace:
+
+```bash
+docker run -it --rm --pid=container:<container> --network=container:<container> \
+  busybox sh
+```
+
+(The CRaC image keeps a shell, so `docker exec -it <container> sh` still works there.) See "Debugging a distroless image" in [`references/DOCKER.md`](https://github.com/jdubois/dr-jskill/blob/main/references/DOCKER.md).
+
 ### Spring Boot Actuator endpoints return 404
 
-**Cause:** the endpoints aren't exposed.
+**Cause:** the endpoints aren't exposed — or they're exposed but don't exist.
 
 **Fix:** in `application.properties`:
 ```properties
 management.endpoints.web.exposure.include=health,info,metrics,prometheus
+```
+
+Then check what actually got registered:
+
+```bash
+curl -s http://localhost:8080/actuator | jq '._links | keys'
+```
+
+If a name you listed is missing from that output, exposure wasn't the problem — the endpoint isn't on the classpath at all:
+
+- **`prometheus`** needs the `micrometer-registry-prometheus` dependency.
+- **`httpexchanges`** needs an `HttpExchangeRepository` bean (none is auto-configured).
+- **`httptrace`** doesn't exist any more; it was renamed `httpexchanges` in Spring Boot 3.
+
+### A POST returns 400 and the log says "Cannot map `null` into type `boolean`"
+
+**Cause:** Jackson 3 (Spring Boot 4) enables `FAIL_ON_NULL_FOR_PRIMITIVES` by default, so omitting a primitive field from the JSON body — `{"title":"Buy milk"}` with no `"completed"` — is an error rather than a fall-back to `false`.
+
+**Fix:** generated projects already set this in `application.properties`. If yours doesn't, add it (and repeat it in `src/test/resources/application.properties`, which shadows the main file on the test classpath):
+
+```properties
+spring.jackson.deserialization.fail-on-null-for-primitives=false
 ```
 
 ---

@@ -127,7 +127,7 @@ A few things happen in parallel:
 
 - **Docker Compose starts PostgreSQL** automatically (thanks to `spring-boot-docker-compose` — the `compose.yaml` is detected at boot).
 - **Hibernate creates the schema** from the `@Entity` classes (`spring.jpa.hibernate.ddl-auto=update`).
-- **The Vite dev server builds** the front-end bundle and Spring Boot serves it from `/`.
+- **Vite builds the front-end bundle** (a one-off production build run by the `frontend-maven-plugin`, not the dev server) and Spring Boot serves it from `/`. For hot reload you run `npm run dev` separately — see chapter 3.
 
 When you see:
 

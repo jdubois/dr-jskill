@@ -43,7 +43,9 @@ npm --version    # should print 11.x.x
 
 ### 1.2 Java 25
 
-Spring Boot 4 requires Java 25.
+Spring Boot 4 itself requires Java 17 or later, but Dr JSkill targets **Java 25** — it is the
+current LTS, and the generated projects set `<java.version>25</java.version>`. A newer JDK
+also works; anything older than 25 will fail to build the generated project.
 
 **macOS (Homebrew):**
 ```bash
@@ -121,7 +123,7 @@ cd ~/.copilot/skills
 git clone https://github.com/jdubois/dr-jskill.git
 ```
 
-> **Using a fork?** If you plan to customize the skill (change defaults, bump versions, tweak conventions), fork `jdubois/dr-jskill` on GitHub first and clone your fork instead. The root [`README.md`](../README.md#fork-or-clone-this-repository) shows how.
+> **Using a fork?** If you plan to customize the skill (change defaults, bump versions, tweak conventions), fork `jdubois/dr-jskill` on GitHub first and clone your fork instead. The root [`README.md`](https://github.com/jdubois/dr-jskill/blob/main/README.md#fork-or-clone-this-repository) shows how.
 
 **Verify the skill is loaded** by starting a Copilot CLI session in any directory and running:
 

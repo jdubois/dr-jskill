@@ -58,9 +58,15 @@ curl -s http://localhost:8080/actuator | jq '._links | keys'
 # Generate some load
 for i in {1..50}; do curl -s http://localhost:8080/api/todos > /dev/null; done
 
-# Look at latency percentiles
+# Look at request count, total time and slowest request
 curl -s http://localhost:8080/actuator/metrics/http.server.requests | jq .
 ```
+
+This returns `COUNT`, `TOTAL_TIME` and `MAX` — not percentiles. The
+`percentiles-histogram` property exports histogram *buckets* to a registry such as
+Prometheus; it does not add percentile measurements to this endpoint. For percentiles,
+scrape `/actuator/prometheus` (see section 2 for the dependency it needs) and read the
+`http_server_requests_seconds_bucket` series.
 
 You now have a baseline.
 
@@ -196,12 +202,59 @@ curl -s -I http://localhost:8080/index.html | grep -i cache-control
 
 N+1 is the most common JPA performance bug. It rarely shows up until you have real data. Tests can catch it early.
 
-```
-Add a p6spy dependency (test scope) and configure it to log SQL statements
-with their execution time during tests. No change to production code.
+Hibernate can count the statements it issues, which is all you need and costs no extra
+dependency. Turn statistics on in `src/test/resources/application.properties`:
+
+```properties
+spring.jpa.properties.hibernate.generate_statistics=true
 ```
 
-Run `./mvnw verify` and watch the test output. If a single "list todos" endpoint produces dozens of SQL statements for N todos, you have an N+1. Ask the agent to fix it with `@EntityGraph` or `JOIN FETCH` — the pattern is in [`references/DATABASE.md`](../references/DATABASE.md#avoiding-n1-queries).
+Then assert the count directly, so an N+1 fails the build instead of hiding in a log:
+
+```java
+@DataJpaTest
+@Import(TestcontainersConfiguration.class)
+class NPlusOneDetectionTest {
+
+    @Autowired private TodoRepository todoRepository;
+    @Autowired private EntityManager entityManager;
+
+    @Test
+    void listingTodosIssuesASingleQuery() {
+        todoRepository.save(new Todo("a", "d", false));
+        todoRepository.save(new Todo("b", "d", false));
+        entityManager.flush();
+        entityManager.clear();
+
+        Statistics statistics = entityManager.getEntityManagerFactory()
+                .unwrap(SessionFactory.class)
+                .getStatistics();
+        statistics.clear();
+
+        var todos = todoRepository.findAllByOrderByCreatedAtDescIdDesc();
+
+        assertThat(todos).hasSize(2);
+        assertThat(statistics.getPrepareStatementCount())
+                .as("listing todos must not issue one query per row")
+                .isEqualTo(1);
+    }
+}
+```
+
+Run `./mvnw verify`. If listing N todos issues N+1 statements instead of 1, the assertion
+fails and names the problem. Fix it with `@EntityGraph` or `JOIN FETCH` — the pattern is in
+[`references/DATABASE.md`](../references/DATABASE.md#avoiding-n1-queries) — then re-run.
+
+> **Why not p6spy?** A SQL-logging proxy such as `p6spy-spring-boot-starter` wraps the
+> `DataSource`, which collides with the Testcontainers `@ServiceConnection` DataSource. In
+> testing, that ranged from working, to logging nothing at all, to breaking Hibernate's
+> schema generation so integration tests failed with `relation "app_user" does not exist`.
+> Counting statements needs no proxy and gives you a real assertion rather than output you
+> have to read.
+>
+> Note that `generate_statistics` powers the `Statistics` API but does **not** reliably emit
+> the "Session Metrics" log line under `@DataJpaTest`, so assert on the API rather than
+> grepping logs.
 
 ## 9. Stop optimizing
 
@@ -217,8 +270,8 @@ A real application needs maybe five to ten of these tweaks applied **thoughtfull
 | HTTP compression | 2 properties | ↓ bytes on the wire | [`references/SPRING-BOOT-4.md`](../references/SPRING-BOOT-4.md) |
 | Read-only transactions | 1 annotation per method | ↓ DB work on queries | [`references/DATABASE.md`](../references/DATABASE.md) |
 | Lazy routes | 1 import per route | ↓ initial bundle | [`references/VUE.md`](../references/VUE.md) |
-| Static asset caching | 2 properties | ↓ repeat requests | [`references/SPRING-BOOT-4.md`](../references/SPRING-BOOT-4.md) |
-| N+1 detection in tests | 1 dep + config | ↓ surprises in prod | [`references/DATABASE.md`](../references/DATABASE.md) |
+| Static asset caching | 1 config class | ↓ repeat requests | [`references/SPRING-BOOT-4.md`](../references/SPRING-BOOT-4.md) |
+| N+1 detection in tests | 1 property + 1 test | ↓ surprises in prod | [`references/DATABASE.md`](../references/DATABASE.md) |
 
 ---
 
@@ -232,7 +285,7 @@ A real application needs maybe five to ten of these tweaks applied **thoughtfull
 **Checkpoint**
 
 - Actuator endpoints respond
-- Your `application.properties` has at least the compression + caching + virtual threads settings
+- Your `application.properties` has at least the compression + virtual threads settings, and a `WebMvcConfigurer` handles static asset caching
 - You've run one load test and can describe the result in one sentence
 - `./mvnw verify` still green
 - Commit the combined changes: *"Apply core performance recipes"*

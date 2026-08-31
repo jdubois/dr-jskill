@@ -25,7 +25,7 @@ Think of it as a "senior engineer's checklist" that travels with the agent.
 
 ## 2. What Dr JSkill is
 
-[Dr JSkill](../README.md) is an Agent Skill that teaches any compatible AI coding agent how to generate **Spring Boot applications** following Julien Dubois' best practices.
+[Dr JSkill](https://github.com/jdubois/dr-jskill/blob/main/README.md) is an Agent Skill that teaches any compatible AI coding agent how to generate **Spring Boot applications** following Julien Dubois' best practices.
 
 When you ask the agent to "create a new Spring Boot app", Dr JSkill tells it:
 

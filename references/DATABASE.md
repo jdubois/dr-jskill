@@ -151,6 +151,21 @@ spring.jpa.properties.hibernate.generate_statistics=true
 logging.level.org.hibernate.stat=DEBUG
 ```
 
+The most reliable way to use this is to assert on it in a test, so an N+1 breaks the build
+instead of hiding in a log (the "Session Metrics" log line does not reliably appear under
+`@DataJpaTest`):
+
+```java
+Statistics statistics = entityManager.getEntityManagerFactory()
+        .unwrap(SessionFactory.class)
+        .getStatistics();
+statistics.clear();
+
+List<Todo> todos = todoRepository.findAllByOrderByCreatedAtDescIdDesc();
+
+assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
+```
+
 ### Pagination
 Always paginate large result sets. Never use unbounded `findAll()` in production:
 

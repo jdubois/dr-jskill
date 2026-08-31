@@ -37,14 +37,18 @@ Spring Boot apps are typically organized in **layers**. Open `src/main/java/` an
 ```
 com/example/app/
   Application.java               <-- main() entry point
-  todo/
+  domain/
     Todo.java                    <-- entity (JPA @Entity)
+  repository/
     TodoRepository.java          <-- data-access (Spring Data JPA)
-    TodoService.java             <-- business logic
+  controller/
     TodoController.java          <-- REST API (@RestController)
+    TodoRequest.java             <-- request DTO (record)
 ```
 
 Exact package names may differ — the agent picks them — but the **pattern** is the same. Here is what each layer does.
+
+> **Where's the service layer?** Dr JSkill deliberately **omits it for simple CRUD**: the controller calls the repository directly. A `TodoService` only appears once there's real business logic to hold — see [`SKILL.md`](https://github.com/jdubois/dr-jskill/blob/main/SKILL.md#project-structure). If your generated project *does* have one, the agent judged it worthwhile; both shapes are correct. Chapter 7 adds one deliberately.
 
 ### 2.1 The entity — `Todo.java`
 
@@ -76,9 +80,11 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
 
 You declare an interface, Spring Data generates the implementation at runtime. `findAll()`, `findById(Long)`, `save(Todo)`, `deleteById(Long)` — all free. No SQL to write for basic CRUD.
 
-### 2.3 The service — `TodoService.java`
+### 2.3 The service — `TodoService.java` (often absent)
 
-The service holds **business logic**: validations, cross-repository coordination, transactions. In a tiny CRUD app it's thin — sometimes just delegations. That's fine. Having the layer there means you have a place to grow into when logic appears.
+A service holds **business logic**: validations, cross-repository coordination, transactions. For a plain CRUD app there is nothing for it to hold, so Dr JSkill skips it and lets the controller talk to the repository directly — one less layer of pass-through delegation to read.
+
+Add one the moment real logic appears. That's exactly what Chapter 7 does when it introduces read-only transactions.
 
 ### 2.4 The controller — `TodoController.java`
 
@@ -87,24 +93,26 @@ The service holds **business logic**: validations, cross-repository coordination
 @RequestMapping("/api/todos")
 public class TodoController {
 
-    private final TodoService service;
+    private final TodoRepository repository;
 
-    public TodoController(TodoService service) {
-        this.service = service;
+    public TodoController(TodoRepository repository) {
+        this.repository = repository;
     }
 
     @GetMapping
-    public List<Todo> list() { return service.findAll(); }
+    public List<Todo> list() { return repository.findAll(); }
 
     @PostMapping
-    public Todo create(@RequestBody Todo todo) { return service.save(todo); }
+    public Todo create(@RequestBody @Valid TodoRequest request) { ... }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) { service.deleteById(id); }
+    public void delete(@PathVariable Long id) { repository.deleteById(id); }
 }
 ```
 
 This is the HTTP surface. `@RestController` + `@GetMapping` turn method calls into REST endpoints. The Vue front-end calls these URLs with `fetch()` / `axios`.
+
+Note that `create` takes a **`TodoRequest` record**, not the entity. Binding straight to `Todo` would let a client set server-owned fields such as `id` or `createdAt`; a small request DTO keeps that surface closed.
 
 ## 3. Configuration — `application.properties`
 
@@ -147,7 +155,7 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "user"]
       ...
@@ -219,15 +227,27 @@ Because these executions are bound to `generate-resources`, when you run `./mvnw
 
 1. Installs a local Node.js inside `frontend/node/` (doesn't touch your system Node)
 2. Runs `npm install` inside `frontend/`
-3. Runs `npm run build` — Vite produces optimized, hashed assets in `frontend/dist/`
-4. Copies `frontend/dist/` into `src/main/resources/static/` so Spring Boot serves it
+3. Runs `npm run build` — Vite writes optimized, hashed assets **straight into `src/main/resources/static/`**
+
+That third step is worth a closer look. `frontend/vite.config.js` sets:
+
+```js
+build: {
+  outDir: '../src/main/resources/static',
+  emptyOutDir: true,
+}
+```
+
+So there is **no `frontend/dist/` directory and no copy step** — Vite targets Spring Boot's static resources directory directly, and Maven picks the files up as ordinary resources.
 
 Result: a single executable JAR that contains both the Spring Boot backend and the compiled Vue front-end. No separate web server needed.
 
 ### 5.2 Dev vs prod
 
 - **Dev (`./mvnw spring-boot:run`):** Spring Boot serves a pre-built front-end from `src/main/resources/static/`. If you edit `.vue` files and want fast hot-reload, run `npm run dev` inside `frontend/` separately — it starts Vite on port 5173 with HMR.
-- **Prod (`./mvnw -Pprod package`):** produces a fat JAR with the optimized bundle baked in.
+- **Prod (`./mvnw clean package`):** produces a fat JAR with the optimized bundle baked in.
+
+> **No `-Pprod` profile.** The front-end production build is bound to the normal `generate-resources` phase, so a plain `./mvnw package` already runs `npm run build` in production mode. The only profiles the generated `pom.xml` defines are `aot` and `crac` (Chapter 8).
 
 See [`references/VUE.md`](https://github.com/jdubois/dr-jskill/blob/main/references/VUE.md) for the full front-end reference.
 
@@ -244,8 +264,11 @@ Have a look at these files — each one does a small job:
 | `.env.sample` | Documents the env vars the app expects — copy to `.env` for local secrets |
 | `.github/lsp.json` | Tells Copilot CLI to wire JDTLS for this project |
 | `.vscode/extensions.json` | Recommends the Java and Vue VS Code extensions |
-| `Dockerfile` | Multi-stage build: compile with JDK, run on JRE |
-| `Dockerfile-native` | Alternate: GraalVM native image (much smaller, faster startup) |
+| `Dockerfile` | JVM image — multi-stage build, jlink runtime on a distroless base |
+| `Dockerfile-aot` | JVM + Spring AOT — faster startup, distroless base |
+| `Dockerfile-native` | GraalVM native image — smallest image, fastest startup |
+| `Dockerfile-crac` | CRaC (Coordinated Restore at Checkpoint) — near-instant restore |
+| `checkpoint-and-run.sh` | Entrypoint helper used by `Dockerfile-crac` |
 | `compose.yaml` | Postgres for development |
 
 None of these are flashy — they're the difference between "a prototype" and "a project a team can pick up tomorrow". Dr JSkill ships them by default.

@@ -1,6 +1,6 @@
 # GitHub Copilot CLI + Java workshop, using Dr JSkill
 
-Welcome! In this hands-on workshop you'll build a complete Spring Boot application from scratch — **by talking to an AI coding agent** — using [Dr JSkill](../README.md), an Agent Skill that teaches GitHub Copilot CLI how to generate Spring Boot projects following Julien Dubois' best practices.
+Welcome! In this hands-on workshop you'll build a complete Spring Boot application from scratch — **by talking to an AI coding agent** — using [Dr JSkill](https://github.com/jdubois/dr-jskill/blob/main/README.md), an Agent Skill that teaches GitHub Copilot CLI how to generate Spring Boot projects following Julien Dubois' best practices.
 
 You don't need prior Spring Boot experience. You do need to be comfortable with a terminal and with editing files.
 
@@ -57,7 +57,7 @@ Everything else (Node.js, Java, Docker, Copilot CLI, Dr JSkill) is installed in 
 
 ## Reference material
 
-Each chapter links to the deeper reference guide in [`../references/`](https://github.com/jdubois/dr-jskill/blob/main/references/PROJECT-SETUP.md) when relevant. If you want to go further on a specific topic (databases, Docker, testing, Azure deployment, etc.), those guides are the source of truth.
+Each chapter links to the deeper reference guide in [`../references/`](https://github.com/jdubois/dr-jskill/blob/main/references/) when relevant. If you want to go further on a specific topic (databases, Docker, testing, Azure deployment, etc.), those guides are the source of truth.
 
 ---
 

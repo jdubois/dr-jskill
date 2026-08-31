@@ -26,6 +26,9 @@ jobs:
       - name: Verify reference docs are in sync with versions.json
         run: node scripts/sync-versions-in-docs.mjs --check
 
+      - name: Verify published workshop is in sync with workshop/
+        run: node scripts/sync-workshop-docs.mjs --check
+
       - name: Syntax-check scripts
         run: |
           for f in scripts/*.mjs scripts/lib/*.mjs; do

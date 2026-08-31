@@ -64,10 +64,10 @@ The agent will do **a lot** of things in sequence. Roughly:
 
 1. **Read Dr JSkill's instructions.** It opens `SKILL.md` and the relevant `references/*.md` files to understand your conventions.
 2. **Call Spring Initializr.** It runs a Dr JSkill script that hits `https://start.spring.io` to bootstrap a `pom.xml`, `Application.java`, and a minimal project skeleton.
-3. **Scaffold the Vue front-end.** It creates a `frontend/` directory, runs `npm create vite@latest`, and wires Vite to the Maven build via the Frontend Maven Plugin.
+3. **Scaffold the Vue front-end.** It creates a `frontend/` directory, runs `npm create vue@latest`, and wires Vite to the Maven build via the Frontend Maven Plugin.
 4. **Write the domain code.** Entities (`Todo`), repositories (`TodoRepository`), services (`TodoService`), and REST controllers (`TodoController`).
 5. **Write the UI.** Vue components for the list, the form, toasts/effects, wired to the REST API.
-6. **Add dotfiles.** `.gitignore`, `.editorconfig`, `.env.sample`, `.dockerignore`, `.gitattributes`, `Dockerfile`, `compose.yaml`, `.github/lsp.json`.
+6. **Add dotfiles.** `.gitignore`, `.editorconfig`, `.env.sample`, `.dockerignore`, `.gitattributes`, Dockerfiles (JVM, AOT, native, CRaC), `compose.yaml`, `.github/lsp.json`.
 7. **Initialize git** and often make a first commit.
 
 Expect this to take a few minutes. The agent may ask you to confirm certain shell commands (installing packages, running `npm`, etc.) — read each one and approve.
@@ -90,8 +90,11 @@ You should see something like:
 .env.sample
 .github/
 .gitignore
-Dockerfile
-Dockerfile-native
+Dockerfile                <-- JVM image (jlink + distroless)
+Dockerfile-aot            <-- JVM + Spring AOT image
+Dockerfile-native         <-- GraalVM native image
+Dockerfile-crac           <-- CRaC (fast-restore) image
+checkpoint-and-run.sh     <-- CRaC entrypoint helper
 compose.yaml
 frontend/                 <-- Vue.js front-end
 mvnw                      <-- Maven wrapper (no local Maven install needed)
@@ -124,7 +127,7 @@ A few things happen in parallel:
 
 - **Docker Compose starts PostgreSQL** automatically (thanks to `spring-boot-docker-compose` — the `compose.yaml` is detected at boot).
 - **Hibernate creates the schema** from the `@Entity` classes (`spring.jpa.hibernate.ddl-auto=update`).
-- **The Vite dev server builds** the front-end bundle and Spring Boot serves it from `/`.
+- **Vite builds the front-end bundle** (a one-off production build run by the `frontend-maven-plugin`, not the dev server) and Spring Boot serves it from `/`. For hot reload you run `npm run dev` separately — see chapter 3.
 
 When you see:
 

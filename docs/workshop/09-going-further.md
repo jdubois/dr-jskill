@@ -41,6 +41,8 @@ Prompt:
 ```
 Add a prometheus + grafana service to compose.yaml (dev only).
 
+- Add the micrometer-registry-prometheus dependency and expose the
+  /actuator/prometheus endpoint (it does not exist without that dependency).
 - Prometheus scrapes the app's /actuator/prometheus endpoint every 15s.
 - Grafana is pre-provisioned with a Prometheus datasource and a basic
   Spring Boot dashboard (JVM, HTTP request rates/latency, DB connection pool).
@@ -116,7 +118,7 @@ Running the whole workshop on a second domain in under an hour is the real proof
 
 If Dr JSkill's conventions don't match yours exactly — maybe you prefer Gradle, or H2 for dev, or a different package layout — **fork the skill and edit it**.
 
-The whole skill is Markdown files in [`../references/`](https://github.com/jdubois/dr-jskill/blob/main/references/PROJECT-SETUP.md) and [`../SKILL.md`](https://github.com/jdubois/dr-jskill/blob/main/SKILL.md). Change a few sentences, bump a version in [`../versions.json`](https://github.com/jdubois/dr-jskill/blob/main/versions.json), and the next project the agent generates will follow your conventions instead. No plugin system, no build step.
+The whole skill is Markdown files in [`../references/`](https://github.com/jdubois/dr-jskill/blob/main/references/) and [`../SKILL.md`](https://github.com/jdubois/dr-jskill/blob/main/SKILL.md). Change a few sentences, bump a version in [`../versions.json`](https://github.com/jdubois/dr-jskill/blob/main/versions.json), and the next project the agent generates will follow your conventions instead. No plugin system, no build step.
 
 Prompt (from inside `~/.copilot/skills/dr-jskill`):
 
@@ -126,7 +128,7 @@ integrate with our team's custom logging service. Draft references/ACME-LOG.md
 with the usage pattern and add it to SKILL.md's reference list.
 ```
 
-See the skill's own [README](../README.md) for how to point Copilot CLI at your fork.
+See the skill's own [README](https://github.com/jdubois/dr-jskill/blob/main/README.md) for how to point Copilot CLI at your fork.
 
 ## 7. Teach the workshop
 

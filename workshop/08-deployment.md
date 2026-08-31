@@ -103,7 +103,9 @@ After packaging, the build stage does two more things that keep the final image 
 FROM gcr.io/distroless/base-debian12:nonroot
 ```
 
-The runtime base is a Google **distroless** image — glibc and little else: no shell, no package manager, no `curl`. Combined with the jlink runtime and the exploded layers, the final image lands around **~120 MB** with a very small attack surface. The `:nonroot` tag runs the app as an unprivileged user (uid 65532).
+The runtime base is a Google **distroless** image — glibc and little else: no shell, no package manager, no `curl`. Combined with the jlink runtime and the exploded layers, the final image for this full-stack app lands around **~260 MB** with a very small attack surface. The `:nonroot` tag runs the app as an unprivileged user (uid 65532).
+
+Roughly, that breaks down as ~70 MB of jlink'd Java runtime, ~55 MB of application dependencies, and ~130 MB of distroless base (glibc, OpenSSL, CA certificates). A backend-only app with fewer dependencies lands lower; the jlink runtime and base are the floor you cannot trim much further without going native.
 
 Because there's no shell or `curl` in the image, there is **no Docker `HEALTHCHECK`**. You probe `/actuator/health` from your orchestrator's liveness/readiness checks instead (Kubernetes, Azure Container Apps, etc. do this for you).
 
@@ -123,14 +125,24 @@ The `JarLauncher` entrypoint boots the app straight from the exploded layers —
 
 ### Inspect the image
 
+Compose tags its image after the project directory (`todo-app-spring-app`), so build it
+under an explicit name first if you want to inspect it directly:
+
 ```bash
-docker images | grep todo-app
-# todo-app   latest   ...   ~120MB
+docker build -t todo-app:latest .
+
+docker images todo-app:latest
+# todo-app   latest   ...   262MB
 
 # The image is distroless, so inspect its config instead of `docker exec`-ing a shell:
 docker inspect todo-app:latest --format '{{.Config.Entrypoint}}'
 docker inspect todo-app:latest --format '{{.Config.Env}}'
 ```
+
+> **Build fails downloading Node or npm with an SSL/TLS handshake error?** You are almost
+> certainly behind a corporate proxy or VPN: your host can reach the npm registry but the
+> container cannot. See
+> [Appendix B → "Docker build fails downloading Node/npm"](appendix-b-troubleshooting.md#docker-build-fails-downloading-nodenpm-ssl-peer-shut-down-incorrectly).
 
 > **No shell in the image?** That's deliberate. To debug a running distroless container, attach a temporary sidecar that shares its process namespace — see "Debugging a distroless image" in [`references/DOCKER.md`](../references/DOCKER.md).
 
@@ -144,11 +156,18 @@ A **GraalVM native image** ahead-of-time compiles your app to a standalone binar
 |---|---|---|
 | Startup | 2–10 s | 50–200 ms |
 | Idle memory | 300 MB–1 GB | 50–150 MB |
-| Image size | ~120 MB | ~30–60 MB |
+| Image size | ~260 MB (measured) | varies — measure it |
 | Peak throughput | ✅ JIT-optimized | ⚠️ No JIT |
 | Build time | ~1 min | 5–15 min |
 
 Native is ideal for **serverless, scale-to-zero, and short-lived workloads**. Long-running services under sustained load usually benefit more from JIT — pick the right tool for the job.
+
+> **On image size:** both Dockerfiles ship on the same `gcr.io/distroless/base-debian12:nonroot`
+> base (43.5 MB measured), so that part is a shared floor. Native replaces the ~70 MB jlink
+> runtime and ~55 MB of dependency jars with a single self-contained binary whose size tracks
+> how much of your dependency graph is actually reachable. The saving is real but far less
+> dramatic than the startup and memory numbers above — measure your own image with
+> `docker images` rather than assuming.
 
 ### Build and run
 

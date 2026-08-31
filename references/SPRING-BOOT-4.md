@@ -70,24 +70,38 @@ import tools.jackson.databind.ObjectMapper;  // ✅ Correct for API classes
 
 See "Jackson 2 to Jackson 3 Migration" section below for complete details.
 
-### 2. TestcontainersConfiguration Must Be Package-Private
+### 2. TestcontainersConfiguration Must Be Public
 
-**✅ CORRECT - Package-private (no `public` modifier):**
+Spring Boot's initializr scaffolds `TestcontainersConfiguration` as package-private. That
+works only while every test lives in the same package. As soon as you add tests in
+sub-packages — `...controller.TodoControllerIT`, `...repository.TodoRepositoryTest` — they
+cannot import it and compilation fails.
+
+**✅ CORRECT — public, so tests in sub-packages can import it:**
 ```java
 @TestConfiguration(proxyBeanMethods = false)
-class TestcontainersConfiguration {  // No public!
-    // ...
+public class TestcontainersConfiguration {
+
+    @Bean
+    @ServiceConnection
+    public PostgreSQLContainer<?> postgresContainer() {
+        return new PostgreSQLContainer<>("postgres:18-alpine");
+    }
 }
 ```
 
-**❌ WRONG - Public modifier:**
+**❌ WRONG — package-private, breaks the moment a test moves into a sub-package:**
 ```java
-public class TestcontainersConfiguration {  // Wrong!
+@TestConfiguration(proxyBeanMethods = false)
+class TestcontainersConfiguration {  // not visible from ...controller or ...repository
     // ...
 }
 ```
 
-This is a Spring Boot 4 requirement for test configurations. See "Testing Changes" section below for more details.
+Spring Boot places no visibility requirement on `@TestConfiguration` classes, so make it
+public. The generator does this for you — `normalizeTestcontainersConfiguration()` in
+`scripts/lib/versions.mjs` rewrites the scaffolded class and its `@Bean` method to public.
+See "Testing Changes" below for more details.
 
 ### 3. TestContainers 2.x Artifact & Package Rename
 

@@ -80,9 +80,9 @@ Add an integration test TodoIntegrationIT that:
 - Uses Testcontainers with postgres:18-alpine via @ServiceConnection
 - Creates a todo via POST, reads it back via GET, deletes it via DELETE
 - Asserts the todo is gone afterwards
-- Uses RestAssured or TestRestTemplate, whichever is already in the project
+- Uses RestTestClient (Spring Framework 7) for HTTP-level assertions
 
-Put the test in the same package as TestcontainersConfiguration (package-private).
+Import TestcontainersConfiguration explicitly; it is generated public, so the test can live in a sub-package.
 Follow Dr JSkill's testing conventions.
 ```
 
@@ -125,12 +125,17 @@ While iterating, you don't want to run the whole suite every time:
 # One unit test class
 ./mvnw test -Dtest=TodoControllerTest
 
-# One integration test class
-./mvnw verify -Dit.test=TodoIntegrationIT -DskipUnitTests
+# One integration test class (unit tests still run first)
+./mvnw verify -Dit.test=TodoIntegrationIT
+
+# One integration test class, skipping the unit tests entirely
+./mvnw verify -Dit.test=TodoIntegrationIT -Dtest=none -Dsurefire.failIfNoSpecifiedTests=false
 
 # One test method
 ./mvnw test -Dtest=TodoControllerTest#createReturnsBadRequestOnEmptyTitle
 ```
+
+> **Why the awkward second form?** Surefire (unit tests) and Failsafe (integration tests) share the `skipTests` property, so `-DskipTests` switches off *both*. To silence only Surefire you point it at a class name that matches nothing (`-Dtest=none`) and tell it not to fail over the empty selection (`-Dsurefire.failIfNoSpecifiedTests=false`).
 
 ## 8. Fix a failure with the agent
 
