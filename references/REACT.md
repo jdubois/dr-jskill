@@ -958,7 +958,7 @@ This approach ensures that refreshing the browser on any React route (e.g., `/it
   // wrap <Routes> in <Suspense fallback={<Spinner />}>
   ```
 - **Memoization** — `React.memo`, `useMemo`, `useCallback` for components and values that are expensive to compute *and* rendered often. Don't wrap everything; unnecessary memoization costs more than it saves.
-- **Production build** — ship the bundle produced by `./mvnw -Pprod package` (or `npm run build`). Vite applies minification, tree shaking, and content-hashed filenames.
+- **Production build** — ship the bundle produced by `./mvnw package` (or `npm run build`). Vite applies minification, tree shaking, and content-hashed filenames.
 - **Long-term asset caching** — hashed `/assets/**` files are safe to cache for a year. Configure `Cache-Control` on the Spring side (see `references/SPRING-BOOT-4.md` → Performance → Static resource caching). Keep `index.html` uncached.
 
 ### 7. Development Workflow

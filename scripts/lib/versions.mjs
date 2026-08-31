@@ -422,6 +422,11 @@ function configureApplicationProperties(projectDir, { database = false } = {}) {
 
   content = upsertConfigImport(content, 'optional:file:.env[.properties]');
   content = upsertProperty(content, 'server.port', '${SPRING_BOOT_PORT:8080}');
+  // Jackson 3 (Spring Boot 4) enables FAIL_ON_NULL_FOR_PRIMITIVES by default, so a
+  // request body that omits a primitive field (e.g. {"title":"Buy milk"} with no
+  // "completed") is rejected with HTTP 400 instead of falling back to the Java
+  // default. See references/SPRING-BOOT-4.md.
+  content = upsertProperty(content, 'spring.jackson.deserialization.fail-on-null-for-primitives', 'false');
 
   if (database) {
     content = upsertProperty(
@@ -445,14 +450,22 @@ function configureApplicationProperties(projectDir, { database = false } = {}) {
 }
 
 function configureTestApplicationProperties(projectDir, { database = false } = {}) {
-  if (!database) return;
-
   const target = join(projectDir, 'src', 'test', 'resources', 'application.properties');
+
+  // The test-classpath file shadows the main one (same name, test-classes wins), so
+  // any setting the tests rely on has to be repeated here. Skip creating the file
+  // entirely when there is nothing to override and none already exists.
+  if (!database && !existsSync(target)) return;
+
   let content = existsSync(target) ? readFileSync(target, 'utf8') : '';
 
-  content = upsertProperty(content, 'spring.docker.compose.enabled', 'false');
-  content = upsertProperty(content, 'spring.jpa.hibernate.ddl-auto', 'create-drop');
-  content = upsertProperty(content, 'spring.jpa.open-in-view', 'false');
+  content = upsertProperty(content, 'spring.jackson.deserialization.fail-on-null-for-primitives', 'false');
+
+  if (database) {
+    content = upsertProperty(content, 'spring.docker.compose.enabled', 'false');
+    content = upsertProperty(content, 'spring.jpa.hibernate.ddl-auto', 'create-drop');
+    content = upsertProperty(content, 'spring.jpa.open-in-view', 'false');
+  }
 
   const destDir = dirname(target);
   if (!existsSync(destDir)) mkdirSync(destDir, { recursive: true });

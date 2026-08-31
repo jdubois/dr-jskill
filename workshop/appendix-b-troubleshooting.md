@@ -117,7 +117,7 @@ Make sure your `.gitattributes` enforces LF for `mvnw` (Dr JSkill's generated `.
 **Fix:**
 ```bash
 sudo rm -rf frontend/node_modules frontend/node
-./mvnw -Pprod clean package
+./mvnw clean package
 ```
 
 ### Port 8080 already in use
@@ -236,11 +236,33 @@ docker run -it --rm --pid=container:<container> --network=container:<container> 
 
 ### Spring Boot Actuator endpoints return 404
 
-**Cause:** the endpoints aren't exposed.
+**Cause:** the endpoints aren't exposed — or they're exposed but don't exist.
 
 **Fix:** in `application.properties`:
 ```properties
 management.endpoints.web.exposure.include=health,info,metrics,prometheus
+```
+
+Then check what actually got registered:
+
+```bash
+curl -s http://localhost:8080/actuator | jq '._links | keys'
+```
+
+If a name you listed is missing from that output, exposure wasn't the problem — the endpoint isn't on the classpath at all:
+
+- **`prometheus`** needs the `micrometer-registry-prometheus` dependency.
+- **`httpexchanges`** needs an `HttpExchangeRepository` bean (none is auto-configured).
+- **`httptrace`** doesn't exist any more; it was renamed `httpexchanges` in Spring Boot 3.
+
+### A POST returns 400 and the log says "Cannot map `null` into type `boolean`"
+
+**Cause:** Jackson 3 (Spring Boot 4) enables `FAIL_ON_NULL_FOR_PRIMITIVES` by default, so omitting a primitive field from the JSON body — `{"title":"Buy milk"}` with no `"completed"` — is an error rather than a fall-back to `false`.
+
+**Fix:** generated projects already set this in `application.properties`. If yours doesn't, add it (and repeat it in `src/test/resources/application.properties`, which shadows the main file on the test classpath):
+
+```properties
+spring.jackson.deserialization.fail-on-null-for-primitives=false
 ```
 
 ---

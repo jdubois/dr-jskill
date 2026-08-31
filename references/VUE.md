@@ -1059,7 +1059,7 @@ This approach ensures that refreshing the browser on any Vue.js route (e.g., `/i
   import { defineAsyncComponent } from 'vue'
   const Chart = defineAsyncComponent(() => import('./Chart.vue'))
   ```
-- **Production build** — always ship the bundle produced by `./mvnw -Pprod package` (or `npm run build` during dev). Vite applies minification, tree shaking, and content-hashed filenames.
+- **Production build** — always ship the bundle produced by `./mvnw package` (or `npm run build` during dev). Vite applies minification, tree shaking, and content-hashed filenames.
 - **Long-term asset caching** — content-hashed filenames mean `/assets/**` can be served with a 1-year `Cache-Control`. Configure this on the Spring side (see `references/SPRING-BOOT-4.md` → Performance → Static resource caching).
 - **Keep `index.html` uncached** — it references the hashed asset filenames; caching it would pin clients to stale bundles.
 

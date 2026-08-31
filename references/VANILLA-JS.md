@@ -1033,7 +1033,7 @@ This approach ensures that refreshing the browser on any route (e.g., `/items/12
   })
   ```
 - **Code splitting** — Vite automatically creates a separate chunk for every dynamic `import()`.
-- **Production build** — `./mvnw -Pprod package` (or `npm run build`) runs Vite's minification, tree shaking, and content-hashed filenames.
+- **Production build** — `./mvnw package` (or `npm run build`) runs Vite's minification, tree shaking, and content-hashed filenames.
 - **Long-term asset caching** — hashed `/assets/**` files can be served with a 1-year `Cache-Control` (see `references/SPRING-BOOT-4.md` → Performance → Static resource caching). Keep `index.html` uncached.
 - **Avoid unnecessary re-renders** — since there's no framework diffing, update only the DOM nodes that actually changed rather than rebuilding whole sections.
 

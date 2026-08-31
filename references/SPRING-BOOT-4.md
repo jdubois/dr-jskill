@@ -885,10 +885,33 @@ Vite emits hashed filenames for `/assets/**`, so they're safe to cache aggressiv
 
 ```properties
 spring.web.resources.cache.cachecontrol.max-age=365d
-spring.web.resources.cache.cachecontrol.immutable=true
 ```
 
-Keep `index.html` uncached (the default) so clients pick up new asset hashes.
+> ⚠️ Two things this property does **not** do:
+>
+> - **There is no `spring.web.resources.cache.cachecontrol.immutable` property.** Spring Boot exposes `max-age`, `no-cache`, `no-store`, `must-revalidate`, `no-transform`, `cache-public`, `cache-private`, `proxy-revalidate`, `s-max-age`, `stale-while-revalidate` and `stale-if-error` — but not `immutable`. Setting it is silently ignored, so the response header reads `Cache-Control: max-age=31536000` with no `immutable` directive.
+> - **It applies to every static resource, including `index.html`.** Caching `index.html` for a year means browsers keep loading the old asset hashes and never see a new deployment.
+
+To cache the hashed assets aggressively *and* keep `index.html` revalidating, register the two path patterns separately instead of using the blanket property:
+
+```java
+@Configuration
+public class WebCacheConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/assets/**")
+                .addResourceLocations("classpath:/static/assets/")
+                .setCacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable());
+
+        registry.addResourceHandler("/index.html", "/")
+                .addResourceLocations("classpath:/static/")
+                .setCacheControl(CacheControl.noCache());
+    }
+}
+```
+
+`CacheControl.immutable()` (the programmatic API) *does* exist, which is why the header is achievable in Java but not through configuration properties.
 
 ### Observability for performance work
 
@@ -898,6 +921,26 @@ Enable in `application.properties` when diagnosing:
 management.endpoints.web.exposure.include=health,info,metrics,prometheus
 management.metrics.distribution.percentiles-histogram.http.server.requests=true
 ```
+
+> ⚠️ **Exposure alone does not create an endpoint.** Two commonly-requested endpoints need more:
+>
+> - **`prometheus`** only exists once `micrometer-registry-prometheus` is on the classpath:
+>   ```xml
+>   <dependency>
+>       <groupId>io.micrometer</groupId>
+>       <artifactId>micrometer-registry-prometheus</artifactId>
+>       <scope>runtime</scope>
+>   </dependency>
+>   ```
+> - **`httpexchanges`** (the Boot 2 `httptrace`, renamed in Boot 3) needs an `HttpExchangeRepository` bean. Spring Boot auto-configures none on purpose, since an unbounded in-memory trace buffer is a production memory leak:
+>   ```java
+>   @Bean
+>   InMemoryHttpExchangeRepository httpExchangeRepository() {
+>       return new InMemoryHttpExchangeRepository();
+>   }
+>   ```
+>
+> Listing either name in `exposure.include` without the above leaves it silently missing from `/actuator`. Check what you actually got with `curl -s localhost:8080/actuator | jq '._links | keys'`.
 
 See `references/LOGGING.md` for structured logging setup and `references/DATABASE.md` for Hibernate-specific tuning.
 

@@ -957,7 +957,7 @@ This approach ensures that refreshing the browser on any Angular route (e.g., `/
 - **OnPush change detection** — set `changeDetection: ChangeDetectionStrategy.OnPush` on components that render from immutable inputs or signals. Drastically cuts dirty-checking cost.
 - **`@for` with `track`** — always provide a `track` expression in `@for` (or `trackBy` with `*ngFor`) so Angular reuses DOM nodes.
 - **Signals over `async` pipes on hot paths** — signals skip the zone roundtrip and integrate cleanly with OnPush.
-- **Production build** — `./mvnw -Pprod package` runs `ng build --configuration production`, which enables AOT, minification, tree shaking, and file hashing.
+- **Production build** — `./mvnw package` runs `ng build --configuration production`, which enables AOT, minification, tree shaking, and file hashing.
 - **Long-term asset caching** — hashed output is safe to cache for a year; configure `Cache-Control` on the Spring side (see `references/SPRING-BOOT-4.md` → Performance → Static resource caching). Keep `index.html` uncached.
 
 ### 7. Development Workflow

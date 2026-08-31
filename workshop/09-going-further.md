@@ -41,6 +41,8 @@ Prompt:
 ```
 Add a prometheus + grafana service to compose.yaml (dev only).
 
+- Add the micrometer-registry-prometheus dependency and expose the
+  /actuator/prometheus endpoint (it does not exist without that dependency).
 - Prometheus scrapes the app's /actuator/prometheus endpoint every 15s.
 - Grafana is pre-provisioned with a Prometheus datasource and a basic
   Spring Boot dashboard (JVM, HTTP request rates/latency, DB connection pool).
