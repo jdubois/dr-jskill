@@ -30,7 +30,7 @@ You can run this JAR anywhere Java 25 is installed — no Maven, no Node, nothin
 
 ```bash
 # Start Postgres first (compose.yaml still works standalone)
-docker compose up -d postgres
+docker compose -f compose.yaml up -d postgres
 
 # Run the JAR
 java -jar target/todo-app-0.0.1-SNAPSHOT.jar
@@ -41,7 +41,7 @@ Open http://localhost:8080. Same app, running from the packaged artifact.
 Stop the app (Ctrl+C) and the database:
 
 ```bash
-docker compose down
+docker compose -f compose.yaml down
 ```
 
 ## 2. Run the whole stack in Docker

@@ -202,8 +202,8 @@ Run `git status`. If it's clean, the agent may have hit a silent error. Ask: *"S
 
 **Fix:**
 ```bash
-docker compose ps           # is postgres running?
-docker compose logs postgres | tail -30
+docker compose -f compose.yaml ps           # is postgres running?
+docker compose -f compose.yaml logs postgres | tail -30
 ```
 
 Compare `spring.datasource.*` in `application.properties` against `compose.yaml`.

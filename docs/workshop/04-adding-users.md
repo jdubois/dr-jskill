@@ -136,8 +136,14 @@ If any behavior is off, stop the app (Ctrl+C) and give the agent another follow-
 While the app is running, in a new terminal:
 
 ```bash
-docker compose exec postgres psql -U user -d mydb
+docker compose -f compose.yaml exec postgres psql -U user -d mydb
 ```
+
+> **Why `-f compose.yaml`?** Your project ships two Compose files — `compose.yaml` (the dev
+> database, started automatically by Spring Boot) and `docker-compose.yml` (the full
+> containerised stack, used in [chapter 8](08-deployment.md)). A bare `docker compose` finds
+> both and warns `Found multiple config files ...` before picking `compose.yaml`. Naming the
+> file keeps it unambiguous.
 
 At the `psql` prompt:
 
