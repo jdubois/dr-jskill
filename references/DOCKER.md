@@ -30,7 +30,7 @@ Docker Compose files that wire them to PostgreSQL.
 | `Dockerfile` | JVM image — `jlink` custom runtime on a **distroless** base |
 | `Dockerfile-aot` | JVM + **Spring AOT** for faster startup, distroless |
 | `Dockerfile-crac` | **CRaC** (Coordinated Restore at Checkpoint), restores in tens of ms |
-| `Dockerfile-native` | **GraalVM** native image, sub-second startup, ~45–80 MB |
+| `Dockerfile-native` | **GraalVM** native image, sub-second startup, smallest compressed image |
 
 **Spring Boot 4 requirements:**
 
@@ -158,13 +158,19 @@ application is executed at runtime:
 
 | Variant | Runtime base | Startup | Image size¹ | Needs at build/run time |
 | ------- | ------------ | ------- | ----------- | ----------------------- |
-| JVM (`Dockerfile`) | distroless glibc | baseline | ~170 MB | nothing special |
+| JVM (`Dockerfile`) | distroless glibc | baseline | baseline (jlink-trimmed) | nothing special |
 | JVM + AOT (`Dockerfile-aot`) | distroless glibc | ~30–50 % faster context refresh | ~JVM (+70–100 MB if you add the JDK AOT cache) | `aot` Maven profile |
 | CRaC (`Dockerfile-crac`) | Liberica CRaC slim-glibc | restore in ~tens of ms | ~JVM + checkpoint volume | **Linux + CRIU privileges**, LTS JDK 21, `crac` profile |
-| GraalVM native (`Dockerfile-native`) | distroless glibc | well under 1 s | ~45–80 MB | GraalVM 25 toolchain (in the build image), `native` profile |
+| GraalVM native (`Dockerfile-native`) | distroless glibc | well under 1 s | much smaller compressed; on disk, comparable to JVM¹ | GraalVM 25 toolchain (in the build image), `native` profile |
 
-> ¹ Sizes are indicative — they depend on your dependency set. The relative ordering
-> (native ≪ JVM ≈ AOT) is the reliable takeaway.
+> ¹ Sizes vary a lot with your dependency set, JDK and CPU architecture, so measure your
+> own rather than treating any number here as a target. The dependable native wins are
+> **startup time** and **compressed (registry/pull) size** — not necessarily the on-disk
+> size `docker images` prints. Measured on this workshop's app on arm64: the native image
+> was **276 MB on disk vs 267 MB** for the jlink + distroless JVM image (i.e. slightly
+> *larger*), yet only **67.9 MB compressed vs 103.4 MB**. Because the JVM image is already
+> jlink-trimmed and distroless, native has much less fat left to cut than the usual
+> "native is tiny" comparisons against a full JDK base image suggest.
 
 Each Dockerfile is self-documenting (read the header comment) and pairs with a Compose
 file:
@@ -396,7 +402,7 @@ libraries.
 
 1. GraalVM 25 native-image compilation (required for Spring Boot 4; GraalVM 25 = JDK 25).
 2. Ultra-fast startup (well under a second) and low memory use.
-3. Smallest runtime image (~45–80 MB) on a distroless `:nonroot` base.
+3. Smallest *compressed* runtime image on a distroless `:nonroot` base — see the size note above before comparing `docker images` output.
 4. No local GraalVM install needed — the toolchain lives in the build image.
 
 **Build and run:**

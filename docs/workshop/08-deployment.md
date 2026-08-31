@@ -210,9 +210,16 @@ Started TodoApplication in 0.087 seconds
 ```bash
 docker images | grep -E "todo-app|REPOSITORY"
 # REPOSITORY          TAG       SIZE
-# todo-app            latest    148MB   ← JVM
-# todo-app-native     latest     38MB   ← native
+# todo-app            latest    267MB   ← JVM (jlink + distroless)
+# todo-app-native     latest    276MB   ← native
 ```
+
+Surprised the native image is not dramatically smaller? Your numbers will differ, and that
+is the point: the JVM image here is already jlink-trimmed and distroless, so there is little
+fat left for native to cut. Native's dependable wins are **startup time** (fractions of a
+second, above) and **compressed** size — the same two images pull as roughly 68 MB (native)
+versus 103 MB (JVM). `docker images` reports uncompressed size, which is not what you push
+or pull.
 
 ### Stop native
 
