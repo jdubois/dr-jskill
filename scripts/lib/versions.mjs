@@ -34,20 +34,20 @@ function getVersionValue(key, defaultValue = '') {
 
 export function getJavaVersion() { return getVersionValue('javaVersion', '25'); }
 export function getBootPreferredMajor() { return getVersionValue('springBootPreferredMajor', '4'); }
-export function getBootFallback() { return getVersionValue('springBootFallback', '4.1.0'); }
+export function getBootFallback() { return getVersionValue('springBootFallback', '4.1.1'); }
 export function getPostgresVersion() { return getVersionValue('postgresVersion', '18'); }
 export function getTemurinVersion() { return getVersionValue('temurinVersion', '25'); }
 export function getMavenMinVersion() { return getVersionValue('mavenMinVersion', '3.8.0'); }
 export function getGraalvmVersion() { return getVersionValue('graalvmVersion', '25'); }
-export function getNodeVersion() { return getVersionValue('nodeVersion', '24.19.0'); }
-export function getNpmVersion() { return getVersionValue('npmVersion', '11.17.0'); }
+export function getNodeVersion() { return getVersionValue('nodeVersion', '24.20.0'); }
+export function getNpmVersion() { return getVersionValue('npmVersion', '11.19.0'); }
 export function getViteVersion() { return getVersionValue('viteVersion', '8'); }
 export function getMavenFrontendPluginVersion() { return getVersionValue('mavenFrontendPluginVersion', '2.0.2'); }
 export function getVueVersion() { return getVersionValue('vueVersion', '3'); }
 export function getPiniaVersion() { return getVersionValue('piniaVersion', '4'); }
 export function getVueRouterVersion() { return getVersionValue('vueRouterVersion', '5'); }
 export function getReactVersion() { return getVersionValue('reactVersion', '19'); }
-export function getReactRouterVersion() { return getVersionValue('reactRouterVersion', '7'); }
+export function getReactRouterVersion() { return getVersionValue('reactRouterVersion', '8'); }
 export function getAngularVersion() { return getVersionValue('angularVersion', '22'); }
 export function getBootstrapVersion() { return getVersionValue('bootstrapVersion', '5.3.8'); }
 export function getBootstrapIconsVersion() { return getVersionValue('bootstrapIconsVersion', '1.13.1'); }

@@ -254,7 +254,7 @@ _Add this to `pom.xml` to enforce minimum Maven, Java, and block Lombok dependen
     <plugin>
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-enforcer-plugin</artifactId>
-      <version>3.4.1</version>
+      <version>3.6.3</version>
       <executions>
         <execution>
           <id>enforce</id>
@@ -574,9 +574,8 @@ management.metrics.mongo.* → management.metrics.mongodb.*
 - Optional dependencies no longer in uber jars by default
 - Use `<includeOptional>true</includeOptional>` if needed
 
-#### Gradle  
-- Gradle 9 now supported (8.14+ also works)
-- Minimum CycloneDX plugin version: 3.0.0
+#### Gradle
+- Not applicable — this skill generates **Maven-only** projects.
 
 #### AOP Starter
 - `spring-boot-starter-aop` renamed to `spring-boot-starter-aspectj`

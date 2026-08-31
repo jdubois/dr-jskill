@@ -41,12 +41,12 @@ This skill includes cross-platform JavaScript (Node.js) scripts in the `scripts/
 
 **Unified launcher (cross-platform):**
 ```bash
-node scripts/create-project my-app com.myco my-app com.myco.myapp 21 fullstack --output-dir /absolute/path/to/user/workspace
+node scripts/create-project my-app com.myco my-app com.myco.myapp 25 fullstack --output-dir /absolute/path/to/user/workspace
 ```
 
 **Direct invocation:**
 ```bash
-node scripts/create-project-latest.mjs my-app com.myco my-app com.myco.myapp 21 fullstack --output-dir /absolute/path/to/user/workspace
+node scripts/create-project-latest.mjs my-app com.myco my-app com.myco.myapp 25 fullstack --output-dir /absolute/path/to/user/workspace
 ```
 
 Flags supported:
@@ -61,7 +61,7 @@ Flags supported:
 ### Latest Version Project ⭐
 Use the `create-project-latest.mjs` script to create a project with the **latest Spring Boot version** (automatically fetched):
 ```bash
-node scripts/create-project-latest.mjs my-app com.mycompany my-app com.mycompany.myapp 21 web
+node scripts/create-project-latest.mjs my-app com.mycompany my-app com.mycompany.myapp 25 web
 ```
 
 Project types available:

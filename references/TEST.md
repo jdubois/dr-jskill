@@ -726,7 +726,7 @@ Add to `pom.xml` (plugins section):
 <plugin>
   <groupId>org.cyclonedx</groupId>
   <artifactId>cyclonedx-maven-plugin</artifactId>
-  <version>2.8.0</version>
+  <version>2.9.3</version>
   <executions>
     <execution>
       <phase>verify</phase>
@@ -737,7 +737,7 @@ Add to `pom.xml` (plugins section):
 <plugin>
   <groupId>org.owasp</groupId>
   <artifactId>dependency-check-maven</artifactId>
-  <version>9.2.0</version>
+  <version>13.0.0</version>
   <configuration>
     <failBuildOnCVSS>7</failBuildOnCVSS>
   </configuration>

@@ -644,15 +644,15 @@ Use **federated credentials** so GitHub Actions gets a short-lived Azure token
          CONTAINER_APP_NAME: myapp-app
          GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/myapp
        steps:
-         - uses: actions/checkout@v5
+         - uses: actions/checkout@v7
          - name: Log in to GitHub Container Registry
-           uses: docker/login-action@v3
+           uses: docker/login-action@v4
            with:
              registry: ghcr.io
              username: ${{ github.actor }}
              password: ${{ secrets.GITHUB_TOKEN }}
          - name: Build and push image to GHCR
-           uses: docker/build-push-action@v6
+           uses: docker/build-push-action@v7
            with:
              context: .
              push: true

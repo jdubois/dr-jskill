@@ -24,11 +24,11 @@ This guide covers creating front-end applications for Spring Boot using React 19
 <!-- versions:start -->
 | Tool | Version |
 |------|---------|
-| Node.js | 24.19.0 |
-| npm | 11.17.0 |
+| Node.js | 24.20.0 |
+| npm | 11.19.0 |
 | React | 19.x |
 | Vite | 8.x |
-| React Router | 7.x |
+| React Router | 8.x |
 <!-- versions:end -->
 
 > Tip: `corepack enable` for pnpm/yarn if desired. Default instructions assume `npm`. No OpenAPI client generation is provided; use `fetch`/`axios` as needed.
@@ -94,7 +94,8 @@ cd frontend
 npm install
 
 # Install React Router, Bootstrap and Bootstrap Icons
-npm install react-router-dom bootstrap@5.3.8 bootstrap-icons@1.13.1
+# React Router 8 removed the `react-router-dom` package: install `react-router` instead
+npm install react-router bootstrap@5.3.8 bootstrap-icons@1.13.1
 ```
 
 ### 2. Configure Vite for Spring Boot Integration
@@ -183,8 +184,8 @@ Add to your `pom.xml`:
                         <goal>install-node-and-npm</goal>
                     </goals>
                     <configuration>
-                        <nodeVersion>v24.19.0</nodeVersion>
-                        <npmVersion>11.17.0</npmVersion>
+                        <nodeVersion>v24.20.0</nodeVersion>
+                        <npmVersion>11.19.0</npmVersion>
                     </configuration>
                 </execution>
                 
@@ -295,7 +296,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 ### Root Component (frontend/src/App.jsx)
 
 ```jsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
@@ -329,7 +330,7 @@ export default App
 ### Navigation Component (frontend/src/components/Navbar.jsx)
 
 ```jsx
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 
 export default function Navbar() {
   return (
@@ -620,7 +621,7 @@ export default function HomePage() {
 
 ```jsx
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { useItems } from '../hooks/useItems'
 
 export default function ItemsPage() {
@@ -715,7 +716,7 @@ export default function ItemsPage() {
 
 ```jsx
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router'
 import { itemService } from '../services/itemService'
 
 export default function ItemDetailPage() {
