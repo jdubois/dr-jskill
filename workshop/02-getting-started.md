@@ -65,7 +65,7 @@ The agent will do **a lot** of things in sequence. Roughly:
 1. **Read Dr JSkill's instructions.** It opens `SKILL.md` and the relevant `references/*.md` files to understand your conventions.
 2. **Call Spring Initializr.** It runs a Dr JSkill script that hits `https://start.spring.io` to bootstrap a `pom.xml`, `Application.java`, and a minimal project skeleton.
 3. **Scaffold the Vue front-end.** It creates a `frontend/` directory, runs `npm create vue@latest`, and wires Vite to the Maven build via the Frontend Maven Plugin.
-4. **Write the domain code.** Entities (`Todo`), repositories (`TodoRepository`), services (`TodoService`), and REST controllers (`TodoController`).
+4. **Write the domain code.** Entities (`Todo`), repositories (`TodoRepository`), REST controllers (`TodoController`), and a service (`TodoService`) *only if the logic warrants one* — for simple CRUD the controller calls the repository directly.
 5. **Write the UI.** Vue components for the list, the form, toasts/effects, wired to the REST API.
 6. **Add dotfiles.** `.gitignore`, `.editorconfig`, `.env.sample`, `.dockerignore`, `.gitattributes`, Dockerfiles (JVM, AOT, native, CRaC), `compose.yaml`, `.github/lsp.json`.
 7. **Initialize git** and often make a first commit.

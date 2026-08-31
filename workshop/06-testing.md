@@ -47,14 +47,22 @@ Add unit tests for TodoController using @WebMvcTest and MockMvc.
 
 Cover:
 - GET /api/todos returns a list and 200
-- GET /api/todos?userId=1 filters correctly (mock the service)
+- GET /api/todos?userId=1 filters correctly
 - POST /api/todos with a valid body returns 201 and the created todo
 - POST /api/todos with an empty title returns 400
 - DELETE /api/todos/{id} returns 204
 
-Use Mockito's @MockitoBean for the service dependency (not the deprecated @MockBean).
+Mock whichever collaborator TodoController actually depends on: TodoService if
+your project has one, otherwise TodoRepository. Use Mockito's @MockitoBean for
+it (not the deprecated @MockBean).
 Follow Dr JSkill's testing conventions.
 ```
+
+> **Service or repository?** As [Chapter 3](03-generated-application.md) explained, Dr JSkill
+> omits the service layer for simple CRUD, so `TodoController` may well call `TodoRepository`
+> directly — you only add a `TodoService` in [Chapter 7](07-performance.md). Mock whichever one
+> your controller actually holds; mocking a bean the controller never uses leaves the real
+> collaborator in play and the test fails in confusing ways.
 
 Review the diff. Run:
 
@@ -168,7 +176,7 @@ This is the loop you'll use against real bugs in later projects.
 
 Pick one of these and prompt the agent:
 
-- *"Add a unit test for TodoService covering the user-not-found case."*
+- *"Add a unit test for the user-not-found case."* (on `TodoService` if you have one, otherwise on the controller)
 - *"Add an integration test that asserts todos created for alice are not visible when filtering by bob."*
 - *"Add a repository test (`@DataJpaTest`) verifying that saving a Todo with a null title throws a validation exception."*
 
