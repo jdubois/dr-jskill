@@ -710,6 +710,9 @@ import org.springframework.boot.ansi.AnsiColor;
 import org.springframework.boot.ansi.AnsiOutput;
 import org.springframework.boot.ansi.AnsiStyle;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.boot.web.server.WebServer;
+import org.springframework.boot.web.server.context.WebServerApplicationContext;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
@@ -723,12 +726,27 @@ public class StartupInfoListener implements ApplicationListener<ApplicationReady
 
     private static final Logger log = LoggerFactory.getLogger(StartupInfoListener.class);
 
+    /**
+     * Returns the port the web server actually bound to. Reading {@code server.port} is not
+     * enough: with {@code server.port=0} (random port, used by
+     * {@code @SpringBootTest(webEnvironment = RANDOM_PORT)}) that property is literally "0".
+     */
+    private String resolvePort(ApplicationContext context, Environment env) {
+        if (context instanceof WebServerApplicationContext webServerContext) {
+            WebServer webServer = webServerContext.getWebServer();
+            if (webServer != null && webServer.getPort() > 0) {
+                return String.valueOf(webServer.getPort());
+            }
+        }
+        return env.getProperty("local.server.port", env.getProperty("server.port", "8080"));
+    }
+
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
         Environment env = event.getApplicationContext().getEnvironment();
 
         String protocol = "true".equalsIgnoreCase(env.getProperty("server.ssl.enabled")) ? "https" : "http";
-        String serverPort = env.getProperty("server.port", "8080");
+        String serverPort = resolvePort(event.getApplicationContext(), env);
         String contextPath = env.getProperty("server.servlet.context-path", "/");
         if (!contextPath.endsWith("/")) {
             contextPath = contextPath + "/";
@@ -838,7 +856,10 @@ In a terminal with ANSI support, the output looks like:
 
 ### Design notes
 
-- **Triggered on `ApplicationReadyEvent`** — fires after Tomcat has bound its port, so what's printed is the real port (including `server.port=0` random-port mode).
+- **Triggered on `ApplicationReadyEvent`** — fires after Tomcat has bound its port. The port is
+  read from the live `WebServer` rather than from the `server.port` property, so `server.port=0`
+  (random-port mode, as used by `@SpringBootTest(webEnvironment = RANDOM_PORT)`) prints the real
+  bound port instead of `0`.
 - **HTTPS-aware** — flips the protocol when `server.ssl.enabled=true`.
 - **Context-path aware** — respects a non-root `server.servlet.context-path`.
 - **`Front-end:` line is conditional** — only printed when a `frontend/` folder exists next to the process, so standalone backends don't get a misleading line. The listener uses `VITE_PORT` first, then tries to read a `port:` from `vite.config.{js,ts}`, and falls back to Vite's default (5173).
