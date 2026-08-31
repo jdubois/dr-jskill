@@ -716,6 +716,7 @@ Keep the feedback loop fast:
 - **Share container across tests** — prefer a single `@ServiceConnection`-annotated container (already the pattern in `TestcontainersConfiguration`) over per-class containers.
 
 - **Split unit vs integration** — unit tests run via `./mvnw test` (no containers, milliseconds); integration tests run via `./mvnw verify` (containers, slower). Keep controllers covered by `@WebMvcTest` so they stay in the fast lane.
+- **Rename the generated context test** — start.spring.io emits `…ApplicationTests` annotated with `@Import(TestcontainersConfiguration.class)`, so despite the `*Tests` name Surefire runs it during `./mvnw test` and starts a real PostgreSQL container. The same trap applies to any repository or N+1 test you write against a container: if it is named `*Test` it lands in the fast lane and drags a container in with it. **Anything that needs a container belongs in `*IT`** — rename `…ApplicationTests` to `…ApplicationIT` and keep container-backed repository tests as `…RepositoryIT`, otherwise `./mvnw test` is neither container-free nor fast.
 
 ## Example Test Structure
 
@@ -723,6 +724,7 @@ Keep the feedback loop fast:
 src/test/java/
 └── com/example/app/
     ├── TestcontainersConfiguration.java     # TestContainers config (public)
+    ├── AppApplicationIT.java                # Renamed from AppApplicationTests (boots a container)
     ├── UserIntegrationIT.java               # Integration test (same package as TC config)
     ├── UserRepositoryIT.java                # Integration test (same package as TC config)
     ├── controller/

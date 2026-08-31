@@ -209,7 +209,9 @@ dependency. Turn statistics on in `src/test/resources/application.properties`:
 spring.jpa.properties.hibernate.generate_statistics=true
 ```
 
-Then assert the count directly, so an N+1 fails the build instead of hiding in a log:
+Then assert the count directly, so an N+1 fails the build instead of hiding in a log. Note the
+`*IT` name: this test needs a real database, so it belongs in the Failsafe (`verify`) lane
+rather than the fast `./mvnw test` one — see [chapter 6](06-testing.md).
 
 ```java
 import static org.assertj.core.api.Assertions.assertThat;
@@ -224,7 +226,7 @@ import org.springframework.context.annotation.Import;
 
 @DataJpaTest
 @Import(TestcontainersConfiguration.class)
-class NPlusOneDetectionTest {
+class NPlusOneDetectionIT {
 
     @Autowired private TodoRepository todoRepository;
     @Autowired private EntityManager entityManager;
