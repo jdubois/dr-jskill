@@ -131,6 +131,12 @@ TESTCONTAINERS_RYUK_DISABLED=false
 # Application secrets (NEVER commit real values)
 APP_API_KEY=replace-me
 APP_API_SECRET=replace-me
+
+# Front-end build mirrors — only needed behind a corporate proxy that blocks
+# registry.npmjs.org. Read by docker-compose*.yml at build time.
+# NODE_DOWNLOAD_ROOT=https://nodejs.org/dist/
+# NPM_DOWNLOAD_ROOT=https://your-mirror/npm/-/
+# NPM_CONFIG_REGISTRY=https://your-mirror
 ```
 
 > **Local dev tip:** copy once → `cp .env.sample .env`, then update values. **Do not** check in `.env`.

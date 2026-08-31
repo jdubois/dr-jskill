@@ -28,6 +28,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-native
+      # Front-end build mirrors for corporate proxies. Defaults match the
+      # Dockerfile; override them in .env — see workshop Appendix B.
+      args:
+        NODE_DOWNLOAD_ROOT: ${NODE_DOWNLOAD_ROOT:-https://nodejs.org/dist/}
+        NPM_DOWNLOAD_ROOT: ${NPM_DOWNLOAD_ROOT:-https://registry.npmjs.org/npm/-/}
+        NPM_CONFIG_REGISTRY: ${NPM_CONFIG_REGISTRY:-https://registry.npmjs.org}
     environment:
       SPRING_BOOT_PORT: ${SPRING_BOOT_PORT:-8080}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mydb

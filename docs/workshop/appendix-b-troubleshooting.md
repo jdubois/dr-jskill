@@ -286,6 +286,15 @@ docker run --rm alpine:3 sh -c "apk add -q --no-cache curl && curl -sS -o /dev/n
    ```
    Add `--build-arg NODE_DOWNLOAD_ROOT=...` too if your mirror also proxies the Node
    distribution (many corporate mirrors do, under a `nodejs/dist` path).
+
+   Using Compose instead of `docker build`? All four generated `docker-compose*.yml` files
+   read the same three settings from the environment, so export them (or put them in `.env`)
+   and `docker compose build` picks them up — no `--build-arg` needed:
+   ```bash
+   REGISTRY="$(npm config get registry)"; REGISTRY="${REGISTRY%/}"
+   export NPM_DOWNLOAD_ROOT="${REGISTRY}/npm/-/" NPM_CONFIG_REGISTRY="${REGISTRY}"
+   docker compose up --build
+   ```
 2. Add your proxy's CA certificate to the build stage, and/or pass `HTTP_PROXY` / `HTTPS_PROXY`
    as build args.
 3. If you only need to *run* the app, build the jar on the host and copy it in — this skips the

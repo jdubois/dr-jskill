@@ -19,6 +19,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-crac
+      # Front-end build mirrors for corporate proxies. Defaults match the
+      # Dockerfile; override them in .env — see workshop Appendix B.
+      args:
+        NODE_DOWNLOAD_ROOT: ${NODE_DOWNLOAD_ROOT:-https://nodejs.org/dist/}
+        NPM_DOWNLOAD_ROOT: ${NPM_DOWNLOAD_ROOT:-https://registry.npmjs.org/npm/-/}
+        NPM_CONFIG_REGISTRY: ${NPM_CONFIG_REGISTRY:-https://registry.npmjs.org}
     # CRIU needs broad privileges to checkpoint and restore the JVM process. A
     # narrower set (cap_add: CHECKPOINT_RESTORE, SYS_PTRACE, SYS_ADMIN and
     # security_opt: seccomp:unconfined) works on most hosts; `privileged` is the
