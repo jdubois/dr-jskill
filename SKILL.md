@@ -233,6 +233,14 @@ When wiring the `frontend-maven-plugin`, bind the Node install, `npm install`, a
 > - Vue: `npm create -y vue@latest frontend -- --router --pinia --vitest --eslint --prettier` (create-vue does not pose extra prompts)
 > - Angular: `echo | npx --yes @angular/cli@22 new frontend --style=css --ssr=false --skip-git --defaults --skip-install`, then `npm install`
 >
+> **Vue: normalize before the first `npm install` (required).** `create-vue` scaffolds `oxlint` and `eslint-plugin-oxlint` pinned to mismatched minors, so `npm install` fails with an `ERESOLVE` peer conflict — which fails the `frontend-maven-plugin` step and therefore the whole Maven build. Immediately after scaffolding, run:
+>
+> ```bash
+> node scripts/normalize-vue-frontend.mjs frontend
+> ```
+>
+> It drops the oxlint dual-linter, leaving the single ESLint pipeline. It is idempotent, and `--check` reports without writing. See [Vue.js Guide](references/VUE.md#1-project-setup).
+>
 > **Vitest + callback Vite config.** If `vite.config.js` exports `defineConfig(({ mode }) => ...)`, do not let the generated `vitest.config.js` call `mergeConfig(viteConfig, ...)`. Resolve the callback first with `viteConfig({ mode: 'test', command: 'serve' })`; otherwise Vitest fails with `Cannot merge config in form of callback`. See [Vue.js Guide](references/VUE.md#2-configure-vite-for-spring-boot-integration).
 
 ## Docker Deployment

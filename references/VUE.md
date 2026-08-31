@@ -107,24 +107,29 @@ npm install
 npm install bootstrap@5.3.8 bootstrap-icons@1.13.1
 ```
 
-> **Heads-up — create-vue's oxlint dual-linter can break `npm install`.** Recent
+> **Heads-up — create-vue's oxlint dual-linter breaks `npm install`.** Recent
 > `create-vue` scaffolds add both `oxlint` and `eslint-plugin-oxlint` as dev
-> dependencies, and the two are sometimes pinned to mismatched minors (e.g.
+> dependencies, pinned to mismatched minors (e.g.
 > `oxlint@~1.74.0` with `eslint-plugin-oxlint@~1.73.0`, whose peer requires
 > `oxlint@~1.73.0`). This makes `npm install` fail with an `ERESOLVE` peer
-> conflict — which also breaks the `frontend-maven-plugin` `npm install` step.
-> The recommended, drift-proof fix is to drop the oxlint dual-linter and keep a
-> single ESLint pipeline (this project standardizes on the eslint-only scripts in
-> [step 4](#4-update-frontend-packagejson-scripts)):
-> 1. Remove `oxlint`, `eslint-plugin-oxlint`, and `npm-run-all2` from
->    `devDependencies` in `frontend/package.json`.
-> 2. Delete `frontend/.oxlintrc.json` if present.
-> 3. In `frontend/eslint.config.js`, remove the `import pluginOxlint from
->    'eslint-plugin-oxlint'` line and the
->    `...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json')` entry.
+> conflict — which also fails the `frontend-maven-plugin` `npm install` step and
+> therefore the **whole Maven build**.
 >
-> Then `npm install` resolves cleanly. (Alternatively, align both packages to the
-> same minor, but removal avoids future version drift.)
+> **Always run the normalizer immediately after scaffolding**, before the first
+> `npm install`. It drops the oxlint dual-linter and collapses linting to the
+> single ESLint pipeline this project standardizes on (see
+> [step 4](#4-update-frontend-packagejson-scripts)):
+>
+> ```bash
+> node scripts/normalize-vue-frontend.mjs frontend
+> ```
+>
+> It is idempotent, and `--check` reports without writing (useful in CI). If you
+> ever need to do it by hand: remove `oxlint`, `eslint-plugin-oxlint` and
+> `npm-run-all2` from `devDependencies`, delete `frontend/.oxlintrc.json`, and
+> drop the `eslint-plugin-oxlint` import plus the
+> `...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json')` entry from
+> `frontend/eslint.config.js`.
 
 ### 2. Configure Vite for Spring Boot Integration
 
@@ -376,17 +381,17 @@ app.mount('#app')
 ```vue
 <template>
   <div id="app">
-    <Navbar />
+    <AppNavbar />
     <main class="container my-5">
       <RouterView />
     </main>
-    <Footer />
+    <AppFooter />
   </div>
 </template>
 
 <script setup>
-import Navbar from './components/Navbar.vue'
-import Footer from './components/Footer.vue'
+import AppNavbar from './components/AppNavbar.vue'
+import AppFooter from './components/AppFooter.vue'
 import { RouterView } from 'vue-router'
 </script>
 
@@ -414,7 +419,11 @@ main {
 </style>
 ```
 
-### Navigation Component (frontend/src/components/Navbar.vue)
+### Navigation Component (frontend/src/components/AppNavbar.vue)
+
+> Component filenames are multi-word on purpose: ESLint's `vue/multi-word-component-names`
+> rule ships enabled in the `create-vue` scaffold, so a single-word `Navbar.vue` fails
+> `npm run lint`.
 
 ```vue
 <template>
@@ -451,7 +460,7 @@ import { RouterLink } from 'vue-router'
 </script>
 ```
 
-### Footer Component (frontend/src/components/Footer.vue)
+### Footer Component (frontend/src/components/AppFooter.vue)
 
 ```vue
 <template>
