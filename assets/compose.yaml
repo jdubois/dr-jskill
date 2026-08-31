@@ -7,12 +7,12 @@ services:
     image: postgres:18-alpine
     environment:
       POSTGRES_DB: mydb
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME:-user}
+      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-password}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "user"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5

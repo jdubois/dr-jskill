@@ -422,6 +422,11 @@ function configureApplicationProperties(projectDir, { database = false } = {}) {
 
   content = upsertConfigImport(content, 'optional:file:.env[.properties]');
   content = upsertProperty(content, 'server.port', '${SPRING_BOOT_PORT:8080}');
+  // `.env` is imported as a plain properties file, so its keys arrive literally
+  // (SPRING_PROFILES_ACTIVE) instead of being relaxed-bound like real environment
+  // variables. Every key it provides therefore has to be dereferenced explicitly,
+  // otherwise setting it in `.env` silently does nothing.
+  content = upsertProperty(content, 'spring.profiles.active', '${SPRING_PROFILES_ACTIVE:default}');
   // Jackson 3 (Spring Boot 4) enables FAIL_ON_NULL_FOR_PRIMITIVES by default, so a
   // request body that omits a primitive field (e.g. {"title":"Buy milk"} with no
   // "completed") is rejected with HTTP 400 instead of falling back to the Java
