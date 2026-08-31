@@ -236,7 +236,9 @@ When wiring the `frontend-maven-plugin`, bind the Node install, `npm install`, a
 > **Vue: normalize before the first `npm install` (required).** `create-vue` scaffolds `oxlint` and `eslint-plugin-oxlint` pinned to mismatched minors, so `npm install` fails with an `ERESOLVE` peer conflict — which fails the `frontend-maven-plugin` step and therefore the whole Maven build. Immediately after scaffolding, run:
 >
 > ```bash
-> node scripts/normalize-vue-frontend.mjs frontend
+> # Run from the Dr JSkill skill directory (that is where `scripts/` lives),
+> # passing the path to the generated project's frontend/ directory.
+> node scripts/normalize-vue-frontend.mjs /absolute/path/to/my-app/frontend
 > ```
 >
 > It drops the oxlint dual-linter, leaving the single ESLint pipeline. It is idempotent, and `--check` reports without writing. See [Vue.js Guide](references/VUE.md#1-project-setup).

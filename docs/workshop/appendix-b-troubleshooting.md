@@ -122,10 +122,15 @@ npm error Could not resolve dependency:
 npm error peer oxlint@"~1.73.0" from eslint-plugin-oxlint@1.73.0
 ```
 
-**Fix:** drop the oxlint dual-linter (Dr JSkill uses a single ESLint pipeline):
+**Fix:** drop the oxlint dual-linter (Dr JSkill uses a single ESLint pipeline).
+The simplest route is to ask the agent: *"run the Vue normalizer on `frontend/`"*.
+
+To do it yourself, note that `scripts/` lives in the **Dr JSkill skill folder**, not in
+your generated project — running `node scripts/...` from the project root fails with
+`MODULE_NOT_FOUND`. Point at the skill's copy instead:
 
 ```bash
-node scripts/normalize-vue-frontend.mjs frontend
+node /path/to/dr-jskill/scripts/normalize-vue-frontend.mjs frontend
 cd frontend && npm install
 ```
 

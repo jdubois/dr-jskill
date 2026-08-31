@@ -121,7 +121,11 @@ npm install bootstrap@5.3.8 bootstrap-icons@1.13.1
 > [step 4](#4-update-frontend-packagejson-scripts)):
 >
 > ```bash
-> node scripts/normalize-vue-frontend.mjs frontend
+> # `scripts/` lives in the Dr JSkill skill folder, NOT in your generated
+> # project — running this from the project root gives MODULE_NOT_FOUND.
+> # Easiest: ask the agent, "run the Vue normalizer on frontend/".
+> # Manually, point at the skill's copy and pass your frontend path:
+> node /path/to/dr-jskill/scripts/normalize-vue-frontend.mjs frontend
 > ```
 >
 > It is idempotent, and `--check` reports without writing (useful in CI). If you
