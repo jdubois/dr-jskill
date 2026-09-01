@@ -42,7 +42,7 @@ Review the diff before running. Typical files touched:
 - `frontend/src/App.vue` — layout wrapper
 - `frontend/src/components/AppNavbar.vue` (new — multi-word name, because ESLint's `vue/multi-word-component-names` rejects `Navbar.vue`)
 - `frontend/src/views/*.vue` — card wrappers
-- Maybe `frontend/src/main.js` to import Bootstrap if it wasn't already
+- Maybe `frontend/src/main.js` (or `main.ts`) to import Bootstrap if it wasn't already
 
 Then:
 

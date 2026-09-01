@@ -190,6 +190,15 @@ frontend/
   public/
 ```
 
+> **Scaffolded with TypeScript?** If you answered yes to "Add TypeScript?" (or passed
+> `--typescript`), every `.js` file named in this workshop is a `.ts` file in your project:
+> `vite.config.ts`, `vitest.config.ts`, `src/main.ts`, `src/router/index.ts`. Translate the
+> paths as you go. One deliberate exception: inside `vitest.config.ts`, the import stays
+> `import viteConfig from './vite.config.js'` — that is a *module specifier*, not a filename,
+> and TypeScript rejects `./vite.config.ts` with
+> `TS5097: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled`.
+> Leave it as `.js`.
+
 This is a standard [Vite + Vue](https://vitejs.dev) project. The interesting question is: **how does it get packaged with the Spring Boot app?**
 
 ### 5.1 The Maven Frontend Plugin

@@ -134,7 +134,7 @@ ls src/main/resources/static/assets/*.js
 Several files (e.g. `index-<hash>.js` **and** `AboutView-<hash>.js`) means routes are already split, which is what the Dr JSkill Vue scaffold generates. In that case skip ahead. Otherwise:
 
 ```
-In frontend/src/router/index.js, convert every route's component to a lazy
+In frontend/src/router/index.js (or index.ts), convert every route's component to a lazy
 import: component: () => import('../views/SomeView.vue')
 ```
 

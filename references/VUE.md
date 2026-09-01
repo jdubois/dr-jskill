@@ -210,6 +210,13 @@ export default mergeConfig(
 )
 ```
 
+> **TypeScript flavour:** the file is `vitest.config.ts` and it sits next to
+> `vite.config.ts` — but keep the import specifier as `'./vite.config.js'` exactly as
+> written above. It is a module specifier, not a filename, and TypeScript rejects the `.ts`
+> form with `TS5097: An import path can only end with a '.ts' extension when
+> 'allowImportingTsExtensions' is enabled`, which fails `vue-tsc` and therefore the Maven
+> build. "Correcting" it to `.ts` is a common and confusing self-inflicted break.
+
 ### 3. Configure Maven for Frontend Build
 
 Add to your `pom.xml`:
