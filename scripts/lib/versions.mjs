@@ -256,6 +256,49 @@ export function patchPomStartClass(projectDir, mainClass) {
 }
 
 /**
+ * Rename the generated `*ApplicationTests` to `*ApplicationIT` when it is wired to
+ * Testcontainers.
+ *
+ * start.spring.io emits `<App>ApplicationTests` annotated with
+ * `@Import(TestcontainersConfiguration.class)`, so despite the `*Tests` name Surefire
+ * runs it during `./mvnw test` and it boots a real PostgreSQL container. That
+ * contradicts the convention the skill documents ("anything needing a container belongs
+ * in `*IT`", references/TEST.md) and makes `./mvnw test` slow and Docker-dependent.
+ *
+ * Renaming moves it to the Failsafe lane, which `patchPomFailsafe` has already enabled,
+ * so the smoke test still runs — under `./mvnw verify` instead of `./mvnw test`.
+ *
+ * Only touches files that actually reference TestcontainersConfiguration, so a
+ * container-free `*ApplicationTests` is left alone. Idempotent.
+ */
+export function renameContainerBackedApplicationTest(projectDir) {
+  const testRoot = join(projectDir, 'src', 'test', 'java');
+  if (!existsSync(testRoot)) return;
+
+  const walk = (dir) => {
+    let found = [];
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) found = found.concat(walk(full));
+      else if (entry.isFile() && entry.name.endsWith('ApplicationTests.java')) found.push(full);
+    }
+    return found;
+  };
+
+  for (const filePath of walk(testRoot)) {
+    const source = readFileSync(filePath, 'utf8');
+    // Only reclassify tests that really need a container.
+    if (!source.includes('TestcontainersConfiguration')) continue;
+    const oldClass = basename(filePath, '.java');
+    const newClass = `${oldClass.slice(0, -'Tests'.length)}IT`;
+    const newPath = join(dirname(filePath), `${newClass}.java`);
+    if (existsSync(newPath)) continue; // Already renamed
+    writeFileSync(newPath, source.replaceAll(oldClass, newClass), 'utf8');
+    unlinkSync(filePath);
+  }
+}
+
+/**
  * Inject the Maven Failsafe plugin into pom.xml's <build><plugins> if absent.
  * Spring Boot's parent POM declares failsafe only under <pluginManagement>, so
  * without an explicit declaration `./mvnw verify` silently skips every *IT test
@@ -634,6 +677,10 @@ export function applyDotfiles(projectDir, options = {}) {
   // Activate Maven Failsafe so `./mvnw verify` actually runs *IT integration tests
   // (the Boot parent only manages it under <pluginManagement>) — see references/TEST.md.
   patchPomFailsafe(projectDir);
+  // Move the container-backed smoke test into the Failsafe lane so `./mvnw test`
+  // stays container-free, as references/TEST.md promises. Must run after
+  // patchPomFailsafe so the renamed *IT is actually executed by `./mvnw verify`.
+  renameContainerBackedApplicationTest(projectDir);
   // Add the `aot` and `crac` profiles so Dockerfile-aot and Dockerfile-crac build
   // out of the box (the `native` profile comes from start.spring.io). See DOCKER.md.
   patchPomProfiles(projectDir);

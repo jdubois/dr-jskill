@@ -23,7 +23,8 @@ Open `src/test/java/` in your project. You'll see the one test the generator shi
 
 ```java
 @SpringBootTest
-class ApplicationTest {
+@Import(TestcontainersConfiguration.class)
+class ApplicationIT {
     @Test
     void contextLoads() {}
 }
@@ -38,7 +39,7 @@ This proves the app starts. Useful, but tiny. Dr JSkill's convention (see [`refe
 
 Unit tests go in `src/test/java/.../*Test.java`. Integration tests follow a `*IT.java` naming convention and are run by the Maven Failsafe plugin during the `verify` phase.
 
-> **One exception ships with the project.** The generated `…ApplicationTests` above is annotated with `@Import(TestcontainersConfiguration.class)`, so despite its `*Tests` name Surefire runs it during `./mvnw test` and it starts a real PostgreSQL container — which is why your first `./mvnw test` takes seconds, not milliseconds. It is an integration test wearing a unit test's name. The same applies to any repository test you point at a container (and the N+1 test in [chapter 7](07-performance.md)). The rule that actually holds: **anything needing a container belongs in `*IT`**. Ask the agent to rename them if you want `./mvnw test` to stay genuinely container-free.
+> **This one already ships renamed.** The generated context test is annotated with `@Import(TestcontainersConfiguration.class)`, so it boots a real PostgreSQL container. Dr JSkill therefore generates it as `…ApplicationIT`, not `…ApplicationTests`, which puts it in the Failsafe lane: `./mvnw test` stays container-free and fast, and the smoke test still runs under `./mvnw verify`. The same rule applies to tests you add later — **anything needing a container belongs in `*IT`** (including the N+1 test in [chapter 7](07-performance.md)). Name a container-backed test `*Test` and it lands in the fast lane and drags a container in with it.
 
 ## 3. Add unit tests for the controller
 

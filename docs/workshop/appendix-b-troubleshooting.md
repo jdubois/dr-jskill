@@ -196,7 +196,7 @@ Run `git status`. If it's clean, the agent may have hit a silent error. Ask: *"S
 
 ## Tests & build
 
-### `./mvnw test` fails with `Failed to start application`
+### `./mvnw verify` fails with `Failed to start application`
 
 **Cause:** usually a Postgres connection error (container not up, credentials changed).
 
