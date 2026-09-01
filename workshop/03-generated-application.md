@@ -201,6 +201,10 @@ Open `pom.xml` and look for `frontend-maven-plugin`:
   <groupId>com.github.eirslett</groupId>
   <artifactId>frontend-maven-plugin</artifactId>
   ...
+  <configuration>
+    <workingDirectory>frontend</workingDirectory>
+    <installDirectory>target</installDirectory>
+  </configuration>
   <executions>
     <execution>
       <id>install node and npm</id>
@@ -225,7 +229,7 @@ Open `pom.xml` and look for `frontend-maven-plugin`:
 
 Because these executions are bound to `generate-resources`, when you run `./mvnw package` or `./mvnw spring-boot:run`, Maven:
 
-1. Installs a local Node.js inside `frontend/node/` (doesn't touch your system Node)
+1. Installs a local Node.js and npm under `target/node/` (that is what `<installDirectory>target</installDirectory>` selects — it doesn't touch your system Node, and `./mvnw clean` discards it)
 2. Runs `npm install` inside `frontend/`
 3. Runs `npm run build` — Vite writes optimized, hashed assets **straight into `src/main/resources/static/`**
 
