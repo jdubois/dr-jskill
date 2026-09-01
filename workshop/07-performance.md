@@ -229,12 +229,15 @@ import org.springframework.context.annotation.Import;
 class NPlusOneDetectionIT {
 
     @Autowired private TodoRepository todoRepository;
+    @Autowired private AppUserRepository userRepository;
     @Autowired private EntityManager entityManager;
 
     @Test
     void listingTodosIssuesASingleQuery() {
-        todoRepository.save(new Todo("a", false));
-        todoRepository.save(new Todo("b", false));
+        // Chapter 4 gave Todo a required owner, so a todo cannot be saved without one.
+        AppUser owner = userRepository.save(new AppUser("julien"));
+        todoRepository.save(new Todo("a", false, owner));
+        todoRepository.save(new Todo("b", false, owner));
         entityManager.flush();
         entityManager.clear();
 
@@ -253,14 +256,17 @@ class NPlusOneDetectionIT {
 }
 ```
 
-> **Two things to get right.** `@DataJpaTest` moved in Spring Boot 4 — it is
+> **Three things to get right.** `@DataJpaTest` moved in Spring Boot 4 — it is
 > `org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest`, not the Boot 3
 > `org.springframework.boot.test.autoconfigure.orm.jpa` package. The
 > `spring-boot-starter-data-jpa-test` dependency it needs is already in your generated
-> `pom.xml`. And `new Todo("a", false)` matches the entity from
-> [Chapter 3](03-generated-application.md) (`title`, `completed`) —
-> if your agent generated a different shape, adjust the constructor call. The assertion is
-> the part that matters.
+> `pom.xml`. Second, **a todo needs an owner now**: chapter 4 added a `@ManyToOne` to
+> `AppUser`, and if your agent made it non-optional (`optional = false` / `nullable = false`,
+> which is the usual choice) then saving a todo without one fails on insert. Create a user
+> first, as above, and pass it in. Third, `new Todo("a", false, owner)` assumes the entity
+> shape from [Chapter 3](03-generated-application.md) plus that owner — if your agent
+> generated a different constructor, or names the repository something other than
+> `AppUserRepository`, adjust the calls to match. The assertion is the part that matters.
 
 Run `./mvnw verify`. If listing N todos issues N+1 statements instead of 1, the assertion
 fails and names the problem. Fix it with `@EntityGraph` or `JOIN FETCH` — the pattern is in
