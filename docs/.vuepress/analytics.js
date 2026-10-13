@@ -11,7 +11,7 @@
 
 export const GA_MEASUREMENT_ID = 'G-92TRR0HJMQ'
 
-const CONSENT_STORAGE_KEY = 'drjskill-analytics-consent'
+const CONSENT_STORAGE_KEY = 'jdubois-analytics-consent'
 const CONSENT_EVENT = 'drjskill:analytics-consent'
 const GRANTED = 'granted'
 const DENIED = 'denied'

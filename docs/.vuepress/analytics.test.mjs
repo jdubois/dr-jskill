@@ -87,7 +87,7 @@ async function withStubbedBrowser({storage = 'available'} = {}) {
     // What another tab writing to the shared key looks like from here.
     writeInAnotherTab(value) {
       ;(listeners.get('storage') ?? []).forEach((handler) =>
-        handler({key: 'drjskill-analytics-consent', newValue: value})
+        handler({key: 'jdubois-analytics-consent', newValue: value})
       )
     },
     configOptions: () => Array.from(globalThis.window.dataLayer ?? []).find((entry) => entry[0] === 'config')?.[2],
