@@ -6,6 +6,7 @@
   "scripts": {
     "docs:dev": "vuepress dev docs --host 127.0.0.1 --port 8091",
     "docs:build": "vuepress build docs",
+    "docs:test": "node --test docs/.vuepress/analytics.test.mjs",
     "docs:preview": "VUEPRESS_BASE=/ npm run docs:build && serve docs/.vuepress/dist --listen 8091"
   },
   "devDependencies": {

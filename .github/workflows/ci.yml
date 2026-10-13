@@ -32,6 +32,9 @@ jobs:
       - name: Test workshop link synchronization
         run: node --test scripts/sync-workshop-docs.test.mjs
 
+      - name: Test docs analytics consent
+        run: node --test docs/.vuepress/analytics.test.mjs
+
       - name: Syntax-check scripts
         run: |
           for f in scripts/*.mjs scripts/lib/*.mjs; do
