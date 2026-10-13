@@ -23,7 +23,6 @@ features:
     details: PostgreSQL with Hibernate ddl-auto, REST APIs, monitoring, security, and testing recipes baked into every generated project.
   - title: Built on JHipster experience
     details: Distils years of JHipster experience into an AI-agent skill — versatile, easy to tune, and able to update existing projects.
-footer: Apache-2.0 Licensed | Dr JSkill
 ---
 
 ## Start here
