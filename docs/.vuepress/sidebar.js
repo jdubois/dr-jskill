@@ -22,7 +22,7 @@ const workshopOrder = [
 ]
 
 export function createDocsSidebar() {
-  return [folderGroup('Workshop', 'workshop', workshopOrder)]
+  return [folderGroup('Workshop', 'workshop', workshopOrder), toSidebarItem('PRIVACY.md')]
 }
 
 function folderGroup(text, folder, order) {

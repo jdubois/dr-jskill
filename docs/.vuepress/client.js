@@ -1,8 +1,15 @@
 import {nextTick, onMounted, onUnmounted, watch} from 'vue'
 import {defineClientConfig, onContentUpdated, useRoute} from 'vuepress/client'
 import './styles/index.css'
+import CookieConsent from './components/CookieConsent.vue'
+import CookieSettings from './components/CookieSettings.vue'
+import {trackPageView} from './analytics.js'
 
 export default defineClientConfig({
+  enhance({app}) {
+    app.component('CookieSettings', CookieSettings)
+  },
+  rootComponents: [CookieConsent],
   setup() {
     const route = useRoute()
     let scheduleSidebarSync = () => {}
@@ -29,7 +36,15 @@ export default defineClientConfig({
     })
 
     onContentUpdated(syncAfterDomUpdate)
-    watch(() => route.fullPath, syncAfterDomUpdate)
+    watch(
+      () => route.fullPath,
+      () => {
+        syncAfterDomUpdate()
+        // Client-side navigation never reloads the document, so gtag.js cannot see it. The title is
+        // only correct once Vue has flushed, hence the nextTick.
+        void nextTick(() => trackPageView(window.location.pathname))
+      }
+    )
 
     onUnmounted(() => {
       cleanupSidebarSync()
