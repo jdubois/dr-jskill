@@ -101,7 +101,7 @@ node scripts/create-web-project.mjs my-web-app com.mycompany my-web-app com.myco
 - Spring Boot DevTools
 
 ### 3. create-fullstack-project.mjs
-Creates a comprehensive Spring Boot application with database, security, and web dependencies.
+Creates a comprehensive Spring Boot application with database and web dependencies. Security is optional and is not included by default.
 
 **Usage:**
 ```bash
@@ -142,6 +142,13 @@ After downloading from start.spring.io, the scripts **patch in** dotfiles:
 - optional `.nvmrc` / `.node-version` (uses Node version from `versions.json`)
 
 Existing files are preserved; `.gitignore` is appended once using a marker.
+
+Generated projects pin the Maven wrapper to `mavenVersion` and enforce the minimum
+Maven version and the Lombok dependency ban with Maven Enforcer.
+
+After scaffolding Vue, run `node scripts/normalize-vue-frontend.mjs /path/to/frontend`
+before the first `npm install`. This removes the conflicting oxlint pipeline and
+pins existing Vue/Vite/test dependencies to the stable versions in `versions.json`.
 
 ## Keeping docs in sync with `versions.json`
 
@@ -187,7 +194,7 @@ These JavaScript scripts work natively on:
 - All scripts create projects with Java packaging (JAR)
 - The scripts will create a new directory with your project name in the current directory, or under `--output-dir` when provided
 - If a directory with the same name already exists, the unzip operation may fail
-- **Testing support**: All projects include `spring-boot-starter-test` (JUnit 5, Mockito, AssertJ). For `@WebMvcTest` support in Spring Boot 4, `spring-boot-starter-webmvc-test` is also required.
+- **Testing support**: Projects include the Spring Boot test starters (JUnit Jupiter, Mockito, AssertJ). For `@WebMvcTest` support in Spring Boot 4, `spring-boot-starter-webmvc-test` is required.
 - **TestContainers**: Full-stack projects include TestContainers for integration testing with PostgreSQL
 - Spring Boot DevTools is included for development productivity
 - No Spring Security is included by default

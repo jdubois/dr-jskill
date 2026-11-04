@@ -618,7 +618,7 @@ Use **federated credentials** so GitHub Actions gets a short-lived Azure token
 
    The `subject` must match `repo:<owner>/<repo>:ref:refs/heads/<branch>`
    **exactly** — a typo here is the single most common reason the
-   `azure/login@v2` step fails with `AADSTS70021: No matching federated
+   `azure/login@v3` step fails with `AADSTS70021: No matching federated
    identity record found`.
 
 2. Add three **repo variables** (not secrets): `AZURE_CLIENT_ID`,
@@ -661,7 +661,7 @@ Use **federated credentials** so GitHub Actions gets a short-lived Azure token
                ${{ env.GHCR_IMAGE }}:latest
              cache-from: type=gha
              cache-to: type=gha,mode=max
-         - uses: azure/login@v2
+         - uses: azure/login@v3
            with:
              client-id: ${{ vars.AZURE_CLIENT_ID }}
              tenant-id: ${{ vars.AZURE_TENANT_ID }}

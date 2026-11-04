@@ -34,26 +34,46 @@ function getVersionValue(key, defaultValue = '') {
 
 export function getJavaVersion() { return getVersionValue('javaVersion', '25'); }
 export function getBootPreferredMajor() { return getVersionValue('springBootPreferredMajor', '4'); }
-export function getBootFallback() { return getVersionValue('springBootFallback', '4.1.1'); }
+export function getBootFallback() { return getVersionValue('springBootFallback', '4.1.2'); }
 export function getPostgresVersion() { return getVersionValue('postgresVersion', '18'); }
 export function getTemurinVersion() { return getVersionValue('temurinVersion', '25'); }
 export function getMavenMinVersion() { return getVersionValue('mavenMinVersion', '3.8.0'); }
+export function getMavenVersion() { return getVersionValue('mavenVersion', '3.10.0'); }
+export function getMavenEnforcerPluginVersion() { return getVersionValue('mavenEnforcerPluginVersion', '3.7.0'); }
 export function getGraalvmVersion() { return getVersionValue('graalvmVersion', '25'); }
-export function getNodeVersion() { return getVersionValue('nodeVersion', '24.21.0'); }
-export function getNpmVersion() { return getVersionValue('npmVersion', '11.20.0'); }
-export function getViteVersion() { return getVersionValue('viteVersion', '8'); }
+export function getNodeVersion() { return getVersionValue('nodeVersion', '24.22.2'); }
+export function getNpmVersion() { return getVersionValue('npmVersion', '11.21.1'); }
+export function getViteVersion() { return getVersionValue('viteVersion', '8.3.5'); }
 export function getMavenFrontendPluginVersion() { return getVersionValue('mavenFrontendPluginVersion', '2.0.2'); }
-export function getVueVersion() { return getVersionValue('vueVersion', '3'); }
-export function getPiniaVersion() { return getVersionValue('piniaVersion', '4'); }
-export function getVueRouterVersion() { return getVersionValue('vueRouterVersion', '5'); }
-export function getReactVersion() { return getVersionValue('reactVersion', '19'); }
-export function getReactRouterVersion() { return getVersionValue('reactRouterVersion', '8'); }
-export function getAngularVersion() { return getVersionValue('angularVersion', '22'); }
+export function getVueVersion() { return getVersionValue('vueVersion', '3.5.44'); }
+export function getPiniaVersion() { return getVersionValue('piniaVersion', '4.1.0'); }
+export function getVueRouterVersion() { return getVersionValue('vueRouterVersion', '5.4.0'); }
+export function getReactVersion() { return getVersionValue('reactVersion', '19.3.1'); }
+export function getReactRouterVersion() { return getVersionValue('reactRouterVersion', '8.5.1'); }
+export function getAngularVersion() { return getVersionValue('angularVersion', '22.2.3'); }
 export function getBootstrapVersion() { return getVersionValue('bootstrapVersion', '5.3.8'); }
-export function getBootstrapIconsVersion() { return getVersionValue('bootstrapIconsVersion', '1.13.1'); }
+export function getBootstrapIconsVersion() { return getVersionValue('bootstrapIconsVersion', '1.13.2'); }
 export function getTestcontainersVersion() { return getVersionValue('testcontainersVersion', '2.0.5'); }
-export function getSpringFrameworkVersion() { return getVersionValue('springFrameworkVersion', '7.0'); }
-export function getHibernateVersion() { return getVersionValue('hibernateVersion', '7.4'); }
+export function getSpringFrameworkVersion() { return getVersionValue('springFrameworkVersion', '7.0.10'); }
+export function getHibernateVersion() { return getVersionValue('hibernateVersion', '7.4.13.Final'); }
+
+export function getVueFrontendVersions() {
+  return {
+    vue: getVueVersion(),
+    pinia: getPiniaVersion(),
+    'vue-router': getVueRouterVersion(),
+    bootstrap: getBootstrapVersion(),
+    'bootstrap-icons': getBootstrapIconsVersion(),
+    vite: getViteVersion(),
+    vitest: getVersionValue('vitestVersion', '5.0.5'),
+    '@vitejs/plugin-vue': getVersionValue('viteVuePluginVersion', '6.0.10'),
+    '@vue/test-utils': getVersionValue('vueTestUtilsVersion', '2.5.1'),
+    jsdom: getVersionValue('jsdomVersion', '30.1.3'),
+    eslint: getVersionValue('eslintVersion', '10.13.0'),
+    'eslint-plugin-vue': getVersionValue('eslintVuePluginVersion', '10.12.0'),
+    prettier: getVersionValue('prettierVersion', '3.9.10'),
+  };
+}
 
 /**
  * Strip legacy qualifiers (.RELEASE, .GA) that Spring Boot 4+ no longer uses.
@@ -114,34 +134,19 @@ export async function resolveBootVersion(preferredMajor, fallback) {
       return fallback;
     }
 
-    const cleaned = stripLegacyQualifier(fetched);
-
-    if (cleaned.startsWith(`${preferredMajor}.`)) {
-      // Verify the version actually exists on Maven Central
-      if (await existsOnMavenCentral(cleaned)) {
-        return cleaned;
-      }
-      console.error(`⚠️  Spring Boot ${cleaned} (from start.spring.io) is not on Maven Central yet. Using fallback ${fallback}.`);
-      return fallback;
-    }
-
-    // start.spring.io default doesn't match our preferred major — scan available versions
     const values = metadata?.bootVersion?.values || [];
-    const candidates = values
+    const candidates = [fetched, ...values
       .map(v => typeof v === 'string' ? v : v?.id)
-      .filter(Boolean)
+      .filter(Boolean)]
       .map(stripLegacyQualifier)
-      .filter(v => v.startsWith(`${preferredMajor}.`) && !v.includes('-'));
-    // Pick the highest stable version from the list
-    if (candidates.length > 0) {
-      candidates.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-      if (await existsOnMavenCentral(candidates[0])) {
-        return candidates[0];
-      }
+      .filter(v => v.startsWith(`${preferredMajor}.`) && /^\d+\.\d+\.\d+$/.test(v));
+    candidates.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+    for (const candidate of new Set(candidates)) {
+      if (await existsOnMavenCentral(candidate)) return candidate;
     }
 
     console.error(
-      `⚠️  start.spring.io default bootVersion (${fetched}) does not match preferred major ${preferredMajor}. Using fallback ${fallback}. Override with --boot-version if needed.`
+      `⚠️  No published stable Spring Boot ${preferredMajor}.x version found (default: ${fetched}). Using fallback ${fallback}. Override with --boot-version if needed.`
     );
     return fallback;
   } catch (err) {
@@ -318,6 +323,48 @@ export function patchPomFailsafe(projectDir) {
     '\t\t\t</plugin>\n\t\t';
   pom = pom.slice(0, closingPlugins) + snippet + pom.slice(closingPlugins);
   writeFileSync(pomPath, pom, 'utf8');
+}
+
+export function configureMaven(projectDir) {
+  const wrapperPath = join(projectDir, '.mvn', 'wrapper', 'maven-wrapper.properties');
+  if (existsSync(wrapperPath)) {
+    const version = getMavenVersion();
+    const wrapper = readFileSync(wrapperPath, 'utf8').replace(
+      /^distributionUrl=.*$/m,
+      `distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${version}/apache-maven-${version}-bin.zip`
+    );
+    writeFileSync(wrapperPath, wrapper, 'utf8');
+  }
+
+  const pomPath = join(projectDir, 'pom.xml');
+  if (!existsSync(pomPath)) return;
+  const pom = readFileSync(pomPath, 'utf8');
+  if (pom.includes('<artifactId>maven-enforcer-plugin</artifactId>')) return;
+  const plugin = `
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${getMavenEnforcerPluginVersion()}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-project-conventions</id>
+                        <goals><goal>enforce</goal></goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>[${getMavenMinVersion()},)</version>
+                                </requireMavenVersion>
+                                <bannedDependencies>
+                                    <excludes><exclude>org.projectlombok:lombok</exclude></excludes>
+                                    <searchTransitive>true</searchTransitive>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+`;
+  writeFileSync(pomPath, pom.replace(/([ \t]*)<\/plugins>/, `${plugin}$1</plugins>`), 'utf8');
 }
 
 /**
@@ -684,6 +731,7 @@ export function applyDotfiles(projectDir, options = {}) {
   // Add the `aot` and `crac` profiles so Dockerfile-aot and Dockerfile-crac build
   // out of the box (the `native` profile comes from start.spring.io). See DOCKER.md.
   patchPomProfiles(projectDir);
+  configureMaven(projectDir);
   // Optional Node version pinning if front-end present
   try {
     const nodeVersion = getNodeVersion();

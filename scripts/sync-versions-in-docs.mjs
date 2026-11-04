@@ -6,7 +6,7 @@
 //   node scripts/sync-versions-in-docs.mjs           # update files in place
 //   node scripts/sync-versions-in-docs.mjs --check   # fail (exit 1) if any file would change
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,6 +22,12 @@ const END = '<!-- versions:end -->';
  * Each entry: [relative-path, [ [regex, replacement], ... ]].
  */
 const assetRewrites = [
+  ['.github/workflows/ci.yml', [
+    [/node-version:\s*'[^']+'/g, `node-version: '${versions.nodeVersion}'`],
+  ]],
+  ['.github/workflows/pages.yml', [
+    [/node-version:\s*'[^']+'/g, `node-version: '${versions.nodeVersion}'`],
+  ]],
   ['assets/Dockerfile', [
     [/eclipse-temurin:[^-\s]+-jdk-noble/g, `eclipse-temurin:${versions.temurinVersion}-jdk-noble`],
   ]],
@@ -76,31 +82,41 @@ const docRewrites = [
 // Per-file version-table manifests. All rows must come from versions.json so
 // the manifest stays the single source of truth — no hardcoded versions here.
 const docs = {
+  'references/SPRING-BOOT-4.md': [
+    ['Spring Boot', versions.springBootFallback],
+    ['Java (Temurin LTS)', versions.temurinVersion],
+    ['Maven (wrapper)', versions.mavenVersion],
+    ['Spring Framework (Boot-managed)', versions.springFrameworkVersion],
+    ['Hibernate ORM (Boot-managed)', versions.hibernateVersion],
+    ['Testcontainers (Boot-managed)', versions.testcontainersVersion],
+  ],
   'references/VUE.md': [
     ['Node.js', versions.nodeVersion],
     ['npm', versions.npmVersion],
-    ['Vue.js', `${versions.vueVersion}.x`],
-    ['Vite', `${versions.viteVersion}.x`],
-    ['Pinia', `${versions.piniaVersion}.x`],
-    ['Vue Router', `${versions.vueRouterVersion}.x`],
+    ['Vue.js', versions.vueVersion],
+    ['Vite', versions.viteVersion],
+    ['Pinia', versions.piniaVersion],
+    ['Vue Router', versions.vueRouterVersion],
+    ['Vitest', versions.vitestVersion],
   ],
   'references/REACT.md': [
     ['Node.js', versions.nodeVersion],
     ['npm', versions.npmVersion],
-    ['React', `${versions.reactVersion}.x`],
-    ['Vite', `${versions.viteVersion}.x`],
-    ['React Router', `${versions.reactRouterVersion}.x`],
+    ['React', versions.reactVersion],
+    ['Vite', versions.viteVersion],
+    ['React Router', versions.reactRouterVersion],
   ],
   'references/ANGULAR.md': [
     ['Node.js', versions.nodeVersion],
     ['npm', versions.npmVersion],
-    ['Angular', `${versions.angularVersion}.x`],
-    ['Angular Router', `${versions.angularVersion}.x`],
+    ['Angular', versions.angularVersion],
+    ['Angular Router', versions.angularVersion],
+    ['Angular CLI', versions.angularCliVersion],
   ],
   'references/VANILLA-JS.md': [
     ['Node.js', versions.nodeVersion],
     ['npm', versions.npmVersion],
-    ['Vite', `${versions.viteVersion}.x`],
+    ['Vite', versions.viteVersion],
     ['Bootstrap', versions.bootstrapVersion],
   ],
   'references/AZURE.md': [
@@ -111,6 +127,17 @@ const docs = {
     ['GraalVM', versions.graalvmVersion],
     ['Java (Temurin)', versions.temurinVersion],
     ['PostgreSQL', versions.postgresVersion],
+  ],
+  'workshop/01-setup.md': [
+    ['Java (Temurin LTS)', versions.temurinVersion],
+    ['Spring Boot', versions.springBootFallback],
+    ['Maven (wrapper)', versions.mavenVersion],
+    ['Node.js', versions.nodeVersion],
+    ['npm', versions.npmVersion],
+    ['PostgreSQL', versions.postgresVersion],
+    ['Vue.js', versions.vueVersion],
+    ['Vite', versions.viteVersion],
+    ['Vitest', versions.vitestVersion],
   ],
 };
 
@@ -128,7 +155,7 @@ function renderTable(rows) {
  * Returns the possibly-modified content.
  */
 function rewritePluginVersions(content) {
-  return content
+  let next = content
     .replace(/<nodeVersion>v[^<]*<\/nodeVersion>/g, `<nodeVersion>v${versions.nodeVersion}</nodeVersion>`)
     .replace(/<npmVersion>[^<]*<\/npmVersion>/g, `<npmVersion>${versions.npmVersion}</npmVersion>`)
     .replace(
@@ -141,7 +168,29 @@ function rewritePluginVersions(content) {
     // package.json snippets
     .replace(/("bootstrap"\s*:\s*")[^"]+(")/g, `$1${versions.bootstrapVersion}$2`)
     .replace(/("bootstrap-icons"\s*:\s*")[^"]+(")/g, `$1${versions.bootstrapIconsVersion}$2`)
-    .replace(/("vite"\s*:\s*"\^)\d+(\.0\.0")/g, `$1${versions.viteVersion}$2`);
+    .replace(/("vite"\s*:\s*")[^"]+(")/g, `$1${versions.viteVersion}$2`)
+    .replace(/@angular\/cli@[\d.]+/g, `@angular/cli@${versions.angularCliVersion}`)
+    .replace(/(npm install )react-router(?=\s)/g, `$1react@${versions.reactVersion} react-dom@${versions.reactVersion} react-router@${versions.reactRouterVersion}`)
+    .replace(/react@[\d.]+/g, `react@${versions.reactVersion}`)
+    .replace(/react-dom@[\d.]+/g, `react-dom@${versions.reactVersion}`)
+    .replace(/react-router@[\d.]+/g, `react-router@${versions.reactRouterVersion}`);
+
+  const artifacts = {
+    'maven-enforcer-plugin': versions.mavenEnforcerPluginVersion,
+    'jjwt-api': versions.jjwtVersion,
+    'jjwt-impl': versions.jjwtVersion,
+    'jjwt-jackson': versions.jjwtVersion,
+    'bucket4j_jdk17-core': versions.bucket4jVersion,
+    'cyclonedx-maven-plugin': versions.cyclonedxPluginVersion,
+    'dependency-check-maven': versions.dependencyCheckPluginVersion,
+  };
+  for (const [artifact, version] of Object.entries(artifacts)) {
+    next = next.replace(
+      new RegExp(`(<artifactId>${artifact}</artifactId>\\s*<version>)[^<]+(</version>)`, 'g'),
+      `$1${version}$2`
+    );
+  }
+  return next;
 }
 
 const checkMode = process.argv.includes('--check');
@@ -184,7 +233,13 @@ if (checkMode && drift > 0) {
 }
 
 // ---- Asset files (Dockerfiles, compose, CI workflow) and doc prose rewrites ----
-for (const [rel, rules] of [...assetRewrites, ...docRewrites]) {
+const handledDocs = new Set([...Object.keys(docs), ...docRewrites.map(([rel]) => rel)]);
+const remainingDocs = ['references', 'workshop'].flatMap(dir =>
+  readdirSync(resolve(ROOT, dir))
+    .filter(name => name.endsWith('.md') && !handledDocs.has(`${dir}/${name}`))
+    .map(name => [`${dir}/${name}`, []])
+);
+for (const [rel, rules] of [...assetRewrites, ...docRewrites, ...remainingDocs]) {
   const file = resolve(ROOT, rel);
   let content;
   try {
@@ -193,7 +248,7 @@ for (const [rel, rules] of [...assetRewrites, ...docRewrites]) {
     console.error(`⚠️  ${rel}: not found — skipping`);
     continue;
   }
-  let next = content;
+  let next = rel.endsWith('.md') ? rewritePluginVersions(content) : content;
   for (const [re, repl] of rules) {
     next = next.replace(re, repl);
   }

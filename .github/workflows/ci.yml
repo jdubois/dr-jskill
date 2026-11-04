@@ -14,14 +14,13 @@ jobs:
     name: Docs drift check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           # Kept in sync with versions.json:nodeVersion by scripts/sync-versions-in-docs.mjs.
-          # Major is enough here; exact patch comes from versions.json at generation time.
-          node-version: '24'
+          node-version: '24.22.2'
 
       - name: Verify reference docs are in sync with versions.json
         run: node scripts/sync-versions-in-docs.mjs --check
@@ -29,8 +28,8 @@ jobs:
       - name: Verify published workshop is in sync with workshop/
         run: node scripts/sync-workshop-docs.mjs --check
 
-      - name: Test workshop link synchronization
-        run: node --test scripts/sync-workshop-docs.test.mjs
+      - name: Test generator utilities and workshop synchronization
+        run: node --test scripts/*.test.mjs
 
       - name: Test docs analytics consent
         run: node --test docs/.vuepress/analytics.test.mjs

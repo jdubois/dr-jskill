@@ -12,6 +12,23 @@ Everything you install here is reusable well beyond this workshop. None of it is
 
 ## 1. Install the prerequisites
 
+The tested versions below are generated from `versions.json`. Stay on Java 25 LTS,
+Node 24 and npm 11; newer release lines are not required for this workshop.
+
+<!-- versions:start -->
+| Tool | Version |
+|------|---------|
+| Java (Temurin LTS) | 25 |
+| Spring Boot | 4.1.2 |
+| Maven (wrapper) | 3.10.0 |
+| Node.js | 24.22.2 |
+| npm | 11.21.1 |
+| PostgreSQL | 18 |
+| Vue.js | 3.5.44 |
+| Vite | 8.3.5 |
+| Vitest | 5.0.5 |
+<!-- versions:end -->
+
 ### 1.1 Node.js 24 and npm 11
 
 The generated front-end (Vue.js) needs Node.js to install dependencies and build the production bundle.
@@ -26,6 +43,9 @@ brew link --overwrite node@24
 ```powershell
 winget install OpenJS.NodeJS.LTS
 ```
+
+The LTS installer may now select Node 26. Use your version manager to select
+Node 24 for this workshop instead of accepting a different major.
 
 **Linux (NodeSource):**
 ```bash

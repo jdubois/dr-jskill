@@ -36,7 +36,7 @@ Add these dependencies to your `pom.xml`:
 
 ```xml
 <dependencies>
-    <!-- Spring Boot Test Starter (includes JUnit 5, Mockito, AssertJ) -->
+    <!-- Spring Boot Test Starter (includes JUnit Jupiter, Mockito, AssertJ) -->
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-test</artifactId>
@@ -900,7 +900,7 @@ Spring Boot 4 requires **TestContainers 2.0+**, which brings:
 - **Artifact rename:** `org.testcontainers:postgresql` → `org.testcontainers:testcontainers-postgresql`
 - **Package rename:** `org.testcontainers.containers.PostgreSQLContainer` → `org.testcontainers.postgresql.PostgreSQLContainer`
 - **`PostgreSQLContainer` is no longer generic** — use `PostgreSQLContainer` (not `PostgreSQLContainer<?>`)
-- `junit-jupiter` artifact removed — TC 2.x integrates with JUnit 5 directly
+- TC 2.x renamed `org.testcontainers:junit-jupiter` to `org.testcontainers:testcontainers-junit-jupiter`; include it when using `@Testcontainers` / `@Container`. `@ServiceConnection` bean-based tests do not need those annotations.
 - Improved performance and resource management
 - Better cleanup of containers
 - Enhanced Docker platform support

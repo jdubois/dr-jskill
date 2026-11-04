@@ -748,8 +748,8 @@ Implement rate limiting for sensitive endpoints (login, registration):
 ```xml
 <dependency>
     <groupId>com.bucket4j</groupId>
-    <artifactId>bucket4j-core</artifactId>
-    <version>8.10.1</version>
+    <artifactId>bucket4j_jdk17-core</artifactId>
+    <version>8.22.0</version>
 </dependency>
 ```
 

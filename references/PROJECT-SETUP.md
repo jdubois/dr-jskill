@@ -393,7 +393,7 @@ spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:password}
   }
   ```
 - **`.vscode/settings.json`**: enable format-on-save, set Java code style, Prettier, ESLint, files.eol = "\n".
-- **`.nvmrc` / `.node-version`**: set `24.21.0` (kept in `versions.json`).
+- **`.nvmrc` / `.node-version`**: set `24.22.2` (kept in `versions.json`).
 - **`.mvn/wrapper`**: already provided by start.spring.io; keep `mvnw` executable.
 - **`.prettierignore` / `.eslintignore`** (if front-end added): ignore generated assets and `target/`.
 - **`.testcontainers.properties`** (optional): tune reuse, Docker host, etc. Keep it **ignored** if it contains sensitive overrides.

@@ -19,6 +19,7 @@
 
 import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { getVueFrontendVersions } from './lib/versions.mjs';
 
 // Only the two packages that actually conflict. `npm-run-all2` must NOT be
 // listed here: it is a general-purpose task runner, not part of the oxlint
@@ -43,6 +44,15 @@ function normalizePackageJson(frontendDir, changes, warnings, check) {
   const raw = readFileSync(path, 'utf8');
   const pkg = JSON.parse(raw);
 
+  for (const [name, version] of Object.entries(getVueFrontendVersions())) {
+    for (const section of ['dependencies', 'devDependencies']) {
+      if (pkg[section]?.[name] && pkg[section][name] !== version) {
+        pkg[section][name] = version;
+        changes.push(`package.json: pinned ${name} to ${version}`);
+      }
+    }
+  }
+
   for (const dep of OXLINT_PACKAGES) {
     if (pkg.devDependencies?.[dep]) {
       delete pkg.devDependencies[dep];
@@ -55,6 +65,11 @@ function normalizePackageJson(frontendDir, changes, warnings, check) {
   }
 
   if (pkg.scripts) {
+    if (pkg.scripts.format?.includes('--experimental-cli')) {
+      pkg.scripts.format = pkg.scripts.format.replace(/\s+--experimental-cli\b/g, '');
+      changes.push('package.json: use the stable Prettier CLI');
+    }
+
     // create-vue splits linting into lint:eslint + lint:oxlint and chains them
     // through npm-run-all2; collapse that back to a single ESLint pipeline.
     for (const name of ['lint:oxlint', 'lint:eslint']) {
@@ -153,21 +168,21 @@ function main() {
   };
 
   if (changes.length === 0) {
-    console.log(`${frontendDir}: already normalized (no oxlint dual-linter present).`);
+    console.log(`${frontendDir}: already normalized (stable versions and single ESLint pipeline).`);
     printWarnings();
     if (warnings.length > 0 && check) process.exit(1);
     return;
   }
 
   if (check) {
-    console.error(`${frontendDir}: oxlint dual-linter still present:\n`);
+    console.error(`${frontendDir}: frontend normalization required:\n`);
     for (const change of changes) console.error(`  would fix: ${change}`);
     printWarnings();
     console.error('\nRun: node scripts/normalize-vue-frontend.mjs');
     process.exit(1);
   }
 
-  console.log(`${frontendDir}: normalized for a single ESLint pipeline.`);
+  console.log(`${frontendDir}: normalized for stable versions and a single ESLint pipeline.`);
   for (const change of changes) console.log(`  ${change}`);
   printWarnings();
 }

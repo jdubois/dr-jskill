@@ -24,11 +24,11 @@ This guide covers creating front-end applications for Spring Boot using React 19
 <!-- versions:start -->
 | Tool | Version |
 |------|---------|
-| Node.js | 24.21.0 |
-| npm | 11.20.0 |
-| React | 19.x |
-| Vite | 8.x |
-| React Router | 8.x |
+| Node.js | 24.22.2 |
+| npm | 11.21.1 |
+| React | 19.3.1 |
+| Vite | 8.3.5 |
+| React Router | 8.5.1 |
 <!-- versions:end -->
 
 > Tip: `corepack enable` for pnpm/yarn if desired. Default instructions assume `npm`. No OpenAPI client generation is provided; use `fetch`/`axios` as needed.
@@ -95,7 +95,7 @@ npm install
 
 # Install React Router, Bootstrap and Bootstrap Icons
 # React Router 8 removed the `react-router-dom` package: install `react-router` instead
-npm install react-router bootstrap@5.3.8 bootstrap-icons@1.13.1
+npm install react@19.3.1 react-dom@19.3.1 react-router@8.5.1 bootstrap@5.3.8 bootstrap-icons@1.13.2
 ```
 
 ### 2. Configure Vite for Spring Boot Integration
@@ -184,8 +184,8 @@ Add to your `pom.xml`:
                         <goal>install-node-and-npm</goal>
                     </goals>
                     <configuration>
-                        <nodeVersion>v24.21.0</nodeVersion>
-                        <npmVersion>11.20.0</npmVersion>
+                        <nodeVersion>v24.22.2</nodeVersion>
+                        <npmVersion>11.21.1</npmVersion>
                     </configuration>
                 </execution>
                 

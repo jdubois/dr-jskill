@@ -24,12 +24,13 @@ This guide covers creating front-end applications for Spring Boot using **Vue.js
 <!-- versions:start -->
 | Tool | Version |
 |------|---------|
-| Node.js | 24.21.0 |
-| npm | 11.20.0 |
-| Vue.js | 3.x |
-| Vite | 8.x |
-| Pinia | 4.x |
-| Vue Router | 5.x |
+| Node.js | 24.22.2 |
+| npm | 11.21.1 |
+| Vue.js | 3.5.44 |
+| Vite | 8.3.5 |
+| Pinia | 4.1.0 |
+| Vue Router | 5.4.0 |
+| Vitest | 5.0.5 |
 <!-- versions:end -->
 
 > Tip: `corepack enable` to use `pnpm`/`yarn` if preferred. Default instructions assume `npm`.
@@ -100,11 +101,13 @@ npm create -y vue@latest frontend
 # Fully non-interactive alternative (skips all prompts, picks the features via flags):
 # npm create -y vue@latest frontend -- --router --pinia --vitest --eslint --prettier
 
+# Replace /path/to/dr-jskill with the installed skill directory.
+node /path/to/dr-jskill/scripts/normalize-vue-frontend.mjs frontend
 cd frontend
 npm install
 
 # Install Bootstrap and Bootstrap Icons
-npm install bootstrap@5.3.8 bootstrap-icons@1.13.1
+npm install bootstrap@5.3.8 bootstrap-icons@1.13.2
 ```
 
 > **Heads-up — create-vue's oxlint dual-linter breaks `npm install`.** Recent
@@ -118,7 +121,11 @@ npm install bootstrap@5.3.8 bootstrap-icons@1.13.1
 > **Always run the normalizer immediately after scaffolding**, before the first
 > `npm install`. It drops the oxlint dual-linter, collapses linting to the
 > single ESLint pipeline this project standardizes on, and adds the `lint:check`
-> script `create-vue` never emits — the Maven build runs `npm run lint:check`,
+> script `create-vue` never emits. It also pins the Vue/Vite/test toolchain to
+> the tested stable versions in `versions.json`, rather than trusting a
+> scaffolder's ranges or a registry's `latest` tag (which can point to a beta).
+> It uses Prettier's stable CLI, removing the scaffold's experimental CLI flag.
+> The Maven build runs `npm run lint:check`,
 > so without it the `frontend-maven-plugin` step fails with
 > `Missing script: "lint:check"` (see
 > [step 4](#4-update-frontend-packagejson-scripts)):
@@ -254,8 +261,8 @@ Add to your `pom.xml`:
                         <goal>install-node-and-npm</goal>
                     </goals>
                     <configuration>
-                        <nodeVersion>v24.21.0</nodeVersion>
-                        <npmVersion>11.20.0</npmVersion>
+                        <nodeVersion>v24.22.2</nodeVersion>
+                        <npmVersion>11.21.1</npmVersion>
                     </configuration>
                 </execution>
                 

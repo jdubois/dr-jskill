@@ -67,7 +67,7 @@ node scripts/create-project-latest.mjs my-app com.mycompany my-app com.mycompany
 Project types available:
 - `basic` - Minimal Spring Boot project
 - `web` - Web application with REST API capabilities
-- `fullstack` - Complete application with database and security
+- `fullstack` - Complete application with database; security is optional
 
 ### Basic Spring Boot Project
 Use the `create-basic-project.mjs` script to create a basic Spring Boot project with essential dependencies:
@@ -193,7 +193,7 @@ my-spring-boot-app/
 
 ## Dependencies
 
-Generated projects include: Spring Web, Spring Data JPA, Spring Boot Actuator, DevTools, PostgreSQL, Validation, Docker Compose support, Test Starter with JUnit 5, and TestContainers.
+Generated projects include: Spring Web, Spring Data JPA, Spring Boot Actuator, DevTools, PostgreSQL, Validation, Docker Compose support, Test Starter with JUnit Jupiter (JUnit 6), and Testcontainers.
 
 ## Configuration
 
@@ -241,7 +241,7 @@ When wiring the `frontend-maven-plugin`, bind the Node install, `npm install`, a
 > node scripts/normalize-vue-frontend.mjs /absolute/path/to/my-app/frontend
 > ```
 >
-> It drops the oxlint dual-linter, leaving the single ESLint pipeline, and adds the `lint:check` script that `create-vue` never emits but the Maven `frontend-maven-plugin` build runs. It is idempotent, and `--check` reports without writing. See [Vue.js Guide](references/VUE.md#1-project-setup).
+> It drops the oxlint dual-linter, leaving the single ESLint pipeline, adds the `lint:check` script that the Maven build runs, and pins existing Vue/Vite/test dependencies to the tested stable versions in `versions.json`. It is idempotent, and `--check` reports without writing. See [Vue.js Guide](references/VUE.md#1-project-setup).
 >
 > **Vitest + callback Vite config.** If `vite.config.js` exports `defineConfig(({ mode }) => ...)`, do not let the generated `vitest.config.js` call `mergeConfig(viteConfig, ...)`. Resolve the callback first with `viteConfig({ mode: 'test', command: 'serve' })`; otherwise Vitest fails with `Cannot merge config in form of callback`. See [Vue.js Guide](references/VUE.md#2-configure-vite-for-spring-boot-integration).
 

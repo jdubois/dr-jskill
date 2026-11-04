@@ -13,11 +13,26 @@
 
 ## Overview  
 
-This guide covers the key changes in Spring Boot 4.0 and what to consider when creating new Spring Boot 4 projects.
+This guide covers the key changes in Spring Boot 4 and what to consider when creating new projects.
 
 **Release Date:** November 20, 2025 (4.0.0 GA)
-**Major Version:** 4.0.x
+**Major Version:** 4.x
 **Based on:** Spring Framework 7.0, Jakarta EE 11
+
+The current stable baseline is generated from `versions.json`. Spring Boot manages
+its Java dependency versions; do not override its BOM just to chase newer plugin
+or library releases.
+
+<!-- versions:start -->
+| Tool | Version |
+|------|---------|
+| Spring Boot | 4.1.2 |
+| Java (Temurin LTS) | 25 |
+| Maven (wrapper) | 3.10.0 |
+| Spring Framework (Boot-managed) | 7.0.10 |
+| Hibernate ORM (Boot-managed) | 7.4.13.Final |
+| Testcontainers (Boot-managed) | 2.0.5 |
+<!-- versions:end -->
 
 ## System Requirements
 
@@ -123,7 +138,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 ```
 
-The `junit-jupiter` artifact is no longer needed — TC 2.x integrates with JUnit 5 directly.
+TC 2.x renamed `org.testcontainers:junit-jupiter` to
+`org.testcontainers:testcontainers-junit-jupiter`. Include it when using
+`@Testcontainers` / `@Container`; `@ServiceConnection` bean-based tests do not need
+those annotations. Spring Boot 4.1 manages JUnit Jupiter 6.
 
 ### 4. @WebMvcTest Moved to New Package
 
@@ -257,7 +275,7 @@ class ApplicationTests {
 3. Works seamlessly with `@ServiceConnection` annotation
 4. **Artifact rename:** `org.testcontainers:postgresql` → `org.testcontainers:testcontainers-postgresql`
 5. **Package rename:** `org.testcontainers.containers.PostgreSQLContainer` → `org.testcontainers.postgresql.PostgreSQLContainer`
-6. `junit-jupiter` artifact removed — TC 2.x integrates with JUnit 5 directly
+6. `junit-jupiter` artifact renamed to `testcontainers-junit-jupiter` in TC 2.x
 7. **`PostgreSQLContainer` is no longer generic** — use `PostgreSQLContainer` (not `PostgreSQLContainer<?>`) and `new PostgreSQLContainer(...)` (not `new PostgreSQLContainer<>(...)`)
 
 #### Maven Enforcer + ArchUnit guardrails (no Lombok, enforce Maven)
@@ -269,7 +287,7 @@ _Add this to `pom.xml` to enforce minimum Maven, Java, and block Lombok dependen
     <plugin>
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-enforcer-plugin</artifactId>
-      <version>3.6.3</version>
+      <version>3.7.0</version>
       <executions>
         <execution>
           <id>enforce</id>

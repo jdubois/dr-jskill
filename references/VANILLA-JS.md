@@ -24,9 +24,9 @@ This guide covers creating front-end applications for Spring Boot using plain Ja
 <!-- versions:start -->
 | Tool | Version |
 |------|---------|
-| Node.js | 24.21.0 |
-| npm | 11.20.0 |
-| Vite | 8.x |
+| Node.js | 24.22.2 |
+| npm | 11.21.1 |
+| Vite | 8.3.5 |
 | Bootstrap | 5.3.8 |
 <!-- versions:end -->
 
@@ -174,8 +174,8 @@ Add to your `pom.xml`:
                         <goal>install-node-and-npm</goal>
                     </goals>
                     <configuration>
-                        <nodeVersion>v24.21.0</nodeVersion>
-                        <npmVersion>11.20.0</npmVersion>
+                        <nodeVersion>v24.22.2</nodeVersion>
+                        <npmVersion>11.21.1</npmVersion>
                     </configuration>
                 </execution>
                 
@@ -252,11 +252,11 @@ Edit `frontend/package.json`:
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^8.0.0"
+    "vite": "8.3.5"
   },
   "dependencies": {
     "bootstrap": "5.3.8",
-    "bootstrap-icons": "1.13.1"
+    "bootstrap-icons": "1.13.2"
   }
 }
 ```

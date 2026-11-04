@@ -24,10 +24,11 @@ This guide covers creating front-end applications for Spring Boot using Angular 
 <!-- versions:start -->
 | Tool | Version |
 |------|---------|
-| Node.js | 24.21.0 |
-| npm | 11.20.0 |
-| Angular | 22.x |
-| Angular Router | 22.x |
+| Node.js | 24.22.2 |
+| npm | 11.21.1 |
+| Angular | 22.2.3 |
+| Angular Router | 22.2.3 |
+| Angular CLI | 22.2.4 |
 <!-- versions:end -->
 
 > Use `npx @angular/cli@latest` to scaffold; keep alignment with `engines` constraints. No OpenAPI client generation provided.
@@ -87,17 +88,17 @@ From your Spring Boot project root:
 # that `-y`/`--yes` do NOT silence. In non-TTY shells (CI, agents) you must
 # close stdin with `echo |` AND pass `--defaults` so the CLI accepts defaults
 # immediately. `--skip-install` avoids a duplicate npm install from the CLI.
-echo | npx --yes @angular/cli@22 new frontend \
+echo | npx --yes @angular/cli@22.2.4 new frontend \
   --style=css --ssr=false --skip-git --defaults --skip-install
 
 cd frontend
 npm install
 
 # Install Bootstrap and Bootstrap Icons
-npm install bootstrap@5.3.8 bootstrap-icons@1.13.1
+npm install bootstrap@5.3.8 bootstrap-icons@1.13.2
 ```
 
-> Interactive shells can use the shorter form `ng new frontend --style=css --ssr=false --skip-git` (after `npm install -g @angular/cli@22`).
+> Interactive shells can use the shorter form `ng new frontend --style=css --ssr=false --skip-git` (after `npm install -g @angular/cli@22.2.4`).
 
 ### 2. Configure Angular for Spring Boot Integration
 
@@ -211,8 +212,8 @@ Add to your `pom.xml`:
                         <goal>install-node-and-npm</goal>
                     </goals>
                     <configuration>
-                        <nodeVersion>v24.21.0</nodeVersion>
-                        <npmVersion>11.20.0</npmVersion>
+                        <nodeVersion>v24.22.2</nodeVersion>
+                        <npmVersion>11.21.1</npmVersion>
                     </configuration>
                 </execution>
                 
